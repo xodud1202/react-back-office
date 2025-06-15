@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@layer components {
+  /* 기본 버튼 스타일: 공통 + 회색 테마 */
+  .btn {
+    @apply relative w-full flex justify-center items-center
+           py-2 px-4 backdrop-blur-lg shadow-xl
+           transform transition duration-150 ease-out transform-gpu
+           rounded-lg cursor-pointer
+           bg-[#EEEEEE]/40 ring-1 ring-[#EEEEEE]/50 text-gray-800
+           hover:scale-105 hover:bg-[#EEEEEE]/50
+           focus:outline-none focus:ring-2 focus:ring-[#EEEEEE]/50;
+  }
+
+  /* 흰색 테마 버튼: .btn 위에 오버라이드 */
+  .btn-white {
+    @apply bg-white ring-white text-gray-800
+           hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white;
+  }
+
+  /* 경고(주황색) 테마 버튼 */
+  .btn-warning {
+    @apply bg-orange-500 ring-orange-500 text-white
+           hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500;
+  }
+
+  /* 삭제(빨강색) 테마 버튼 */
+  .btn-red {
+    @apply bg-red-500 ring-red-500 text-white
+           hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500;
+  }
+
+  /* 확인(파랑색) 테마 버튼 */
+  .btn-blue {
+    @apply bg-blue-500 ring-blue-500 text-white
+           hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500;
+  }
+}
