@@ -11,34 +11,26 @@ export default function Login() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    try {
-      // Next.js API 라우트로 요청 보내기
-      const response = await fetch('/api/backend-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, password }),
-      });
-      const data = await response.json();
 
-      console.log('data');
-      console.log(data.id);
+    const res = await fetch('/api/backend-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, password })
+    })
+    const body = await res.json()
 
-      if (!response.ok) {
-        setError(data.message || '로그인에 실패했습니다.')
-        return
-      }
-
-      // 응답에 포함된 JWT 토큰 받기
-      const token = data.token as string
-      // 로컬 스토리지에 JWT 저장
-      localStorage.setItem('jwt', token)
-
-      // 로그인 성공 후 대시보드로 이동
-      await router.replace('/')
-    } catch (err) {
-      console.error(err)
-      setError('네트워크 오류가 발생했습니다.')
+    if (!res.ok) {
+      setError(body.message || '로그인 실패')
+      return
     }
+
+    const token = body.token as string
+    localStorage.setItem('jwt', token)
+
+    // 이후 axios 나 fetch 로 API 호출 시:
+    // Authorization: `Bearer ${localStorage.getItem('jwt')}` 헤더를 붙이세요.
+
+    await router.replace('/')
   }
 
   return (

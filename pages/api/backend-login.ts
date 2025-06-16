@@ -1,38 +1,36 @@
+// pages/api/backend-login.ts
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  console.log('이게뜨나?');
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const backendUrl = process.env.BACKEND_URL || `//127.0.0.1:3010`;
+   console.log('📝 [backend-login] req.body =', req.body);
+   console.log('📝 [backend-login] BACKEND_URL =', process.env.BACKEND_URL);
 
-  // 오직 POST 요청만 허용
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
-    return res.status(405).end('Method Not Allowed')
+    res.setHeader('Allow', ['POST'])
+    return res.status(405).end(`Method ${req.method} Not Allowed`)
   }
 
-  const backendUrl = process.env.BACKEND_URL
-  if (!backendUrl) {
-    return res.status(500).json({ message: 'BACKEND_URL is not defined' })
-  }
+  const { id, password } = req.body;
 
   try {
-    console.log(`gogogo ${backendUrl}`)
-    console.log(`gogogo ${backendUrl}`)
-
-    // 클라이언트에서 넘겨준 body(id, password)를 백엔드로 전달
-    const response = await fetch(`${backendUrl}/backoffice/login`, {
+    const backendRes = await fetch(`${backendUrl}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(req.body),
-    })
+      // 스프링 AuthController 에서는 UserBase.username, password 를 기대합니다
+      body: JSON.stringify({ loginId: id, pwd: password })
+    });
 
-    const data = await response.json()
-    return res.status(response.status).json(data)
-  } catch (error) {
-    console.error('Proxy error:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+    const data = await backendRes.json();
+
+    if (!backendRes.ok) {
+      return res.status(backendRes.status).json(data)
+    }
+
+    // JWT 토큰을 그대로 클라이언트에 내려줍니다
+    return res.status(200).json({ token: data.token || data.accessToken })
+  } catch (e) {
+    console.error(e)
+    return res.status(500).json({ message: '서버 호출 중 에러가 발생했습니다.' })
   }
 }
