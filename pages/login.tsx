@@ -12,25 +12,31 @@ export default function Login() {
     e.preventDefault()
     setError(null)
 
-    const res = await fetch('/api/backend-login', {
+    const requestUri = '/backoffice/login';
+    const requestParam = { loginId: id, pwd: password };
+
+    const header = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, password })
-    })
-    const body = await res.json()
+      body: JSON.stringify({ requestUri, requestParam })
+    };
+
+    // 로그인 처리
+    const res = await fetch('/api/backend-api', header);
+    const body = await res.json();
+
+    console.log('body');
+    console.log(body);
 
     if (!res.ok) {
-      setError(body.message || '로그인 실패')
-      return
+      setError(body.resultMsg || '로그인 실패')
+      return;
     }
 
-    const token = body.token as string
-    localStorage.setItem('jwt', token)
-
     // 이후 axios 나 fetch 로 API 호출 시:
-    // Authorization: `Bearer ${localStorage.getItem('jwt')}` 헤더를 붙이세요.
-
-    await router.replace('/')
+    // Authorization: `Bearer ${localStorage.getItem('loginInfo').jwtToken}` 헤더를 붙이세요.
+    localStorage.setItem('userInfo', body.userInfo);
+    await router.replace('/');
   }
 
   return (
