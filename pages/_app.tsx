@@ -33,7 +33,7 @@ function MyApp({ Component, pageProps }: AppProps) {
             // AccessToken이 없고 RefreshToken만 있는 경우 토큰 갱신 시도
             if (!accessToken && refreshToken) {
                 try {
-                    const requestUri = '/backoffice/refresh-token'
+                    const requestUri = '/token/backoffice/refresh-token'
                     const requestParam = { refreshToken }
 
                     const response = await fetch('/api/backend-api', {

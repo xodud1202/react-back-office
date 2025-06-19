@@ -18,13 +18,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // API 전달 URL
-    const backendUrl = process.env.BACKEND_URL || `//127.0.0.1:3010`;
+    const backendUrl = process.env.BACKEND_URL || `http://127.0.0.1:3010`;
 
     // API REQUEST
     const backendRes = await fetch(`${backendUrl}${req.body.requestUri}`, requestHeader);
 
+    console.log('backendRes');
+    console.log(backendRes);
+
     // API 결과 성공이든 실패든 return.
-    return res.status(backendRes.status).json(await backendRes.json());
+    return res.status(backendRes.status).json(await backendRes?.json());
   } catch (e) {
     console.error(e)
     return res.status(500).json({message: '서버 호출 중 에러가 발생했습니다.'})

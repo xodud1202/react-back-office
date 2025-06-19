@@ -49,7 +49,7 @@ async function refreshAccessToken() {
     if (!refreshToken) return false;
 
     try {
-        const requestUri = '/backoffice/refresh-token';
+        const requestUri = '/token/backoffice/refresh-token';
         const requestParam = { refreshToken };
 
         const response = await fetch('/api/backend-api', {
