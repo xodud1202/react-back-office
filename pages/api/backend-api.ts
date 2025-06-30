@@ -10,21 +10,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // API header 정보
-    let requestHeader = {
-      method: req.method,
-      headers: {'Content-Type': 'application/json', Authorization: req.body.Authorization},
-      // 스프링 AuthController 에서는 UserBase.username, password 를 기대합니다
-      body: JSON.stringify(req.body.requestParam)
+    const body = req.body;
+
+    const requestHeader = {
+      method: body.requestParam.method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(body.requestParam.Authorization ? { 'Authorization': `Bearer ${body.requestParam.Authorization}` } : {}),
+      },
+      ...(body.requestParam.method === 'GET' ? {} : {body: JSON.stringify(body.requestParam)})
     };
 
-    // API 전달 URL
+    // API 전달 URL (BACK-END API 주소 개발자모드에서 노출되지 않도록 한번 더 가공)
     const backendUrl = process.env.BACKEND_URL || `http://127.0.0.1:3010`;
 
     // API REQUEST
-    const backendRes = await fetch(`${backendUrl}${req.body.requestUri}`, requestHeader);
-
-    console.log('backendRes');
-    console.log(backendRes);
+    const backendRes = await fetch(`${backendUrl}${body.requestUri}`, requestHeader);
 
     // API 결과 성공이든 실패든 return.
     return res.status(backendRes.status).json(await backendRes?.json());

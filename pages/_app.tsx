@@ -4,9 +4,14 @@ import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import { setRouter } from '../utils/api'
-import { setupTokenRefresh } from '../utils/tokenRefresh'
+// import { setupTokenRefresh } from '../utils/tokenRefresh'
+import { CookiesProvider } from 'react-cookie';
+import Cookies from 'universal-cookie';
 
-function MyApp({ Component, pageProps }: AppProps) {
+function MyApp({ Component, pageProps }: AppProps & { cookies?: string }) {
+    // SSR로부터 받는 쿠키 문자열 초기화
+    const cookies = pageProps.cookies ? new Cookies(pageProps.cookies) : undefined
+
     const router = useRouter()
 
     useEffect(() => {
@@ -14,10 +19,10 @@ function MyApp({ Component, pageProps }: AppProps) {
         setRouter(router)
 
         // 토큰 갱신 설정
-        setupTokenRefresh()
+        // setupTokenRefresh()
 
         // 페이지 로드 시 토큰 확인
-        const checkAuth = async () => {
+        /*const checkAuth = async () => {
             // 로그인 페이지는 체크하지 않음
             if (router.pathname === '/login') return
 
@@ -58,12 +63,17 @@ function MyApp({ Component, pageProps }: AppProps) {
                     router.push('/login')
                 }
             }
-        }
+        }*/
 
-        checkAuth()
+        // checkAuth()
     }, [router])
 
-    return <Component {...pageProps} />
+    return (
+        // SSR 쿠키를 CSR에도 적용
+        <CookiesProvider cookies={cookies}>
+            <Component {...pageProps} />
+        </CookiesProvider>
+    )
 }
 
 export default MyApp

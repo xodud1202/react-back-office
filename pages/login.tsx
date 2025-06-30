@@ -1,8 +1,12 @@
 import {useEffect, useState} from 'react'
 import Image from 'next/image'
 import {useRouter} from 'next/router'
+import Cookies from 'universal-cookie'
+import {CheckAccessTokenPageProps, getCheckAccessTokenServerSideProps} from "../utils/serverSideProps";
 
-export default function Login() {
+export const getServerSideProps = getCheckAccessTokenServerSideProps;
+
+export default function Login({ data }: CheckAccessTokenPageProps) {
   const [id, setId] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
@@ -11,92 +15,13 @@ export default function Login() {
 
   // 토큰 체크 및 리다이렉트 로직
   useEffect(() => {
-    // 서버 사이드 렌더링 시에는 실행하지 않음
-    if (typeof window === 'undefined') return
-
-    // JWT 토큰 디코딩 함수
-    function decodeJwtToken(token: string) {
-      try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-          atob(base64)
-            .split('')
-            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-            .join('')
-        );
-        return JSON.parse(jsonPayload);
-      } catch (error) {
-        console.error('JWT 토큰 디코딩 실패:', error);
-        return null;
-      }
+    if (data && data.result === 'OK') {
+      router.replace('/main')
+    } else {
+      // 로그인이 안되어있다는 말은, REFRESH_TOKEN을 삭제해야한다는 말과 동일함.
+      localStorage.removeItem('refreshToken');
     }
-
-    // JWT 토큰 유효성 검증 함수
-    function isTokenValid(token: string) {
-      try {
-        const decodedToken = decodeJwtToken(token);
-        if (!decodedToken) return false;
-
-        // 토큰의 만료 시간(exp)과 현재 시간 비교
-        const currentTime = Date.now() / 1000;
-        return decodedToken.exp > currentTime;
-      } catch (error) {
-        console.error('토큰 유효성 검증 실패:', error);
-        return false;
-      }
-    }
-
-    // 토큰 체크 및 리다이렉트
-    const checkTokenAndRedirect = async () => {
-      try {
-        // 이제 안전하게 localStorage에 접근 가능
-        const accessToken = localStorage.getItem('accessToken')
-        const refreshToken = localStorage.getItem('refreshToken')
-
-        console.log('로그인 페이지 토큰 체크:');
-        console.log('accessToken:', accessToken ? '존재함' : '없음');
-        console.log('refreshToken:', refreshToken ? '존재함' : '없음');
-
-        // accessToken이 있고 유효한 경우 메인 페이지로 리다이렉트
-        if (accessToken && isTokenValid(accessToken)) {
-          router.replace('/main')
-          return
-        }
-
-        // accessToken이 없거나 만료됐지만 refreshToken이 있는 경우 토큰 갱신 시도
-        if (refreshToken) {
-          const requestUri = '/token/backoffice/refresh-token'
-          const requestParam = { refreshToken }
-
-          const response = await fetch('/api/backend-api', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requestUri, requestParam })
-          })
-
-          if (response.ok) {
-            const data = await response.json()
-            if (data.result === 'OK' && data.accessToken) {
-              // 새로운 accessToken 저장
-              localStorage.setItem('accessToken', data.accessToken)
-              router.replace('/main')
-              return
-            }
-          }
-        }
-
-        // 토큰이 없거나 갱신에 실패한 경우 로그인 페이지에 머무름
-        // 이미 로그인 페이지이므로 추가 작업 필요 없음
-      } catch (error) {
-        console.error('토큰 검증 중 오류 발생:', error)
-        // 오류 발생 시 로그인 페이지에 머무름
-      }
-    }
-
-    // 페이지 로드 시 토큰 체크 실행
-    checkTokenAndRedirect()
-  }, [router])
+  }, [data, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -104,6 +29,7 @@ export default function Login() {
 
     const requestUri = '/backoffice/login';
     const requestParam = {
+      method: 'POST',
       loginId: id,
       pwd: password,
       rememberMe: rememberMe
@@ -124,19 +50,31 @@ export default function Login() {
       return;
     }
 
-    // Access Token 저장
-    localStorage.setItem('accessToken', body.accessToken);
-    localStorage.setItem('userInfo', JSON.stringify(body.userInfo));
+    // 쿠키 인스턴스 생성
+    const cookies = new Cookies();
+
+    // 쿠키 옵션 설정
+    const isSecure = process.env.IS_SECURE === 'TRUE';
+    const cookieOptions = {
+      path: '/',
+      secure: isSecure,
+      sameSite: 'strict' as 'strict', // CSRF 방지
+      maxAge: 30 * 60 // 30분 (초 단위)
+    };
+
+    cookies.set('accessToken', body.accessToken, cookieOptions);
+    console.log('accessToken:', body.accessToken);
+
+    // 로그인 정보 및 refreshToken은 30일 처리 > accessToken 만료시 삭제함.
+    cookieOptions.maxAge = 60 * 60 * 24 * 30;   // 30일
+    cookies.set('loginId', body.userInfo.loginId, cookieOptions);
+    cookies.set('usrNm', body.userInfo.usrNm, cookieOptions);
 
     // 로그인 유지를 선택한 경우 Refresh Token 저장
     if (rememberMe && body.refreshToken) {
+      cookies.set('refreshToken', body.refreshToken, cookieOptions);
       localStorage.setItem('refreshToken', body.refreshToken);
     }
-
-    console.log('localStorage.getItem()');
-    console.log(localStorage.getItem('accessToken'));
-    console.log(localStorage.getItem('refreshToken'));
-    console.log(localStorage.getItem('userInfo'));
 
     await router.replace('/');
   }
@@ -190,7 +128,7 @@ export default function Login() {
             </div>
           </div>
 
-          {/* 에러 메시지를 여기에 배치 */}
+          {/* 에러 메시지 */}
           {error && (
             <div className="text-red-500 text-sm text-center">
               {error}
