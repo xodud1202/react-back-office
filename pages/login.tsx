@@ -19,7 +19,11 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
       router.replace('/main')
     } else {
       // 로그인이 안되어있다는 말은, REFRESH_TOKEN을 삭제해야한다는 말과 동일함.
-      localStorage.removeItem('refreshToken');
+      const cookies = new Cookies();
+      cookies.remove('loginId', { path: '/' });
+      cookies.remove('usrNm', { path: '/' });
+      cookies.remove('refreshToken', { path: '/' });
+      cookies.remove('accessToken', { path: '/' });
     }
   }, [data, router]);
 
@@ -58,7 +62,7 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
     const cookieOptions = {
       path: '/',
       secure: isSecure,
-      sameSite: 'strict' as 'strict', // CSRF 방지
+      sameSite: 'strict' as const, // CSRF 방지
       maxAge: 30 * 60 // 30분 (초 단위)
     };
 

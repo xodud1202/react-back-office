@@ -7,6 +7,7 @@ import { setRouter } from '../utils/api'
 // import { setupTokenRefresh } from '../utils/tokenRefresh'
 import { CookiesProvider } from 'react-cookie';
 import Cookies from 'universal-cookie';
+import AdminLayout from '../components/AdminLayout';
 
 function MyApp({ Component, pageProps }: AppProps & { cookies?: string }) {
     // SSR로부터 받는 쿠키 문자열 초기화
@@ -68,10 +69,18 @@ function MyApp({ Component, pageProps }: AppProps & { cookies?: string }) {
         // checkAuth()
     }, [router])
 
+    const isLayoutNeeded = router.pathname !== '/login' && router.pathname !== '/index' && router.pathname !== '/';
+
     return (
         // SSR 쿠키를 CSR에도 적용
         <CookiesProvider cookies={cookies}>
-            <Component {...pageProps} />
+            {isLayoutNeeded ? (
+                <AdminLayout>
+                    <Component {...pageProps} />
+                </AdminLayout>
+            ) : (
+                <Component {...pageProps} />
+            )}
         </CookiesProvider>
     )
 }

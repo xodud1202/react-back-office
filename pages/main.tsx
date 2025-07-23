@@ -1,7 +1,7 @@
 // pages/main.tsx
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/router'
-import { setupTokenRefresh } from '../utils/tokenRefresh'
+import {useEffect} from 'react'
+import {useRouter} from 'next/router'
+import Cookies from "universal-cookie";
 
 export default function Main() {
   const router = useRouter()
@@ -14,9 +14,14 @@ export default function Main() {
 
   // 로그아웃 처리
   const handleLogout = () => {
-    localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userInfo');
+
+    // 로그인이 안되어있다는 말은, REFRESH_TOKEN을 삭제해야한다는 말과 동일함.
+    const cookies = new Cookies();
+    cookies.remove('loginId', { path: '/' });
+    cookies.remove('usrNm', { path: '/' });
+    cookies.remove('refreshToken', { path: '/' });
+    cookies.remove('accessToken', { path: '/' });
   };
 
   return (
