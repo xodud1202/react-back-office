@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, ComponentType } from 'react';
+import dynamic from 'next/dynamic';
 
 type AdminLayoutProps = {
   children: React.ReactNode;
@@ -11,28 +11,38 @@ type MenuItem = {
   subMenus?: MenuItem[];
 };
 
+// 탭 정보를 위한 타입
+type Tab = {
+  name: string;
+  href: string;
+  Component: ComponentType<any>;
+};
+
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [openTabs, setOpenTabs] = useState<Tab[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('');
 
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
         const requestUri = '/api/admin/menu/list';
-        // 컨트롤러가 GET 요청을 사용하므로 파라미터를 수정합니다.
         const requestParam = { method: 'GET' };
 
-        await fetch('/api/backend-api', {
-            method: 'POST', // 프록시 API는 POST를 통해 호출합니다.
+        const response = await fetch('/api/backend-api', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ requestUri, requestParam })
-        }).then(res => res.json()).then(res => {
-          console.log('menu items:', res);
-          setMenuItems(res || []);
-        }).catch(e => {
-          console.error('Error fetching menu items:', e);
         });
+
+        if (response.ok) {
+          const data = await response.json();
+          setMenuItems(data || []);
+        } else {
+          console.error('Failed to fetch menu items');
+        }
       } catch (error) {
         console.error('Error fetching menu items:', error);
       }
@@ -43,6 +53,24 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const toggleMenu = (name: string) => {
     setOpenMenus((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  const handleMenuClick = (menu: MenuItem) => {
+    if (!openTabs.some(tab => tab.href === menu.menuUrl)) {
+      const PageComponent = dynamic(() => import(`../pages${menu.menuUrl}`).catch(() => <div>페이지를 로드할 수 없습니다.</div>));
+      setOpenTabs([...openTabs, { name: menu.menuNm, href: menu.menuUrl, Component: PageComponent }]);
+    }
+    setActiveTab(menu.menuUrl);
+  };
+
+  const handleCloseTab = (href: string) => {
+    const newTabs = openTabs.filter(tab => tab.href !== href);
+    setOpenTabs(newTabs);
+    if (activeTab === href && newTabs.length > 0) {
+      setActiveTab(newTabs[newTabs.length - 1].href);
+    } else if (newTabs.length === 0) {
+      setActiveTab('');
+    }
   };
 
   const renderMenu = (items: MenuItem[], level = 0) => {
@@ -77,12 +105,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 </svg>
               </div>
             ) : (
-              <Link
-                href={item.menuUrl}
-                className="block flex-grow py-2.5 px-4 rounded transition duration-200 hover:bg-gray-200"
+              <a
+                onClick={() => handleMenuClick(item)}
+                className="block flex-grow py-2.5 px-4 rounded transition duration-200 hover:bg-gray-200 cursor-pointer"
               >
                 {item.menuNm}
-              </Link>
+              </a>
             )}
           </div>
           {hasSubMenus && isOpen && (
@@ -130,7 +158,30 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
         </header>
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-4">
-          {children}
+          <div className="tabs-container bg-white shadow-sm">
+            {openTabs.map(tab => (
+              <button
+                key={tab.href}
+                onClick={() => setActiveTab(tab.href)}
+                className={`px-4 py-2 text-sm font-medium transition-colors duration-150 ${
+                  activeTab === tab.href
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {tab.name}
+                <span onClick={(e) => { e.stopPropagation(); handleCloseTab(tab.href); }} className="ml-2 text-xs font-bold">x</span>
+              </button>
+            ))}
+          </div>
+          <div className="pages-container mt-4">
+            {openTabs.map(tab => (
+              <div key={tab.href} style={{ display: activeTab === tab.href ? 'block' : 'none' }}>
+                <tab.Component />
+              </div>
+            ))}
+            {openTabs.length === 0 && children}
+          </div>
         </main>
       </div>
     </div>
