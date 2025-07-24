@@ -24,7 +24,23 @@ const ResumeList = () => {
     { headerName: '사용자 계정', field: 'loginId' },
     { headerName: '사용자명', field: 'userNm' },
     { headerName: '제목', field: 'subTitle', flex: 1 },
-    { headerName: '등록일', field: 'regDt' },
+    { 
+      headerName: '등록일',
+      field: 'regDt',
+      valueFormatter: (params) => {
+        if (params.value) {
+          const date = new Date(params.value);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+        return '';
+      },
+    },
   ]);
 
   // 데이터 조회 함수
@@ -44,8 +60,7 @@ const ResumeList = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setRowData(data || []); // 백엔드 응답 구조에 따라 .list가 필요할 수 있습니다.
+        return await response.json();
       } else {
         console.error('Failed to fetch resume list');
         alert('이력서 목록을 불러오는 데 실패했습니다.');
@@ -60,13 +75,14 @@ const ResumeList = () => {
 
   // 검색 버튼 핸들러
   const handleSearch = () => {
-    const params = searchValue ? { [searchGb]: searchValue } : {};
-    fetchResumes(params);
+    fetchResumes(searchValue ? {searchGb: searchGb, searchValue: searchValue} : {})
+        .then(r => setRowData(r || []));
   };
 
   // 컴포넌트 마운트 시 초기 데이터 로드
   useEffect(() => {
-    fetchResumes();
+    fetchResumes()
+        .then(r => setRowData(r || []));
   }, [fetchResumes]);
 
   return (
@@ -81,7 +97,7 @@ const ResumeList = () => {
             onChange={e => setSearchGb(e.target.value)}
             className="p-2 border border-gray-300 rounded"
           >
-            <option value="loginId">사용자계정</option>
+            <option value="loginId" selected>사용자계정</option>
             <option value="usrNo">사용자번호</option>
             <option value="userNm">사용자명</option>
           </select>

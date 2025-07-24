@@ -11,6 +11,7 @@ export default function Home({ data }: CheckAccessTokenPageProps) {
   const router = useRouter()
 
   useEffect(() => {
+    console.log('data:', data);
     if (data && data.result === 'OK') {
       router.replace('/main')
     } else {
