@@ -40,3 +40,7 @@
 button {
     cursor: pointer;
 }
+
+.header-center .ag-header-cell-label {
+    justify-content: center;
+}

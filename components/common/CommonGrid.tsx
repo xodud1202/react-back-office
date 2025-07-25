@@ -18,6 +18,7 @@ const CommonGrid: React.FC<CommonGridProps> = (props) => {
           sortable: true,
           resizable: true,
           filter: true,
+          headerClass: 'header-center',
         }}
         {...props} // 부모 컴포넌트에서 받은 props를 그대로 전달
       />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import CommonGrid from '../../components/common/CommonGrid';
-import { ColDef } from 'ag-grid-community';
+import {ColDef, ICellRendererParams} from 'ag-grid-community';
 import {dateFormatter} from "../../utils/common";
 
 // 이력서 데이터 타입 정의
@@ -8,8 +8,10 @@ interface ResumeData {
   loginId: string;
   usrNo: string;
   userNm: string;
+  resumeNm: string;
   subTitle: string;
   regDt: string;
+  udtDt: string;
 }
 
 const ResumeList = () => {
@@ -21,13 +23,55 @@ const ResumeList = () => {
 
   // 그리드 컬럼 정의
   const [columnDefs] = useState<ColDef<ResumeData>[]>([
-    { headerName: '사용자 번호', field: 'usrNo', checkboxSelection: true, headerCheckboxSelection: true },
-    { headerName: '사용자 계정', field: 'loginId' },
-    { headerName: '사용자명', field: 'userNm' },
-    { headerName: '제목', field: 'subTitle', flex: 1 },
+    { headerName: '사용자번호', width: 150, field: 'usrNo', cellClass: 'text-center', checkboxSelection: true, headerCheckboxSelection: true },
+    { headerName: '사용자계정', width: 150, field: 'loginId', cellClass: 'text-center' },
+    { headerName: '사용자명', width: 150, field: 'userNm', cellClass: 'text-center' },
+    /*{ headerName: '기본정보', width:200, field: 'subTitle', cellClass: 'text-center'
+      , cellRenderer: (params: ICellRendererParams) => {
+        return <button type="button" className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">{params.value}</button>
+      }},*/
+    { headerName: '기본정보', width:150, cellClass: 'text-center'
+      , cellRenderer: () => {
+        return <button type="button" className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
+          기본정보
+        </button>
+      }},
+    { headerName: '자기소개', width:150, cellClass: 'text-center'
+      , cellRenderer: () => {
+        return <button type="button" className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
+          자기소개
+        </button>
+      }},
+    { headerName: '경력', width:150, cellClass: 'text-center'
+      , cellRenderer: () => {
+        return <button type="button" className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
+          경력
+        </button>
+      }},
+    { headerName: '학력', width:150, cellClass: 'text-center'
+      , cellRenderer: () => {
+        return <button type="button" className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
+          학력
+        </button>
+      }},
+    { headerName: '기타', width:150, cellClass: 'text-center'
+      , cellRenderer: () => {
+        return <button type="button" className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
+          기타
+        </button>
+      }},
     { 
       headerName: '등록일',
+      width: 180,
       field: 'regDt',
+      cellClass: 'text-center',
+      valueFormatter: (params) => dateFormatter(params),
+    },
+    {
+      headerName: '수정일',
+      width: 180,
+      field: 'udtDt',
+      cellClass: 'text-center',
       valueFormatter: (params) => dateFormatter(params),
     },
   ]);
@@ -83,6 +127,7 @@ const ResumeList = () => {
         <div className="flex items-center space-x-2">
           <select 
             value={searchGb}
+            name='searchGb'
             onChange={e => setSearchGb(e.target.value)}
             className="p-2 border border-gray-300 rounded"
           >
@@ -93,6 +138,7 @@ const ResumeList = () => {
           <input 
             type="text"
             value={searchValue}
+            name='searchValue'
             onChange={e => setSearchValue(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
             className="p-2 border border-gray-300 rounded w-full"
