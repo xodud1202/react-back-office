@@ -23,6 +23,8 @@ type Tab = {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const router = useRouter();
+  const cookies = new Cookies();
+  const loginId = useState(cookies.get('loginId') || '');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -59,7 +61,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     localStorage.removeItem('refreshToken');
 
     // 로그인이 안되어있다는 말은, REFRESH_TOKEN을 삭제해야한다는 말과 동일함.
-    const cookies = new Cookies();
     cookies.remove('loginId', { path: '/' });
     cookies.remove('usrNm', { path: '/' });
     cookies.remove('refreshToken', { path: '/' });
@@ -145,22 +146,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           isSidebarOpen ? 'w-64' : 'w-0'
         } overflow-hidden`}
       >
-        <div className="py-4">
-          <div className="relative w-[70%] h-auto">
+        <div>
+          <div className="h-[73px] flex items-center pl-[20px] text-center">
             <Image
                 src="/images/common/project-logo-512x125.png"
                 alt="Project Logo"
-                fill
-                className="object-contain"
+                width={256}
+                height={62.5}
+                className="object-contain w-[70%]"
             />
           </div>
-          {/*<Image
-              src="/images/common/project-logo-512x125.png"
-              alt="Project Logo"
-              width={256}
-              height={62.5}
-              className="object-contain"
-          />*/}
           <nav className="mt-10">{renderMenu(menuItems)}</nav>
         </div>
       </div>
@@ -187,6 +182,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </button>
           </div>
           <div>
+            <div className="mr-4 inline-block">{ loginId } 님</div>
             <button
                 onClick={handleLogout}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
