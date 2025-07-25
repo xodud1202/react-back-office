@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import CommonGrid from '../../components/common/CommonGrid';
 import { ColDef } from 'ag-grid-community';
+import {dateFormatter} from "../../utils/common";
 
 // 이력서 데이터 타입 정의
 interface ResumeData {
@@ -27,19 +28,7 @@ const ResumeList = () => {
     { 
       headerName: '등록일',
       field: 'regDt',
-      valueFormatter: (params) => {
-        if (params.value) {
-          const date = new Date(params.value);
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          const hours = String(date.getHours()).padStart(2, '0');
-          const minutes = String(date.getMinutes()).padStart(2, '0');
-          const seconds = String(date.getSeconds()).padStart(2, '0');
-          return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-        }
-        return '';
-      },
+      valueFormatter: (params) => dateFormatter(params),
     },
   ]);
 
