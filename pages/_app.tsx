@@ -2,11 +2,9 @@
 import '../styles/globals.css'
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
-import type { AppProps } from 'next/app'
-import { useRouter } from 'next/router'
-import { useEffect } from 'react'
-import { setRouter } from '../utils/api'
-import { CookiesProvider } from 'react-cookie';
+import type {AppProps} from 'next/app'
+import {useRouter} from 'next/router'
+import {CookiesProvider} from 'react-cookie';
 import Cookies from 'universal-cookie';
 import AdminLayout from '../components/AdminLayout';
 import "../utils/common.ts";
@@ -17,11 +15,6 @@ function MyApp({ Component, pageProps }: AppProps & { cookies?: string }) {
     const cookies = pageProps.cookies ? new Cookies(pageProps.cookies) : undefined
 
     const router = useRouter()
-
-    useEffect(() => {
-        // API 유틸리티에 라우터 설정
-        setRouter(router)
-    }, [router])
 
     const isLayoutNeeded = router.pathname === '/main';
 

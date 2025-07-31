@@ -39,8 +39,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // URL 세팅
     const fullUrl = `${backendUrl}${body.requestUri}${queryString}`;
 
-    console.log(fullUrl);
-
     // API REQUEST
     const backendRes = await fetch(fullUrl, requestHeader);
 
