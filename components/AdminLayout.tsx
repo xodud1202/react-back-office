@@ -1,8 +1,7 @@
-import React, { useState, useEffect, ComponentType } from 'react';
+import React, {ComponentType, useEffect, useState} from 'react';
 import dynamic from 'next/dynamic';
 import Cookies from "universal-cookie";
 import {useRouter} from "next/router";
-import Image from "next/image";
 
 type AdminLayoutProps = {
   children: React.ReactNode;
@@ -24,7 +23,7 @@ type Tab = {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const router = useRouter();
   const cookies = new Cookies();
-  const loginId = useState(cookies.get('loginId') || '');
+  const [loginId, setLoginId] = useState('');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -53,6 +52,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         console.error('Error fetching menu items:', error);
       }
     };
+
+    const cookies = new Cookies(); // ← 아무 인자 없이 사용 (문제 발생 가능)
+    const cookieLoginId = cookies.get('loginId'); // 서버에서는 쿠키가 없음
+    if (cookieLoginId) {
+      setLoginId(cookieLoginId);
+    }
 
     fetchMenuItems();
   }, []);
@@ -148,11 +153,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       >
         <div>
           <div className="h-[73px] flex items-center pl-[20px] text-center">
-            <Image
+            <img
                 src="/images/common/project-logo-512x125.png"
                 alt="Project Logo"
-                width={256}
-                height={62.5}
                 className="object-contain w-[70%]"
             />
           </div>

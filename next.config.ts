@@ -4,7 +4,12 @@ const nextConfig: NextConfig = {
   /* config options here */
   images: {
     // 1) 도메인 허용할 때
-    domains: ['image.xodud1202.kro.kr'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'image.xodud1202.kro.kr',
+      },
+    ],
   },
 };
 
