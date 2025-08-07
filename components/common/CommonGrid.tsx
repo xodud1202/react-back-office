@@ -1,9 +1,10 @@
 import React from 'react';
 import { AgGridReact, AgGridReactProps } from 'ag-grid-react';
 
-interface CommonGridProps extends AgGridReactProps {
+/*interface CommonGridProps extends AgGridReactProps {
   // 추가적인 공통 props가 필요하다면 여기에 정의할 수 있습니다.
-}
+}*/
+type CommonGridProps = AgGridReactProps
 
 const CommonGrid: React.FC<CommonGridProps> = (props) => {
   return (

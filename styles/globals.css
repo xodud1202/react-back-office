@@ -44,3 +44,9 @@ button {
 .header-center .ag-header-cell-label {
     justify-content: center;
 }
+
+@layer utilities {
+    .max-w-70vw {
+        max-width: 70vw;
+    }
+}

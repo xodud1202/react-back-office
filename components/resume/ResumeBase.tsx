@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+
+import Image from "next/image";
 
 export interface ResumeBaseType {
   usrNo: string;
@@ -9,7 +11,6 @@ export interface ResumeBaseType {
   portfolio: string;
   lastPay: number;
   faceImgPath: string;
-  
   addr: string;
   delYn: string;
   skillList: string[];
@@ -23,6 +24,38 @@ interface ResumeBaseProps {
 const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo }) => {
   const [formData, setFormData] = useState<ResumeBaseType | null>(null);
   const [skillInput, setSkillInput] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('usrNo', usrNo); // 사용자 번호도 함께 보냅니다.
+
+    try {
+      const response = await fetch('/api/upload-resume-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // 성공적으로 업로드되면 faceImgPath를 업데이트합니다.
+        setFormData(prev => prev ? { ...prev, faceImgPath: data.faceImgPath } : null);
+        console.log('Image uploaded successfully:', data);
+      } else {
+        console.error('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    }
+  };
 
   useEffect(() => {
     if (usrNo) {
@@ -113,7 +146,7 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo }) => {
   return (
     <form onSubmit={handleSubmit} className="">
       <div className="text-[24px] font-bold text-center mb-[10px]">이력서 기본 정보</div>
-      <table className="w-full border-collapse" >
+      <table className="w-full border-collapse max-h-[500px] overflow-y-auto block" >
         <tbody>
           <tr>
             <th className="p-2 text-left bg-blue-50 w-1/6">성명</th>
@@ -127,15 +160,40 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo }) => {
                 className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
             </td>
+            <th className="p-2 text-left bg-blue-50 w-1/6" rowSpan={2}>증명사진</th>
+            <td className="p-2 w-1/3" rowSpan={2}>
+              <div>
+                <div className={"relative h-[100px]"}>
+                  <Image src={formData?.faceImgPath || ''} alt="이력서 사진" className="object-cover" fill/>
+
+                  <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      className="hidden" // 실제 파일 입력 필드는 숨김
+                      accept="image/*" // 이미지 파일만 허용
+                  />
+                  <button
+                      type="button"
+                      onClick={handleButtonClick}
+                      className="ml-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    변경
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
             <th className="p-2 text-left bg-blue-50 w-1/6">부제</th>
             <td className="p-2 w-1/3">
               <input
-                type="text"
-                name="subTitle"
-                id="subTitle"
-                value={formData?.subTitle || ''}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  type="text"
+                  name="subTitle"
+                  id="subTitle"
+                  value={formData?.subTitle || ''}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
             </td>
           </tr>
@@ -177,14 +235,17 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo }) => {
             </td>
             <th className="p-2 text-left bg-blue-50 w-1/6">증명사진</th>
             <td className="p-2 w-1/3">
-              <input
-                type="text"
-                name="faceImgPath"
-                id="faceImgPath"
-                value={formData?.faceImgPath || ''}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              />
+              <div className="flex items-center">
+                <input
+                  type="text"
+                  name="faceImgPath"
+                  id="faceImgPath"
+                  value={formData?.faceImgPath || ''}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  readOnly // 사용자가 직접 수정하지 못하도록 readOnly로 설정
+                />
+              </div>
             </td>
           </tr>
           <tr>
@@ -242,7 +303,7 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo }) => {
         </tbody>
       </table>
       <div className="mt-4 flex justify-end">
-        <button type="submit" className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <button type="submit" className="m-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
           저장
         </button>
       </div>
