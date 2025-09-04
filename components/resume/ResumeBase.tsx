@@ -34,27 +34,37 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo }) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('usrNo', usrNo); // 사용자 번호도 함께 보냅니다.
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('usrNo', usrNo);
 
-    try {
-      const response = await fetch('/api/upload-resume-image', {
-        method: 'POST',
-        body: formData,
-      });
+      try {
+          // 직접 백엔드로 전송 (backend-api 거치지 않음)
+          alert(process.env.BACKEND_URL);
+          alert(process.env.BACKEND_URL);
+          const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:3010';
+          const response = await fetch(`${backendUrl}/api/upload/image`, {
+              method: 'POST',
+              body: formData // Content-Type은 자동으로 multipart/form-data가 됩니다
+          });
 
-      if (response.ok) {
-        const data = await response.json();
-        // 성공적으로 업로드되면 faceImgPath를 업데이트합니다.
-        setFormData(prev => prev ? { ...prev, faceImgPath: data.faceImgPath } : null);
-        console.log('Image uploaded successfully:', data);
-      } else {
-        console.error('Failed to upload image');
+          if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+
+          if (data.error) {
+              throw new Error(data.error);
+          }
+
+          setFormData(prev => prev ? {...prev, faceImgPath: data.faceImgPath} : null);
+          console.log('Image uploaded successfully:', data);
+
+      } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          alert(`Failed to upload image: ${errorMessage}`);
       }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-    }
   };
 
   useEffect(() => {
@@ -164,7 +174,7 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo }) => {
             <td className="p-2 w-1/3" rowSpan={2}>
               <div>
                 <div className={"relative h-[100px]"}>
-                  <Image src={formData?.faceImgPath || ''} alt="이력서 사진" className="object-cover" fill/>
+                  <img src={formData?.faceImgPath || ''} alt="이력서 사진" className={"max-h-full w-auto inline-block"} />
 
                   <input
                       type="file"
@@ -176,7 +186,7 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo }) => {
                   <button
                       type="button"
                       onClick={handleButtonClick}
-                      className="ml-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="inline-block ml-[30px] px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
                     변경
                   </button>
