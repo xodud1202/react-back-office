@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*', // 클라이언트에서 요청받을 API 경로
+        destination: `${process.env.BACKEND_URL}/api/:path*`, // 실제 프록시할 서버 주소로 변경
+      },
+    ];
+  },
 };
 
 export default nextConfig;
