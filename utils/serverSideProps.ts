@@ -44,7 +44,7 @@ export const getCheckAccessTokenServerSideProps: GetServerSideProps<CheckAccessT
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                requestUri: `/token/backoffice/access-token`,
+                requestUri: `/api/token/backoffice/access-token`,
                 requestParam: requestParam
             })
         });

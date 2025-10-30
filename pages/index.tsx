@@ -2,7 +2,7 @@
 import {useRouter} from 'next/router'
 import {useEffect} from "react";
 
-import {CheckAccessTokenPageProps, getCheckAccessTokenServerSideProps} from '../utils/serverSideProps'
+import {CheckAccessTokenPageProps, getCheckAccessTokenServerSideProps} from '@/utils/serverSideProps'
 
 export const getServerSideProps = getCheckAccessTokenServerSideProps;
 

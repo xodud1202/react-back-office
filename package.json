@@ -9,6 +9,7 @@
     "start": "cross-env PORT=3011 next start"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.9.2",
     "ag-grid-community": "^32.3.5",
     "ag-grid-react": "^32.3.5",
     "axios": "^1.13.1",
@@ -16,6 +17,7 @@
     "react": "^19.0.0",
     "react-cookie": "^8.0.1",
     "react-dom": "^19.0.0",
+    "react-redux": "^9.2.0",
     "universal-cookie": "^8.0.1"
   },
   "devDependencies": {

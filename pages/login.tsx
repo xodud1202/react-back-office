@@ -1,12 +1,17 @@
 import {useEffect, useState} from 'react'
 import Image from 'next/image'
 import {useRouter} from 'next/router'
+import api from '@/utils/axios/axios';
 import Cookies from 'universal-cookie'
+import { useAppDispatch, useAppSelector } from '@/utils/hooks/redux';
+import { loginSuccess, logout } from '@/store/loginUser/loginUser';
 import {CheckAccessTokenPageProps, getCheckAccessTokenServerSideProps} from "../utils/serverSideProps";
 
 export const getServerSideProps = getCheckAccessTokenServerSideProps;
 
 export default function Login({ data }: CheckAccessTokenPageProps) {
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const [id, setId] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
@@ -31,7 +36,24 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
     e.preventDefault()
     setError(null)
 
-    const requestUri = '/backoffice/login';
+    // const requestUri = '/backoffice/login';
+
+    //
+    // const header = {
+    //   method: 'POST',
+    //   headers: {'Content-Type': 'application/json'},
+    //   body: JSON.stringify({requestUri, requestParam})
+    // };
+    //
+    // // 로그인 처리
+    // const res = await fetch('/api/backend-api', header);
+    // const body = await res.json();
+    //
+    // if (!res.ok) {
+    //   setError(body.resultMsg || '로그인 실패')
+    //   return;
+    // }
+
     const requestParam = {
       method: 'POST',
       loginId: id,
@@ -39,20 +61,8 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
       rememberMe: rememberMe
     };
 
-    const header = {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({requestUri, requestParam})
-    };
-
-    // 로그인 처리
-    const res = await fetch('/api/backend-api', header);
-    const body = await res.json();
-
-    if (!res.ok) {
-      setError(body.resultMsg || '로그인 실패')
-      return;
-    }
+    const response = await api.post('/api/backoffice/login', requestParam);
+    const body = response.data;
 
     // 쿠키 인스턴스 생성
     const cookies = new Cookies();
@@ -70,15 +80,29 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
     console.log('accessToken:', body.accessToken);
 
     // 로그인 정보 및 refreshToken은 30일 처리 > accessToken 만료시 삭제함.
-    cookieOptions.maxAge = 60 * 60 * 24 * 30;   // 30일
-    cookies.set('loginId', body.userInfo.loginId, cookieOptions);
-    cookies.set('usrNm', body.userInfo.usrNm, cookieOptions);
+
+    const userData = {
+      usrNo: body.userInfo.usrNo,
+      userNm: body.userInfo.usrNm,
+      loginId: body.userInfo.loginId,
+      hPhoneNo: body.userInfo.hPhoneNo,
+      email: body.userInfo.email,
+      usrGradeCd: body.userInfo.usrGradeCd,
+      usrStatCd: body.userInfo.usrStatCd
+    };
+
+    dispatch(loginSuccess(userData));
+
+    // cookies.set('loginId', body.userInfo.loginId, cookieOptions);
+    // cookies.set('usrNm', body.userInfo.usrNm, cookieOptions);
 
     // 로그인 유지를 선택한 경우 Refresh Token 저장
     if (rememberMe && body.refreshToken) {
+      cookieOptions.maxAge = 60 * 60 * 24 * 30;   // 30일
       cookies.set('refreshToken', body.refreshToken, cookieOptions);
-      localStorage.setItem('refreshToken', body.refreshToken);
     }
+
+    console.log('loginSuccess:', body.userInfo);
 
     await router.replace('/');
   }
