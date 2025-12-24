@@ -1,6 +1,7 @@
 // pages/index.tsx
 import {useRouter} from 'next/router'
 import {useEffect} from "react";
+import { getCookie } from 'cookies-next';
 
 import {CheckAccessTokenPageProps, getCheckAccessTokenServerSideProps} from '@/utils/serverSideProps'
 
@@ -11,8 +12,11 @@ export default function Home({ data }: CheckAccessTokenPageProps) {
   const router = useRouter()
 
   useEffect(() => {
+    const accessToken = getCookie('accessToken', {path: '/'});
     console.log('data:', data);
-    if (data && data.result === 'OK') {
+    console.log("check getCookie ::: " + getCookie('accessToken', {path: '/'}))
+
+    if (accessToken) {
       router.replace('/main')
     } else {
       localStorage.removeItem('refreshToken')

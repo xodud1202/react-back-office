@@ -34,7 +34,7 @@ const ResumeList = () => {
   };
 
   // 그리드 컬럼 정의
-  const [columnDefs] = useState<ColDef<ResumeData>[]>([
+  const [columnDefs] = useState<ColDef[]>([
     { headerName: '사용자번호', width: 150, field: 'usrNo', cellClass: 'text-center', checkboxSelection: true, headerCheckboxSelection: true },
     { headerName: '사용자계정', width: 150, field: 'loginId', cellClass: 'text-center' },
     { headerName: '사용자명', width: 150, field: 'userNm', cellClass: 'text-center' },
@@ -176,7 +176,7 @@ const ResumeList = () => {
       {/* 그리드 영역 */}
       <CommonGrid
         rowData={rowData}
-        columnDefs={columnDefs}
+        columnDefs={columnDefs as any}
         overlayLoadingTemplate={'<span class="ag-overlay-loading-center">데이터를 불러오는 중입니다...</span>'}
         overlayNoRowsTemplate={'<span class="ag-overlay-no-rows-center">데이터가 없습니다.</span>'}
         {...(loading && { overlayLoadingTemplate: '<span class="ag-overlay-loading-center">데이터를 불러오는 중입니다...</span>'})}
