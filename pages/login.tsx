@@ -36,7 +36,6 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
     setError(null)
 
     const requestParam = {
-      method: 'POST',
       loginId: id,
       pwd: password,
       rememberMe: rememberMe
@@ -55,6 +54,9 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
       };
 
       setCookie('accessToken', body.accessToken, cookieOptions);
+      setCookie('loginId', body.userInfo.loginId, cookieOptions);
+      setCookie('userNm', body.userInfo.userNm, cookieOptions);
+      setCookie('usrNo', body.userInfo.usrNo, cookieOptions);
       console.log('accessToken:', body.accessToken);
 
       // 로그인 정보 및 refreshToken은 30일 처리 > accessToken 만료시 삭제함.

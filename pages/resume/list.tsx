@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import CommonGrid from '../../components/common/CommonGrid';
-import { ColDef, ICellRendererParams } from 'ag-grid-community';
-import { dateFormatter } from "../../utils/common";
-import Modal from '../../components/common/Modal';
-import ResumeBase from '../../components/resume/ResumeBase';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import CommonGrid from '@/components/common/CommonGrid';
+import {ColDef, ICellRendererParams} from 'ag-grid-community';
+import {dateFormatter} from "@/utils/common";
+import Modal from '@/components/common/Modal';
+import ResumeBase from '@/components/resume/ResumeBase';
+import api from "@/utils/axios/axios";
 
 // 이력서 데이터 타입 정의
 interface ResumeData {
@@ -31,6 +32,12 @@ const ResumeList = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedUsrNo(null);
+  };
+
+  // 저장이 성공했을 때 호출될 함수 >> 리스트 변경때 필요하나, 없음.
+  const handleSaveSuccess = () => {
+    handleCloseModal(); // 1. 모달 닫기
+    fetchResumes().then(r => setRowData(r || [])); // 2. 목록 새로고침
   };
 
   // 그리드 컬럼 정의
@@ -87,28 +94,14 @@ const ResumeList = () => {
   // 데이터 조회 함수
   const fetchResumes = useCallback(async (params: Record<string, any> = {}) => {
     setLoading(true);
+    let result = {};
+
     try {
-      const requestUri = '/api/admin/resume/list';
-      const requestParam = { 
-        method: 'GET',
-        ...params 
-      };
-
-      const response = await fetch('/api/backend-api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestUri, requestParam })
-      });
-
-      if (response.ok) {
-        return await response.json();
-      } else {
-        console.error('Failed to fetch resume list');
-        alert('이력서 목록을 불러오는 데 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('Error fetching resume list:', error);
-      alert('데이터 조회 중 오류가 발생했습니다.');
+      const response = await api.get('/api/admin/resume/list', { params });
+      return response.data;
+    } catch (e) {
+      console.error('Failed to fetch resume list');
+      alert('이력서 목록을 불러오는 데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -184,7 +177,7 @@ const ResumeList = () => {
 
       {/* 이력서 상세 정보 모달 */}
       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
-        {selectedUsrNo && <ResumeBase usrNo={selectedUsrNo} />}
+        {selectedUsrNo && <ResumeBase usrNo={selectedUsrNo} onClose={handleCloseModal} />}
       </Modal>
     </div>
   );

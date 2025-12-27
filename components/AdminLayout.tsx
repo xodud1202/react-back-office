@@ -1,7 +1,8 @@
 import React, {ComponentType, useEffect, useState} from 'react';
 import dynamic from 'next/dynamic';
-import Cookies from "universal-cookie";
+import {deleteCookie, getCookie} from 'cookies-next';
 import {useRouter} from "next/router";
+import api from "@/utils/axios/axios";
 
 type AdminLayoutProps = {
   children: React.ReactNode;
@@ -22,8 +23,7 @@ type Tab = {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const router = useRouter();
-  const cookies = new Cookies();
-  const [loginId, setLoginId] = useState('');
+  const [userNm, setUserNm] = useState('');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -33,30 +33,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const requestUri = '/api/admin/menu/list';
-        const requestParam = { method: 'GET' };
-
-        const response = await fetch('/api/backend-api', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requestUri, requestParam })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setMenuItems(data || []);
-        } else {
-          console.error('Failed to fetch menu items');
-        }
+        const response = await api.get('/api/admin/menu/list');
+        setMenuItems(response.data || []);
       } catch (error) {
         console.error('Error fetching menu items:', error);
       }
     };
 
-    const cookies = new Cookies(); // ← 아무 인자 없이 사용 (문제 발생 가능)
-    const cookieLoginId = cookies.get('loginId'); // 서버에서는 쿠키가 없음
-    if (cookieLoginId) {
-      setLoginId(cookieLoginId);
+    const cookieUserNm = getCookie('userNm', { path: '/' });
+    if (typeof cookieUserNm === 'string') {
+      setUserNm(cookieUserNm);
     }
 
     fetchMenuItems();
@@ -66,10 +52,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     localStorage.removeItem('refreshToken');
 
     // 로그인이 안되어있다는 말은, REFRESH_TOKEN을 삭제해야한다는 말과 동일함.
-    cookies.remove('loginId', { path: '/' });
-    cookies.remove('usrNm', { path: '/' });
-    cookies.remove('refreshToken', { path: '/' });
-    cookies.remove('accessToken', { path: '/' });
+    deleteCookie('loginId', { path: '/' });
+    deleteCookie('usrNm', { path: '/' });
+    deleteCookie('refreshToken', { path: '/' });
+    deleteCookie('accessToken', { path: '/' });
     router.replace('/login');
   };
 
@@ -185,7 +171,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </button>
           </div>
           <div>
-            <div className="mr-4 inline-block">{ loginId } 님</div>
+            <div className="mr-4 inline-block">{ userNm } 님</div>
             <button
                 onClick={handleLogout}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"

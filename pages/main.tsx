@@ -1,14 +1,19 @@
 // pages/main.tsx
-import {useEffect} from 'react'
+import {useEffect, useState} from 'react'
 import {useRouter} from 'next/router'
+import {getCookie} from "cookies-next";
 
 export default function Main() {
-  const router = useRouter()
+  const router = useRouter();
+  const [userNm, setUserNm] = useState('');
+  const [loginId, setLoginId] = useState('');
 
   // 토큰 및 사용자 정보 확인
   useEffect(() => {
     // 서버 사이드 렌더링 시에는 실행하지 않음
     if (typeof window === 'undefined') return;
+    setUserNm(getCookie('userNm', { path: '/' }) as string);
+    setLoginId(getCookie('loginId', { path: '/' }) as string);
   }, [router]);
 
   return (
@@ -24,11 +29,11 @@ export default function Main() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-600">이름</p>
-                <p className="text-lg font-medium"></p>
+                <p className="text-lg font-medium">{userNm}</p>
               </div>
               <div>
                 <p className="text-gray-600">계정 ID</p>
-                <p className="text-lg font-medium"></p>
+                <p className="text-lg font-medium">{loginId}</p>
               </div>
               <div>
                 <p className="text-gray-600">사용자 등급</p>

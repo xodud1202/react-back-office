@@ -57,10 +57,12 @@ api.interceptors.response.use(
       try {
         // 이건 accessToken이 아니라 refresh일때 해야하는거 아닌가...? 잠깐 확인 필요.
         const accessToken = getCookie('accessToken', {path: '/'});
-        const res = await axios.post('/api/token/backoffice/access-token', { accessToken });
+        const refreshToken = getCookie('refreshToken', {path: '/'});
+        const res = await axios.post('/api/token/backoffice/access-token', { accessToken, refreshToken });
         const tokenAccessResult = res.data.result;
         if(tokenAccessResult !== 'OK') {
           await deleteCookie('accessToken', {path: '/'});
+          await deleteCookie('refreshToken', {path: '/'});
           window.location.href = '/login';
           return;
         }

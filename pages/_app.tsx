@@ -7,7 +7,7 @@ import {useRouter} from 'next/router'
 import {CookiesProvider} from 'react-cookie';
 import Cookies from 'universal-cookie';
 import AdminLayout from '../components/AdminLayout';
-import "/utils/common.ts";
+import "@/utils/common";
 import Head from "next/head";
 import {Provider} from 'react-redux';
 import {store} from '@/store/setting/store';

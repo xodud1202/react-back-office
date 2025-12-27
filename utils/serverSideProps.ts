@@ -20,8 +20,6 @@ export const getCheckAccessTokenServerSideProps: GetServerSideProps<CheckAccessT
     ctx: GetServerSidePropsContext
 ) => {
     const accessToken = (await getCookie('accessToken', ctx) as string) ?? null;
-    // const refreshToken = (await getCookie('refreshToken', ctx) as string) ?? null;
-    // const loginId = (await getCookie('loginId', ctx) as string) ?? null;
     let data: LoginTokenCheckResponse = {};
 
     return {
