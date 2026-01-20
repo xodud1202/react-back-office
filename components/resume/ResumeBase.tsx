@@ -176,16 +176,21 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo, onClose }) => {
     }
   };
 
+  /**
+   * 이력서 정보 저장 메서드
+   * @param {React.FormEvent} e - 폼 이벤트 객체.
+   * @description
+   * 이 함수는 폼 제출 시 호출되며 기본 제출 동작을 방지합니다.
+   * formData와 usrNo 정보를 이용해 서버에 PUT 요청을 보내 업데이트 작업을 수행합니다.
+   * 요청이 성공적으로 처리되면 성공 메시지를 알림창으로 표시하고, onClose 함수가 존재하는 경우 이를 호출하여 모달을 닫습니다.
+   * 요청 중 오류가 발생하면 콘솔에 에러를 기록합니다.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData) {
       const dataToSend = { ...formData, usrNo };
 
       try {
-        const requestParam = {
-          body: JSON.stringify(dataToSend),
-        };
-
         await api.put(`/api/admin/resume/${usrNo}`, dataToSend).then(response => {
           const body = response.data;
           if(body.result === "success") {
@@ -195,21 +200,6 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo, onClose }) => {
             alert(body.message);
           }
         });
-
-        // const response = await fetch(`/api/admin/resume/${usrNo}`, {
-        //   method: 'PUT',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //   },
-        //   body: JSON.stringify(dataToSend),
-        // });
-        //
-        // if (response.ok) {
-        //   // 성공적으로 업데이트됨
-        //   console.log('Resume updated successfully');
-        // } else {
-        //   console.error('Failed to update resume');
-        // }
       } catch (error) {
         console.error('Error updating resume:', error);
       }
