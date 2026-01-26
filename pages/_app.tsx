@@ -2,6 +2,7 @@
 import '/styles/globals.css'
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
+import 'react-quill-new/dist/quill.snow.css';
 import type {AppProps} from 'next/app'
 import {useRouter} from 'next/router'
 import {CookiesProvider} from 'react-cookie';

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import api from '@/utils/axios/axios';
 
 export interface ResumeIntroduceType {
@@ -11,10 +12,24 @@ interface ResumeIntroduceProps {
   onClose?: () => void;
 }
 
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+
 const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => {
   const [formData, setFormData] = useState<ResumeIntroduceType | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const quillModules = useMemo(
+    () => ({
+      toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['link'],
+        ['clean'],
+      ],
+    }),
+    []
+  );
 
   useEffect(() => {
     if (!usrNo) return;
@@ -37,13 +52,6 @@ const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => 
 
     fetchIntroduce();
   }, [usrNo]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    if (formData) {
-      setFormData({ ...formData, [name]: value });
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,13 +89,11 @@ const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => 
           <tr>
             <th className="p-2 text-left bg-blue-50 w-1/6">자기소개</th>
             <td className="p-2">
-              <textarea
-                name="introduce"
-                id="introduce"
+              <ReactQuill
+                theme="snow"
                 value={formData.introduce || ''}
-                onChange={handleChange}
-                rows={10}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm resize-y"
+                onChange={(value) => setFormData({ ...formData, introduce: value })}
+                modules={quillModules}
               />
             </td>
           </tr>
