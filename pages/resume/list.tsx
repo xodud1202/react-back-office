@@ -1,9 +1,10 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+﻿import React, {useCallback, useEffect, useRef, useState} from 'react';
 import CommonGrid from '@/components/common/CommonGrid';
 import {ColDef, ICellRendererParams} from 'ag-grid-community';
 import {dateFormatter} from "@/utils/common";
 import Modal from '@/components/common/Modal';
 import ResumeBase from '@/components/resume/ResumeBase';
+import ResumeIntroduce from '@/components/resume/ResumeIntroduce';
 import api from "@/utils/axios/axios";
 
 // 이력서 데이터 타입 정의
@@ -23,6 +24,8 @@ const ResumeList = () => {
   const formRef = useRef<HTMLFormElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUsrNo, setSelectedUsrNo] = useState<string | null>(null);
+  const [isIntroduceModalOpen, setIsIntroduceModalOpen] = useState(false);
+  const [selectedIntroduceUsrNo, setSelectedIntroduceUsrNo] = useState<string | null>(null);
 
   const handleOpenModal = (usrNo: string) => {
     setSelectedUsrNo(usrNo);
@@ -32,6 +35,15 @@ const ResumeList = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedUsrNo(null);
+  };
+  const handleOpenIntroduceModal = (usrNo: string) => {
+    setSelectedIntroduceUsrNo(usrNo);
+    setIsIntroduceModalOpen(true);
+  };
+
+  const handleCloseIntroduceModal = () => {
+    setIsIntroduceModalOpen(false);
+    setSelectedIntroduceUsrNo(null);
   };
 
   // 저장이 성공했을 때 호출될 함수 >> 리스트 변경때 필요하나, 없음.
@@ -52,8 +64,8 @@ const ResumeList = () => {
         </button>
       }},
     { headerName: '자기소개', width:150, cellClass: 'text-center'
-      , cellRenderer: () => {
-        return <button type="button" className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
+      , cellRenderer: (params: ICellRendererParams) => {
+        return <button type="button" onClick={() => handleOpenIntroduceModal(params.data.usrNo)} className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
           자기소개
         </button>
       }},
@@ -178,6 +190,9 @@ const ResumeList = () => {
       {/* 이력서 상세 정보 모달 */}
       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
         {selectedUsrNo && <ResumeBase usrNo={selectedUsrNo} onClose={handleCloseModal} />}
+      </Modal>
+      <Modal isOpen={isIntroduceModalOpen} onClose={handleCloseIntroduceModal}>
+        {selectedIntroduceUsrNo && <ResumeIntroduce usrNo={selectedIntroduceUsrNo} onClose={handleCloseIntroduceModal} />}
       </Modal>
     </div>
   );
