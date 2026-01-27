@@ -25,13 +25,10 @@ interface ResumeExperienceProps {
   onClose?: () => void;
 }
 
-const employmentTypeOptions = [
-  { value: '01', label: '정규직' },
-  { value: '02', label: '계약직' },
-  { value: '03', label: '프리랜서' },
-  { value: '04', label: '아르바이트' },
-  { value: '05', label: '개인사업자' },
-];
+interface EmploymentTypeOption {
+  value: string;
+  label: string;
+}
 
 const createEmptyForm = (): ResumeExperienceBase => ({
   experienceNo: undefined,
@@ -49,6 +46,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
   const [formData, setFormData] = useState<ResumeExperienceBase>(createEmptyForm());
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [employmentTypeOptions, setEmploymentTypeOptions] = useState<EmploymentTypeOption[]>([]);
 
   const employmentTypeLabelMap = useMemo(() => {
     return employmentTypeOptions.reduce((acc, option) => {
@@ -81,9 +79,28 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     }
   };
 
+  const fetchEmploymentTypes = async () => {
+    try {
+      const response = await api.get('/api/admin/common/code', {
+        params: { grpCd: 'EMPLOYMENT_TYPE' },
+      });
+      const list = Array.isArray(response.data) ? response.data : [];
+      setEmploymentTypeOptions(
+        list.map((item: { cd: string; cdNm: string }) => ({
+          value: item.cd,
+          label: item.cdNm,
+        }))
+      );
+    } catch (e) {
+      console.error('Failed to fetch employment types', e);
+      setEmploymentTypeOptions([]);
+    }
+  };
+
   useEffect(() => {
     if (usrNo) {
       fetchExperienceList();
+      fetchEmploymentTypes();
       setFormData(createEmptyForm());
     }
   }, [usrNo]);
