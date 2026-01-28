@@ -55,14 +55,31 @@ api.interceptors.response.use(
     // 401 에러 & 예외 URL 제외
     if (!isExcluded && error.response?.status === 401) {
       try {
-        // 이건 accessToken이 아니라 refresh일때 해야하는거 아닌가...? 잠깐 확인 필요.
+        // accessToken 만료 시 refreshToken 유효 여부를 확인하고 accessToken 재발급을 요청합니다.
         const accessToken = getCookie('accessToken', {path: '/'});
         const refreshToken = getCookie('refreshToken', {path: '/'});
-        const res = await axios.post('/api/token/backoffice/access-token', { accessToken, refreshToken });
+        const loginId = getCookie('loginId', {path: '/'});
+
+        if (!refreshToken || !loginId) {
+          await deleteCookie('accessToken', {path: '/'});
+          await deleteCookie('refreshToken', {path: '/'});
+          await deleteCookie('loginId', {path: '/'});
+          window.location.href = '/login';
+          return;
+        }
+
+        const res = await axios.get('/api/token/backoffice/access-token', {
+          params: {
+            accessToken,
+            refreshToken,
+            loginId,
+          },
+        });
         const tokenAccessResult = res.data.result;
         if(tokenAccessResult !== 'OK') {
           await deleteCookie('accessToken', {path: '/'});
           await deleteCookie('refreshToken', {path: '/'});
+          await deleteCookie('loginId', {path: '/'});
           window.location.href = '/login';
           return;
         }
@@ -80,8 +97,13 @@ api.interceptors.response.use(
         setCookie('accessToken', newAccessToken, cookieOptions);
 
         // localStorage.setItem('accessToken', newAccessToken);
-        if (originalRequest.headers) {
-          originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+        if (!originalRequest.headers) {
+          originalRequest.headers = new AxiosHeaders();
+        }
+        if (typeof (originalRequest.headers as any).set === 'function') {
+          (originalRequest.headers as any).set('Authorization', `Bearer ${newAccessToken}`);
+        } else {
+          (originalRequest.headers as any)['Authorization'] = `Bearer ${newAccessToken}`;
         }
         return api(originalRequest); // 재요청
       } catch (refreshError) {
