@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import api from '@/utils/axios/axios';
 
@@ -16,6 +17,7 @@ const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => {
   const [formData, setFormData] = useState<ResumeIntroduceType | null>(null);
+  const [footerEl, setFooterEl] = useState<Element | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const quillModules = useMemo(
@@ -53,6 +55,11 @@ const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => 
 
     fetchIntroduce();
   }, [usrNo]);
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      setFooterEl(document.querySelector('.modal-footer-actions'));
+    }
+  }, []);
 
   // 자기소개 저장을 처리합니다.
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,28 +91,37 @@ const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => 
   }
 
   return (
-    <form className="" onSubmit={handleSubmit}>
-      <div className="text-[24px] font-bold text-center mb-[10px]">자기소개</div>
-      <table className="w-full table-fixed border-collapse">
-        <tbody>
-          <tr>
-            <th className="p-2 text-left bg-blue-50 w-1/6">자기소개</th>
-            <td className="p-2">
-              <ReactQuill
-                theme="snow"
-                value={formData.introduce || ''}
-                onChange={(value) => setFormData({ ...formData, introduce: value })}
-                modules={quillModules}
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div className="mt-4 flex justify-end">
-        <button type="submit" disabled={saving} className="m-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-60">
-          {saving ? '저장 중...' : '저장'}
-        </button>
+    <form id="resume-introduce-form" className="forms-sample" onSubmit={handleSubmit}>
+      <h4 className="card-title text-center mb-3">자기소개</h4>
+      <div className="mx-auto" style={{ maxWidth: '960px', width: '100%' }}>
+        <div className="table-responsive">
+          <table className="table table-bordered" style={{ tableLayout: 'fixed', width: '100%' }}>
+            <colgroup>
+              <col style={{ width: '18%' }} />
+              <col style={{ width: '82%' }} />
+            </colgroup>
+            <tbody>
+              <tr>
+                <th className="align-middle">자기소개</th>
+                <td>
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.introduce || ''}
+                    onChange={(value) => setFormData({ ...formData, introduce: value })}
+                    modules={quillModules}
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
+      {footerEl && createPortal(
+        <button type="submit" form="resume-introduce-form" disabled={saving} className="btn btn-primary">
+          {saving ? '저장 중...' : '저장'}
+        </button>,
+        footerEl
+      )}
     </form>
   );
 };

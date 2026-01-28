@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '@/utils/axios/axios';
 import { uploadResumeImage } from '@/utils/upload';
 
@@ -36,6 +37,7 @@ const createEmptyForm = (): ResumeEducationItem => ({
 
 const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => {
   const [educationList, setEducationList] = useState<ResumeEducationItem[]>([]);
+  const [footerEl, setFooterEl] = useState<Element | null>(null);
   const [formData, setFormData] = useState<ResumeEducationItem>(createEmptyForm());
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -98,6 +100,11 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
       setFormData(createEmptyForm());
     }
   }, [usrNo]);
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      setFooterEl(document.querySelector('.modal-footer-actions'));
+    }
+  }, []);
 
   // 폼 입력 변경을 처리합니다.
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -257,220 +264,224 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
   };
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-[10px]">
-        <div className="text-[24px] font-bold">학력 관리</div>
-        <button
-          type="button"
-          onClick={handleSwitchToNew}
-          className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white"
-        >
+    <div className="forms-sample">
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <h4 className="card-title mb-0">학력 관리</h4>
+        <button type="button" onClick={handleSwitchToNew} className="btn btn-secondary btn-sm">
           신규 학력 추가
         </button>
       </div>
 
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[16px] font-semibold">학력 목록</div>
-        </div>
-        <div className="border rounded-lg">
-          <table className="w-full table-fixed border-collapse">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 w-1/4">학교명</th>
-                <th className="p-2 w-1/5">학과</th>
-                <th className="p-2 w-1/6">상태</th>
-                <th className="p-2 w-1/4">기간</th>
-                <th className="p-2 w-1/6">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && (
+      <div className="mx-auto" style={{ maxWidth: '960px', width: '100%' }}>
+        <div className="mb-4">
+          <h6 className="font-weight-bold mb-2">학력 목록</h6>
+          <div className="table-responsive">
+            <table className="table table-bordered" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <colgroup>
+                <col style={{ width: '24%' }} />
+                <col style={{ width: '20%' }} />
+                <col style={{ width: '16%' }} />
+                <col style={{ width: '24%' }} />
+                <col style={{ width: '16%' }} />
+              </colgroup>
+              <thead>
                 <tr>
-                  <td colSpan={5} className="p-4 text-center">불러오는 중...</td>
+                  <th className="text-center align-middle">학교명</th>
+                  <th className="text-center align-middle">학과</th>
+                  <th className="text-center align-middle">상태</th>
+                  <th className="text-center align-middle">기간</th>
+                  <th className="text-center align-middle">관리</th>
                 </tr>
-              )}
-              {!loading && educationList.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-4 text-center">등록된 학력이 없습니다.</td>
-                </tr>
-              )}
-              {!loading && educationList.map((item, index) => (
-                <tr key={`${item.educationNo ?? index}`} className="border-t">
-                  <td className="p-2 text-center">{item.educationNm}</td>
-                  <td className="p-2 text-center">{item.department}</td>
-                  <td className="p-2 text-center">
-                    {educationStatLabelMap[item.educationStatCd] || item.educationStatCd}
-                  </td>
-                  <td className="p-2 text-center">
-                    {item.educationStartDt || '-'} ~ {item.educationEndDt || '재학 중'}
-                  </td>
-                  <td className="p-2 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(item)}
-                        className="px-3 py-1 text-sm font-medium transition-colors duration-150 bg-blue-500 text-white"
-                      >
-                        수정
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item.educationNo)}
-                        className="px-3 py-1 text-sm font-medium transition-colors duration-150 bg-red-500 text-white"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[16px] font-semibold">
-            {formData.educationNo ? '학력 수정' : '학력 등록'}
+              </thead>
+              <tbody>
+                {loading && (
+                  <tr>
+                    <td colSpan={5} className="text-center">불러오는 중...</td>
+                  </tr>
+                )}
+                {!loading && educationList.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center">등록된 학력이 없습니다.</td>
+                  </tr>
+                )}
+                {!loading && educationList.map((item, index) => (
+                  <tr key={`${item.educationNo ?? index}`}>
+                    <td className="text-center align-middle">{item.educationNm}</td>
+                    <td className="text-center align-middle">{item.department}</td>
+                    <td className="text-center align-middle">
+                      {educationStatLabelMap[item.educationStatCd] || item.educationStatCd}
+                    </td>
+                    <td className="text-center align-middle">
+                      {item.educationStartDt || '-'} ~ {item.educationEndDt || '재학 중'}
+                    </td>
+                    <td className="text-center align-middle">
+                      <div className="d-flex justify-content-center">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(item)}
+                          className="btn btn-outline-primary btn-sm mr-2"
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item.educationNo)}
+                          className="btn btn-outline-danger btn-sm"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-        <table className="w-full table-fixed border-collapse mb-6">
-          <tbody>
-            <tr>
-              <th className="p-2 text-left bg-blue-50 w-1/6">학교명</th>
-              <td className="p-2 w-1/3">
-                <input
-                  type="text"
-                  name="educationNm"
-                  value={formData.educationNm}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
-                />
-              </td>
-              <th className="p-2 text-left bg-blue-50 w-1/6">학과</th>
-              <td className="p-2 w-1/3">
-                <input
-                  type="text"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
-                />
-              </td>
-            </tr>
-            <tr>
-              <th className="p-2 text-left bg-blue-50 w-1/6">재학상태</th>
-              <td className="p-2 w-1/3">
-                <select
-                  name="educationStatCd"
-                  value={formData.educationStatCd}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
-                >
-                  <option value="">선택</option>
-                  {educationStatOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </td>
-              <th className="p-2 text-left bg-blue-50 w-1/6">학점</th>
-              <td className="p-2 w-1/3">
-                <input
-                  type="text"
-                  name="educationScore"
-                  value={formData.educationScore || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="예: 4.2 / 4.5"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th className="p-2 text-left bg-blue-50 w-1/6">입학</th>
-              <td className="p-2 w-1/3">
-                <input
-                  type="month"
-                  name="educationStartDt"
-                  value={formData.educationStartDt || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
-                />
-              </td>
-              <th className="p-2 text-left bg-blue-50 w-1/6">졸업</th>
-              <td className="p-2 w-1/3">
-                <input
-                  type="month"
-                  name="educationEndDt"
-                  value={formData.educationEndDt || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th className="p-2 text-left bg-blue-50 w-1/6">학교 로고</th>
-              <td className="p-2 w-5/6" colSpan={3}>
-                <div className="flex items-center gap-4">
-                  {formData.logoPath ? (
-                    <img src={formData.logoPath} alt="학교 로고" className="h-[48px] w-[48px] object-contain border" />
-                  ) : (
-                    <div className="h-[48px] w-[48px] flex items-center justify-center border text-sm text-gray-500">
-                      없음
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept="image/*"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleUploadButtonClick}
-                    className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white disabled:bg-gray-300"
-                    disabled={uploading}
-                  >
-                    {uploading ? '업로드 중...' : '로고 업로드'}
-                  </button>
-                  <input
-                    type="text"
-                    name="logoPath"
-                    value={formData.logoPath || ''}
-                    readOnly
-                    className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
 
-        <div className="flex justify-end gap-2">
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white"
-            >
-              닫기
-            </button>
-          )}
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-6 py-2 text-sm font-medium transition-colors duration-150 bg-blue-500 text-white disabled:bg-gray-400"
-          >
-            {saving ? (formData.educationNo ? '수정 중...' : '등록 중...') : (formData.educationNo ? '수정' : '등록')}
-          </button>
-        </div>
-      </form>
+        <form id="resume-education-form" onSubmit={handleSubmit}>
+          <h6 className="font-weight-bold mb-2">
+            {formData.educationNo ? '학력 수정' : '학력 등록'}
+          </h6>
+          <div className="table-responsive mb-4">
+            <table className="table table-bordered" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <colgroup>
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '32%' }} />
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '32%' }} />
+              </colgroup>
+              <tbody>
+                <tr>
+                  <th className="align-middle">학교명</th>
+                  <td>
+                    <input
+                      type="text"
+                      name="educationNm"
+                      value={formData.educationNm}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                      required
+                    />
+                  </td>
+                  <th className="align-middle">학과</th>
+                  <td>
+                    <input
+                      type="text"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                      required
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="align-middle">재학상태</th>
+                  <td>
+                    <select
+                      name="educationStatCd"
+                      value={formData.educationStatCd}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                      required
+                    >
+                      <option value="">선택</option>
+                      {educationStatOptions.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <th className="align-middle">학점</th>
+                  <td>
+                    <input
+                      type="text"
+                      name="educationScore"
+                      value={formData.educationScore || ''}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                      placeholder="예: 4.2 / 4.5"
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="align-middle">입학</th>
+                  <td>
+                    <input
+                      type="month"
+                      name="educationStartDt"
+                      value={formData.educationStartDt || ''}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                      required
+                    />
+                  </td>
+                  <th className="align-middle">졸업</th>
+                  <td>
+                    <input
+                      type="month"
+                      name="educationEndDt"
+                      value={formData.educationEndDt || ''}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="align-middle">학교 로고</th>
+                  <td colSpan={3}>
+                    <div className="d-flex align-items-center">
+                      {formData.logoPath ? (
+                        <img
+                          src={formData.logoPath}
+                          alt="학교 로고"
+                          className="img-fluid border"
+                          style={{ width: '48px', height: '48px', objectFit: 'contain' }}
+                        />
+                      ) : (
+                        <div
+                          className="border text-muted d-flex align-items-center justify-content-center"
+                          style={{ width: '48px', height: '48px', fontSize: '12px' }}
+                        >
+                          없음
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="d-none"
+                        accept="image/*"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleUploadButtonClick}
+                        className="btn btn-secondary btn-sm ml-3"
+                        disabled={uploading}
+                      >
+                        {uploading ? '업로드 중...' : '로고 업로드'}
+                      </button>
+                      <input
+                        type="text"
+                        name="logoPath"
+                        value={formData.logoPath || ''}
+                        readOnly
+                        className="form-control form-control-sm ml-3"
+                      />
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </form>
+      </div>
+      {footerEl && createPortal(
+        <button type="submit" form="resume-education-form" disabled={saving} className="btn btn-primary">
+          {saving ? (formData.educationNo ? '수정 중...' : '등록 중...') : (formData.educationNo ? '수정' : '등록')}
+        </button>,
+        footerEl
+      )}
     </div>
   );
 };

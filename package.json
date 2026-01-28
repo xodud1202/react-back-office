@@ -9,21 +9,42 @@
     "start": "cross-env PORT=3011 next start"
   },
   "dependencies": {
+    "@mdi/font": "^7.3.67",
     "@reduxjs/toolkit": "^2.9.2",
+    "ace-builds": "^1.31.2",
     "ag-grid-community": "^32.3.5",
     "ag-grid-react": "^32.3.5",
     "axios": "^1.13.1",
+    "bootstrap": "^5.3.2",
+    "bootstrap-datepicker": "^1.10.0",
+    "bootstrap-maxlength": "^1.10.1",
+    "chart.js": "^4.4.0",
+    "codemirror": "^5.47.0",
     "cookies-next": "^6.1.1",
+    "flag-icon-css": "^4.1.7",
+    "font-awesome": "^4.7.0",
+    "jquery": "^3.7.1",
+    "jquery-file-upload": "^4.0.11",
+    "jvectormap": "^2.0.4",
     "next": "15.3.3",
+    "owl-carousel-2": "0.0.3",
+    "owl.carousel": "^2.3.4",
+    "perfect-scrollbar": "^1.4.0",
+    "pwstabs": "^1.4.0",
     "react": "^19.0.0",
     "react-cookie": "^8.0.1",
     "react-dom": "^19.0.0",
     "react-quill-new": "^3.7.0",
-    "react-redux": "^9.2.0"
+    "react-redux": "^9.2.0",
+    "sass": "^1.69.5",
+    "select2": "^4.0.13",
+    "select2-bootstrap-theme": "0.1.0-beta.10",
+    "simple-line-icons": "^2.4.1",
+    "ti-icons": "^0.1.2",
+    "typeahead.js": "^0.11.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4.1.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -31,7 +52,6 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "mini-css-extract-plugin": "^2.9.2",
-    "tailwindcss": "^4.1.11",
     "typescript": "^5"
   }
 }

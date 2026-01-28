@@ -1,6 +1,4 @@
 ﻿import React, {useCallback, useEffect, useRef, useState} from 'react';
-import CommonGrid from '@/components/common/CommonGrid';
-import {ColDef, ICellRendererParams} from 'ag-grid-community';
 import {dateFormatter} from "@/utils/common";
 import Modal from '@/components/common/Modal';
 import ResumeBase from '@/components/resume/ResumeBase';
@@ -93,57 +91,6 @@ const ResumeList = () => {
     fetchResumes().then(r => setRowData(r || [])); // 2. 목록 새로고침
   };
 
-  // 그리드 컬럼 정의
-  const [columnDefs] = useState<ColDef[]>([
-    { headerName: '사용자번호', width: 150, field: 'usrNo', cellClass: 'text-center', checkboxSelection: true, headerCheckboxSelection: true },
-    { headerName: '사용자계정', width: 150, field: 'loginId', cellClass: 'text-center' },
-    { headerName: '사용자명', width: 150, field: 'userNm', cellClass: 'text-center' },
-    { headerName: '기본정보', width:150, cellClass: 'text-center'
-      , cellRenderer: (params: ICellRendererParams) => {
-        return <button type="button" onClick={() => handleOpenModal(params.data.usrNo)} className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
-          기본정보
-        </button>
-      }},
-    { headerName: '자기소개', width:150, cellClass: 'text-center'
-      , cellRenderer: (params: ICellRendererParams) => {
-        return <button type="button" onClick={() => handleOpenIntroduceModal(params.data.usrNo)} className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
-          자기소개
-        </button>
-      }},
-    { headerName: '경력', width:150, cellClass: 'text-center'
-      , cellRenderer: (params: ICellRendererParams) => {
-        return <button type="button" onClick={() => handleOpenExperienceModal(params.data.usrNo)} className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
-          경력
-        </button>
-      }},
-    { headerName: '학력', width:150, cellClass: 'text-center'
-      , cellRenderer: (params: ICellRendererParams) => {
-        return <button type="button" onClick={() => handleOpenEducationModal(params.data.usrNo)} className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
-          학력
-        </button>
-      }},
-    { headerName: '기타', width:150, cellClass: 'text-center'
-      , cellRenderer: (params: ICellRendererParams) => {
-        return <button type="button" onClick={() => handleOpenOtherExperienceModal(params.data.usrNo)} className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
-          기타
-        </button>
-      }},
-    { 
-      headerName: '등록일',
-      width: 180,
-      field: 'regDt',
-      cellClass: 'text-center',
-      valueFormatter: (params) => dateFormatter(params),
-    },
-    {
-      headerName: '수정일',
-      width: 180,
-      field: 'udtDt',
-      cellClass: 'text-center',
-      valueFormatter: (params) => dateFormatter(params),
-    },
-  ]);
-
   // 데이터 조회 함수
   const fetchResumes = useCallback(async (params: Record<string, any> = {}) => {
     setLoading(true);
@@ -176,57 +123,128 @@ const ResumeList = () => {
   }, [fetchResumes]);
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h1 className="text-2xl font-bold mb-4">이력서 관리</h1>
-      
-      {/* 검색 영역 */}
-      <form ref={formRef} onSubmit={handleSearch} className="search-bar mb-4 p-4 border rounded-lg bg-gray-50">
-        <table className="w-full">
-          <tbody>
-            <tr>
-              <th className="p-2 text-left bg-gray-100 w-1/6">검색어</th>
-              <td className="p-2">
-                <div className="flex items-center space-x-2">
-                  <select 
-                    name='searchGb'
-                    defaultValue='loginId'
-                    className="p-2 border border-gray-300 rounded"
-                  >
-                    <option value="loginId">사용자계정</option>
-                    <option value="usrNo">사용자번호</option>
-                    <option value="userNm">사용자명</option>
-                  </select>
-                  <input 
-                    type="text"
-                    name='searchValue'
-                    className="p-2 border border-gray-300 rounded w-full"
-                    placeholder="검색어를 입력하세요..."
-                  />
-                </div>
-              </td>
-            </tr>
-            {/* 추가 검색 조건이 필요할 경우 여기에 tr을 추가 */}
-          </tbody>
-        </table>
-        <div className="flex justify-center mt-4">
-          <button 
-            type="submit"
-            disabled={loading}
-            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 whitespace-nowrap"
-          >
-            {loading ? '검색중...' : '검색'}
-          </button>
-        </div>
-      </form>
+    <>
+      <div className="page-header">
+        <h3 className="page-title"> 이력서 관리 </h3>
+        <nav aria-label="breadcrumb">
+          <ol className="breadcrumb">
+            <li className="breadcrumb-item"><a href="#">이력서</a></li>
+            <li className="breadcrumb-item active" aria-current="page">목록</li>
+          </ol>
+        </nav>
+      </div>
 
-      {/* 그리드 영역 */}
-      <CommonGrid
-        rowData={rowData}
-        columnDefs={columnDefs as any}
-        overlayLoadingTemplate={'<span class="ag-overlay-loading-center">데이터를 불러오는 중입니다...</span>'}
-        overlayNoRowsTemplate={'<span class="ag-overlay-no-rows-center">데이터가 없습니다.</span>'}
-        {...(loading && { overlayLoadingTemplate: '<span class="ag-overlay-loading-center">데이터를 불러오는 중입니다...</span>'})}
-      />
+      <div className="row">
+        <div className="col-12 grid-margin stretch-card">
+          <div className="card">
+            <div className="card-body">
+              <h4 className="card-title">검색 조건</h4>
+              <p className="card-description">이력서 목록 조회 조건을 입력하세요.</p>
+              <form ref={formRef} onSubmit={handleSearch} className="forms-sample">
+                <div className="row">
+                  <div className="col-md-2">
+                    <div className="form-group">
+                      <label>검색 구분</label>
+                      <select name="searchGb" defaultValue="loginId" className="form-select">
+                        <option value="loginId">사용자계정</option>
+                        <option value="usrNo">사용자번호</option>
+                        <option value="userNm">사용자명</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="col-md-10">
+                    <div className="form-group">
+                      <label>검색어</label>
+                      <input
+                        type="text"
+                        name="searchValue"
+                        className="form-control"
+                        placeholder="검색어를 입력하세요"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <button type="submit" className="btn btn-primary me-2" disabled={loading}>
+                  {loading ? '검색중...' : '검색'}
+                </button>
+                <button type="reset" className="btn btn-dark">
+                  초기화
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-lg-12 grid-margin stretch-card">
+          <div className="card">
+            <div className="card-body">
+              <h4 className="card-title">이력서 목록</h4>
+              <p className="card-description">조회 결과 목록입니다.</p>
+              <div className="table-responsive">
+                <table className="table table-fixed text-center">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '120px' }}>사용자번호</th>
+                      <th style={{ width: '140px' }}>사용자계정</th>
+                      <th style={{ width: '140px' }}>사용자명</th>
+                      <th style={{ width: '90px' }}>기본정보</th>
+                      <th style={{ width: '90px' }}>자기소개</th>
+                      <th style={{ width: '90px' }}>경력</th>
+                      <th style={{ width: '90px' }}>학력</th>
+                      <th style={{ width: '90px' }}>기타</th>
+                      <th style={{ width: '140px' }}>등록일</th>
+                      <th style={{ width: '140px' }}>수정일</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rowData.length === 0 && (
+                      <tr>
+                        <td colSpan={10} className="text-center">데이터가 없습니다.</td>
+                      </tr>
+                    )}
+                    {rowData.map((row) => (
+                      <tr key={row.usrNo}>
+                        <td style={{ width: '120px' }}>{row.usrNo}</td>
+                        <td style={{ width: '140px' }}>{row.loginId}</td>
+                        <td style={{ width: '140px' }}>{row.userNm}</td>
+                        <td>
+                          <button type="button" onClick={() => handleOpenModal(row.usrNo)} className="btn btn-primary btn-sm">
+                            기본정보
+                          </button>
+                        </td>
+                        <td>
+                          <button type="button" onClick={() => handleOpenIntroduceModal(row.usrNo)} className="btn btn-primary btn-sm">
+                            자기소개
+                          </button>
+                        </td>
+                        <td>
+                          <button type="button" onClick={() => handleOpenExperienceModal(row.usrNo)} className="btn btn-primary btn-sm">
+                            경력
+                          </button>
+                        </td>
+                        <td>
+                          <button type="button" onClick={() => handleOpenEducationModal(row.usrNo)} className="btn btn-primary btn-sm">
+                            학력
+                          </button>
+                        </td>
+                        <td>
+                          <button type="button" onClick={() => handleOpenOtherExperienceModal(row.usrNo)} className="btn btn-primary btn-sm">
+                            기타
+                          </button>
+                        </td>
+                        <td style={{ width: '140px' }}>{dateFormatter({ value: row.regDt } as any)}</td>
+                        <td style={{ width: '140px' }}>{dateFormatter({ value: row.udtDt } as any)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 이력서 상세 정보 모달 */}
       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
@@ -244,7 +262,7 @@ const ResumeList = () => {
       <Modal isOpen={isOtherExperienceModalOpen} onClose={handleCloseOtherExperienceModal}>
         {selectedOtherExperienceUsrNo && <ResumeOtherExperience usrNo={selectedOtherExperienceUsrNo} onClose={handleCloseOtherExperienceModal} />}
       </Modal>
-    </div>
+    </>
   );
 };
 

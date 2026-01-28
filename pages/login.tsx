@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react'
-import Image from 'next/image'
 import {useRouter} from 'next/router'
 import api from '@/utils/axios/axios';
 import {deleteCookie, setCookie} from 'cookies-next';
@@ -87,88 +86,69 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-sm w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
-        {/* 로고 */}
-        <div className="flex justify-center">
-          <Image
-            src="/images/common/project-logo-512x125.png"
-            alt="Project Logo"
-            width={256}
-            height={62.5}
-            className="object-contain"
-          />
+    <div className="container-scroller">
+      <div className="container-fluid page-body-wrapper full-page-wrapper">
+        <div className="row w-100">
+          <div className="content-wrapper full-page-wrapper d-flex align-items-center auth login-bg">
+            <div className="card col-lg-4 mx-auto">
+              <div className="card-body px-5 py-5">
+                <h3 className="card-title text-start mb-3">로그인</h3>
+                <form onSubmit={handleSubmit}>
+                  <div className="form-group">
+                    <label>아이디 *</label>
+                    <input
+                      type="text"
+                      className="form-control p_input"
+                      value={id}
+                      onChange={e => setId(e.target.value)}
+                      required
+                      placeholder="아이디를 입력하세요"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>비밀번호 *</label>
+                    <input
+                      type="password"
+                      className="form-control p_input"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      required
+                      placeholder="비밀번호를 입력하세요"
+                    />
+                  </div>
+                  <div className="form-group d-flex align-items-center justify-content-between">
+                    <div className="form-check">
+                      <label className="form-check-label">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          checked={rememberMe}
+                          onChange={e => setRememberMe(e.target.checked)}
+                        /> 로그인 상태 유지
+                        <i className="input-helper"></i>
+                      </label>
+                    </div>
+                    <a href="#" className="forgot-pass">비밀번호 찾기</a>
+                  </div>
+                  {error && (
+                    <div className="text-danger small mb-3">
+                      {error}
+                    </div>
+                  )}
+                  <div className="text-center d-grid gap-2">
+                    <button type="submit" className="btn btn-primary btn-block enter-btn">
+                      로그인
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          {/* content-wrapper ends */}
         </div>
-
-        {/* 로그인 폼 */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div className="mb-4">
-              <label htmlFor="email" className="sr-only">
-                ID
-              </label>
-              <input
-                id="id"
-                name="id"
-                type="id"
-                required
-                value={id}
-                onChange={e => setId(e.target.value)}
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="LOGIN ID"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                비밀번호
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="비밀번호"
-              />
-            </div>
-          </div>
-
-          {/* 에러 메시지 */}
-          {error && (
-            <div className="text-red-500 text-sm text-center">
-              {error}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember_me"
-                name="remember_me"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={e => setRememberMe(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="remember_me" className="ml-2 block text-sm text-gray-900">
-                로그인 상태 유지
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                비밀번호를 잊으셨나요?
-              </a>
-            </div>
-          </div>
-
-          <div>
-            <button type="submit" className="btn btn-blue">로그인</button>
-          </div>
-        </form>
+        {/* row ends */}
       </div>
+      {/* page-body-wrapper ends */}
     </div>
   )
 }

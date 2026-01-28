@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '@/utils/axios/axios';
 
 interface ResumeOtherExperienceItem {
@@ -31,6 +32,7 @@ const createEmptyForm = (sortSeq?: number): ResumeOtherExperienceItem => ({
 
 const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo, onClose }) => {
   const [otherExperienceList, setOtherExperienceList] = useState<ResumeOtherExperienceItem[]>([]);
+  const [footerEl, setFooterEl] = useState<Element | null>(null);
   const [formData, setFormData] = useState<ResumeOtherExperienceItem>(createEmptyForm());
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -75,6 +77,11 @@ const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo, on
       setFormData(createEmptyForm());
     }
   }, [usrNo]);
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      setFooterEl(document.querySelector('.modal-footer-actions'));
+    }
+  }, []);
 
   // 폼 입력 변경을 처리합니다.
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -207,176 +214,172 @@ const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo, on
   };
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-[10px]">
-        <div className="text-[24px] font-bold">기타 항목 관리</div>
-        <button
-          type="button"
-          onClick={handleSwitchToNew}
-          className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white"
-        >
+    <div className="forms-sample">
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <h4 className="card-title mb-0">기타 항목 관리</h4>
+        <button type="button" onClick={handleSwitchToNew} className="btn btn-secondary btn-sm">
           신규 기타 항목 추가
         </button>
       </div>
 
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[16px] font-semibold">기타 항목 목록</div>
-        </div>
-        <div className="border rounded-lg">
-          <table className="w-full table-fixed border-collapse">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 w-1/4">경험명</th>
-                <th className="p-2 w-1/4">타이틀</th>
-                <th className="p-2 w-1/4">기간</th>
-                <th className="p-2 w-1/12">정렬</th>
-                <th className="p-2 w-1/6">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && (
+      <div className="mx-auto" style={{ maxWidth: '960px', width: '100%' }}>
+        <div className="mb-4">
+          <h6 className="font-weight-bold mb-2">기타 항목 목록</h6>
+          <div className="table-responsive">
+            <table className="table table-bordered" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <colgroup>
+                <col style={{ width: '24%' }} />
+                <col style={{ width: '24%' }} />
+                <col style={{ width: '24%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '16%' }} />
+              </colgroup>
+              <thead>
                 <tr>
-                  <td colSpan={5} className="p-4 text-center">불러오는 중...</td>
+                  <th className="text-center align-middle">경험명</th>
+                  <th className="text-center align-middle">타이틀</th>
+                  <th className="text-center align-middle">기간</th>
+                  <th className="text-center align-middle">정렬</th>
+                  <th className="text-center align-middle">관리</th>
                 </tr>
-              )}
-              {!loading && otherExperienceList.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-4 text-center">등록된 기타 항목이 없습니다.</td>
-                </tr>
-              )}
-              {!loading && otherExperienceList.map((item, index) => (
-                <tr key={`${item.otherExperienceNo ?? index}`} className="border-t">
-                  <td className="p-2 text-center">{item.experienceTitle}</td>
-                  <td className="p-2 text-center">{item.experienceSubTitle}</td>
-                  <td className="p-2 text-center">
-                    {item.experienceStartDt || '-'} ~ {item.experienceEndDt || '진행 중'}
-                  </td>
-                  <td className="p-2 text-center">{item.sortSeq ?? '-'}</td>
-                  <td className="p-2 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(item)}
-                        className="px-3 py-1 text-sm font-medium transition-colors duration-150 bg-blue-500 text-white"
-                      >
-                        수정
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item.otherExperienceNo)}
-                        className="px-3 py-1 text-sm font-medium transition-colors duration-150 bg-red-500 text-white"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[16px] font-semibold">
-            {formData.otherExperienceNo ? '기타 항목 수정' : '기타 항목 등록'}
+              </thead>
+              <tbody>
+                {loading && (
+                  <tr>
+                    <td colSpan={5} className="text-center">불러오는 중...</td>
+                  </tr>
+                )}
+                {!loading && otherExperienceList.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center">등록된 기타 항목이 없습니다.</td>
+                  </tr>
+                )}
+                {!loading && otherExperienceList.map((item, index) => (
+                  <tr key={`${item.otherExperienceNo ?? index}`}>
+                    <td className="text-center align-middle">{item.experienceTitle}</td>
+                    <td className="text-center align-middle">{item.experienceSubTitle}</td>
+                    <td className="text-center align-middle">
+                      {item.experienceStartDt || '-'} ~ {item.experienceEndDt || '진행 중'}
+                    </td>
+                    <td className="text-center align-middle">{item.sortSeq ?? '-'}</td>
+                    <td className="text-center align-middle">
+                      <div className="d-flex justify-content-center">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(item)}
+                          className="btn btn-outline-primary btn-sm mr-2"
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item.otherExperienceNo)}
+                          className="btn btn-outline-danger btn-sm"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-        <table className="w-full table-fixed border-collapse mb-6">
-          <tbody>
-            <tr>
-              <th className="p-2 text-left bg-blue-50 w-1/6">경험명</th>
-              <td className="p-2 w-1/3">
-                <input
-                  type="text"
-                  name="experienceTitle"
-                  value={formData.experienceTitle}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
-                />
-              </td>
-              <th className="p-2 text-left bg-blue-50 w-1/6">타이틀</th>
-              <td className="p-2 w-1/3">
-                <input
-                  type="text"
-                  name="experienceSubTitle"
-                  value={formData.experienceSubTitle}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
-                />
-              </td>
-            </tr>
-            <tr>
-              <th className="p-2 text-left bg-blue-50 w-1/6">시작</th>
-              <td className="p-2 w-1/3">
-                <input
-                  type="month"
-                  name="experienceStartDt"
-                  value={formData.experienceStartDt || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </td>
-              <th className="p-2 text-left bg-blue-50 w-1/6">종료</th>
-              <td className="p-2 w-1/3">
-                <input
-                  type="month"
-                  name="experienceEndDt"
-                  value={formData.experienceEndDt || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th className="p-2 text-left bg-blue-50 w-1/6">정렬순서</th>
-              <td className="p-2 w-1/3">
-                <input
-                  type="number"
-                  name="sortSeq"
-                  value={formData.sortSeq ?? ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  min={1}
-                />
-              </td>
-              <th className="p-2 text-left bg-blue-50 w-1/6">설명</th>
-              <td className="p-2 w-1/3">
-                <textarea
-                  name="experienceDesc"
-                  value={formData.experienceDesc || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  rows={3}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
 
-        <div className="flex justify-end gap-2">
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white"
-            >
-              닫기
-            </button>
-          )}
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-6 py-2 text-sm font-medium transition-colors duration-150 bg-blue-500 text-white disabled:bg-gray-400"
-          >
-            {saving ? (formData.otherExperienceNo ? '수정 중...' : '등록 중...') : (formData.otherExperienceNo ? '수정' : '등록')}
-          </button>
-        </div>
-      </form>
+        <form id="resume-other-experience-form" onSubmit={handleSubmit}>
+          <h6 className="font-weight-bold mb-2">
+            {formData.otherExperienceNo ? '기타 항목 수정' : '기타 항목 등록'}
+          </h6>
+          <div className="table-responsive mb-4">
+            <table className="table table-bordered" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <colgroup>
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '32%' }} />
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '32%' }} />
+              </colgroup>
+              <tbody>
+                <tr>
+                  <th className="align-middle">경험명</th>
+                  <td>
+                    <input
+                      type="text"
+                      name="experienceTitle"
+                      value={formData.experienceTitle}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                      required
+                    />
+                  </td>
+                  <th className="align-middle">타이틀</th>
+                  <td>
+                    <input
+                      type="text"
+                      name="experienceSubTitle"
+                      value={formData.experienceSubTitle}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                      required
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="align-middle">시작</th>
+                  <td>
+                    <input
+                      type="month"
+                      name="experienceStartDt"
+                      value={formData.experienceStartDt || ''}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                    />
+                  </td>
+                  <th className="align-middle">종료</th>
+                  <td>
+                    <input
+                      type="month"
+                      name="experienceEndDt"
+                      value={formData.experienceEndDt || ''}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="align-middle">정렬순서</th>
+                  <td>
+                    <input
+                      type="number"
+                      name="sortSeq"
+                      value={formData.sortSeq ?? ''}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                      min={1}
+                    />
+                  </td>
+                  <th className="align-middle">설명</th>
+                  <td>
+                    <textarea
+                      name="experienceDesc"
+                      value={formData.experienceDesc || ''}
+                      onChange={handleChange}
+                      className="form-control form-control-sm"
+                      rows={3}
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </form>
+      </div>
+      {footerEl && createPortal(
+        <button type="submit" form="resume-other-experience-form" disabled={saving} className="btn btn-primary">
+          {saving ? (formData.otherExperienceNo ? '수정 중...' : '등록 중...') : (formData.otherExperienceNo ? '수정' : '등록')}
+        </button>,
+        footerEl
+      )}
     </div>
   );
 };

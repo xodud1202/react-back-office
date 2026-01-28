@@ -10,17 +10,42 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-500/70 z-50 flex justify-center items-center">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-70vw max-h-[80vh] overflow-y-auto relative">
-        <button 
-          onClick={onClose} 
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl"
-        >
-          &times;
-        </button>
-        {children}
+    <>
+      <div
+        className="modal fade show d-flex align-items-center justify-content-center"
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          margin: 0,
+          padding: 0,
+          zIndex: 1055,
+        }}
+      >
+        <div className="modal-dialog modal-lg" role="document" style={{ maxWidth: '70vw', margin: 0 }}>
+          <div className="modal-content d-flex flex-column" style={{ maxHeight: '80vh' }}>
+            <div className="modal-header">
+              <h5 className="modal-title">상세 정보</h5>
+              <button type="button" className="btn btn-link p-0 text-white" aria-label="닫기" onClick={onClose}>
+                <i className="fa fa-window-close"></i>
+              </button>
+            </div>
+            <div className="modal-body p-3" style={{ overflowY: 'auto' }}>
+              {children}
+            </div>
+            <div className="modal-footer">
+              <div className="modal-footer-actions"></div>
+              <button type="button" className="btn btn-dark" onClick={onClose}>
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+      <div className="modal-backdrop fade show" style={{ position: 'fixed', inset: 0, zIndex: 1050 }}></div>
+    </>
   );
 };
 
