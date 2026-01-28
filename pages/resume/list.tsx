@@ -7,6 +7,7 @@ import ResumeBase from '@/components/resume/ResumeBase';
 import ResumeIntroduce from '@/components/resume/ResumeIntroduce';
 import ResumeExperience from '@/components/resume/ResumeExperience';
 import ResumeEducation from '@/components/resume/ResumeEducation';
+import ResumeOtherExperience from '@/components/resume/ResumeOtherExperience';
 import api from "@/utils/axios/axios";
 
 // 이력서 데이터 타입 정의
@@ -32,6 +33,8 @@ const ResumeList = () => {
   const [selectedExperienceUsrNo, setSelectedExperienceUsrNo] = useState<string | null>(null);
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
   const [selectedEducationUsrNo, setSelectedEducationUsrNo] = useState<string | null>(null);
+  const [isOtherExperienceModalOpen, setIsOtherExperienceModalOpen] = useState(false);
+  const [selectedOtherExperienceUsrNo, setSelectedOtherExperienceUsrNo] = useState<string | null>(null);
 
   const handleOpenModal = (usrNo: string) => {
     setSelectedUsrNo(usrNo);
@@ -72,6 +75,18 @@ const ResumeList = () => {
     setSelectedEducationUsrNo(null);
   };
 
+  // 기타 항목 모달을 엽니다.
+  const handleOpenOtherExperienceModal = (usrNo: string) => {
+    setSelectedOtherExperienceUsrNo(usrNo);
+    setIsOtherExperienceModalOpen(true);
+  };
+
+  // 기타 항목 모달을 닫습니다.
+  const handleCloseOtherExperienceModal = () => {
+    setIsOtherExperienceModalOpen(false);
+    setSelectedOtherExperienceUsrNo(null);
+  };
+
   // 저장이 성공했을 때 호출될 함수 >> 리스트 변경때 필요하나, 없음.
   const handleSaveSuccess = () => {
     handleCloseModal(); // 1. 모달 닫기
@@ -108,8 +123,8 @@ const ResumeList = () => {
         </button>
       }},
     { headerName: '기타', width:150, cellClass: 'text-center'
-      , cellRenderer: () => {
-        return <button type="button" className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
+      , cellRenderer: (params: ICellRendererParams) => {
+        return <button type="button" onClick={() => handleOpenOtherExperienceModal(params.data.usrNo)} className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
           기타
         </button>
       }},
@@ -225,6 +240,9 @@ const ResumeList = () => {
       </Modal>
       <Modal isOpen={isEducationModalOpen} onClose={handleCloseEducationModal}>
         {selectedEducationUsrNo && <ResumeEducation usrNo={selectedEducationUsrNo} onClose={handleCloseEducationModal} />}
+      </Modal>
+      <Modal isOpen={isOtherExperienceModalOpen} onClose={handleCloseOtherExperienceModal}>
+        {selectedOtherExperienceUsrNo && <ResumeOtherExperience usrNo={selectedOtherExperienceUsrNo} onClose={handleCloseOtherExperienceModal} />}
       </Modal>
     </div>
   );
