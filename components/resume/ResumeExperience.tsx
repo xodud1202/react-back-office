@@ -2,6 +2,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import api from "@/utils/axios/axios";
 
 interface ResumeExperienceDetail {
+  experienceDtlNo?: number;
   workTitle: string;
   workDesc?: string;
   workStartDt?: string;
@@ -53,7 +54,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
       acc[option.value] = option.label;
       return acc;
     }, {} as Record<string, string>);
-  }, []);
+  }, [employmentTypeOptions]);
 
   const fetchExperienceList = async () => {
     setLoading(true);
@@ -65,6 +66,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
         workStartDt: item.workStartDt || '',
         workEndDt: item.workEndDt || '',
         resumeExperienceDetailList: (item.resumeExperienceDetailList || []).map((detail: ResumeExperienceDetail) => ({
+          experienceDtlNo: detail.experienceDtlNo,
           ...detail,
           workStartDt: detail.workStartDt || '',
           workEndDt: detail.workEndDt || '',
@@ -123,7 +125,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
       ...prev,
       resumeExperienceDetailList: [
         ...prev.resumeExperienceDetailList,
-        { workTitle: '', workDesc: '', workStartDt: '', workEndDt: '', sortSeq: prev.resumeExperienceDetailList.length + 1 },
+        { experienceDtlNo: undefined, workTitle: '', workDesc: '', workStartDt: '', workEndDt: '', sortSeq: prev.resumeExperienceDetailList.length + 1 },
       ],
     }));
   };
@@ -149,6 +151,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
       workStartDt: item.workStartDt || '',
       workEndDt: item.workEndDt || '',
       resumeExperienceDetailList: (item.resumeExperienceDetailList || []).map((detail) => ({
+        experienceDtlNo: detail.experienceDtlNo,
         workTitle: detail.workTitle || '',
         workDesc: detail.workDesc || '',
         workStartDt: detail.workStartDt || '',
@@ -160,6 +163,17 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
 
   const handleResetForm = () => {
     setFormData(createEmptyForm());
+  };
+
+  const handleSwitchToNew = () => {
+    if (!hasFormInput(formData)) {
+      handleResetForm();
+      return;
+    }
+
+    const ok = confirm('작성 중인 내용이 있습니다. 새 경력을 등록하시겠습니까?');
+    if (!ok) return;
+    handleResetForm();
   };
 
   const hasFormInput = (data: ResumeExperienceBase) => {
@@ -223,21 +237,6 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     }
   };
 
-  const handleAddNew = async () => {
-    if (!hasFormInput(formData)) {
-      handleResetForm();
-      return;
-    }
-
-    const ok = confirm('입력한 내용을 저장하고 새 경력을 추가할까요?');
-    if (!ok) return;
-
-    const saved = await saveExperience();
-    if (saved) {
-      setFormData(createEmptyForm());
-    }
-  };
-
   const handleDelete = async (experienceNo?: number) => {
     if (!experienceNo) return;
 
@@ -272,7 +271,16 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
 
   return (
     <div className="w-full">
-      <div className="text-[24px] font-bold text-center mb-[10px]">경력 관리</div>
+      <div className="flex items-center justify-between mb-[10px]">
+        <div className="text-[24px] font-bold">경력 관리</div>
+        <button
+          type="button"
+          onClick={handleSwitchToNew}
+          className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white"
+        >
+          신규 경력 추가
+        </button>
+      </div>
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="text-[16px] font-semibold">경력 목록</div>
@@ -337,13 +345,6 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
           <div className="text-[16px] font-semibold">
             {formData.experienceNo ? '경력 수정' : '경력 등록'}
           </div>
-          <button
-            type="button"
-            onClick={handleAddNew}
-            className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white"
-          >
-            새 경력 추가
-          </button>
         </div>
         <table className="w-full table-fixed border-collapse mb-6">
           <tbody>
@@ -517,7 +518,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
             disabled={saving}
             className="px-6 py-2 text-sm font-medium transition-colors duration-150 bg-blue-500 text-white disabled:bg-gray-400"
           >
-            {saving ? '저장 중...' : '저장'}
+            {saving ? (formData.experienceNo ? '수정 중...' : '등록 중...') : (formData.experienceNo ? '수정' : '등록')}
           </button>
         </div>
       </form>

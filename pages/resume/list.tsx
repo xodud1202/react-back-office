@@ -6,6 +6,7 @@ import Modal from '@/components/common/Modal';
 import ResumeBase from '@/components/resume/ResumeBase';
 import ResumeIntroduce from '@/components/resume/ResumeIntroduce';
 import ResumeExperience from '@/components/resume/ResumeExperience';
+import ResumeEducation from '@/components/resume/ResumeEducation';
 import api from "@/utils/axios/axios";
 
 // 이력서 데이터 타입 정의
@@ -29,6 +30,8 @@ const ResumeList = () => {
   const [selectedIntroduceUsrNo, setSelectedIntroduceUsrNo] = useState<string | null>(null);
   const [isExperienceModalOpen, setIsExperienceModalOpen] = useState(false);
   const [selectedExperienceUsrNo, setSelectedExperienceUsrNo] = useState<string | null>(null);
+  const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
+  const [selectedEducationUsrNo, setSelectedEducationUsrNo] = useState<string | null>(null);
 
   const handleOpenModal = (usrNo: string) => {
     setSelectedUsrNo(usrNo);
@@ -57,6 +60,16 @@ const ResumeList = () => {
   const handleCloseExperienceModal = () => {
     setIsExperienceModalOpen(false);
     setSelectedExperienceUsrNo(null);
+  };
+
+  const handleOpenEducationModal = (usrNo: string) => {
+    setSelectedEducationUsrNo(usrNo);
+    setIsEducationModalOpen(true);
+  };
+
+  const handleCloseEducationModal = () => {
+    setIsEducationModalOpen(false);
+    setSelectedEducationUsrNo(null);
   };
 
   // 저장이 성공했을 때 호출될 함수 >> 리스트 변경때 필요하나, 없음.
@@ -89,8 +102,8 @@ const ResumeList = () => {
         </button>
       }},
     { headerName: '학력', width:150, cellClass: 'text-center'
-      , cellRenderer: () => {
-        return <button type="button" className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
+      , cellRenderer: (params: ICellRendererParams) => {
+        return <button type="button" onClick={() => handleOpenEducationModal(params.data.usrNo)} className="px-4 py-2 text-sm font-medium transition-colors duration-150 bg-gray-400 text-white">
           학력
         </button>
       }},
@@ -209,6 +222,9 @@ const ResumeList = () => {
       </Modal>
       <Modal isOpen={isExperienceModalOpen} onClose={handleCloseExperienceModal}>
         {selectedExperienceUsrNo && <ResumeExperience usrNo={selectedExperienceUsrNo} onClose={handleCloseExperienceModal} />}
+      </Modal>
+      <Modal isOpen={isEducationModalOpen} onClose={handleCloseEducationModal}>
+        {selectedEducationUsrNo && <ResumeEducation usrNo={selectedEducationUsrNo} onClose={handleCloseEducationModal} />}
       </Modal>
     </div>
   );
