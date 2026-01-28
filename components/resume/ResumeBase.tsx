@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import Image from "next/image";
 import api from "@/utils/axios/axios";
+import { uploadResumeImage } from '@/utils/upload';
 
 export interface ResumeBaseType {
   usrNo: string;
@@ -60,25 +61,15 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo, onClose }) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-      const uploadFormData = new FormData();
-      uploadFormData.append('image', file);
-      uploadFormData.append('usrNo', String(usrNo));
-
       try {
-        await api.post('/api/upload/image', uploadFormData)
-          .then(response => {
-            const data = response.data;
-            if (data.error) {
-                throw new Error(data.error);
-            }
+        const data = await uploadResumeImage('/api/upload/image', file, usrNo);
+        if (data.error) {
+          throw new Error(data.error);
+        }
 
-            setFormData(prev => prev ? {...prev, faceImgPath: data.faceImgPath} : null);
-            alert(data.message || '이미지가 변경되었습니다.');
-            console.log('Image uploaded successfully:', data);
-          }).catch(e => {
-            console.log('Failed to upload image:', e)
-            alert(e);
-          });
+        setFormData(prev => prev ? { ...prev, faceImgPath: data.faceImgPath } : null);
+        alert(data.message || '이미지가 변경되었습니다.');
+        console.log('Image uploaded successfully:', data);
       } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           alert(`Failed to upload image: ${errorMessage}`);

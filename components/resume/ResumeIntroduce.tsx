@@ -34,6 +34,7 @@ const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => 
   useEffect(() => {
     if (!usrNo) return;
 
+    // 자기소개 데이터를 조회합니다.
     const fetchIntroduce = async () => {
       setLoading(true);
       try {
@@ -53,6 +54,7 @@ const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => 
     fetchIntroduce();
   }, [usrNo]);
 
+  // 자기소개 저장을 처리합니다.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData) return;

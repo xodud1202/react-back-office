@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import api from '@/utils/axios/axios';
+import { uploadResumeImage } from '@/utils/upload';
 
 interface ResumeEducationItem {
   educationNo?: number;
@@ -49,6 +50,7 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
     }, {} as Record<string, string>);
   }, [educationStatOptions]);
 
+  // 학력 목록을 조회합니다.
   const fetchEducationList = async () => {
     setLoading(true);
     try {
@@ -70,6 +72,7 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
     }
   };
 
+  // 학력 상태 공통코드를 조회합니다.
   const fetchEducationStats = async () => {
     try {
       const response = await api.get('/api/admin/common/code', {
@@ -96,11 +99,13 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
     }
   }, [usrNo]);
 
+  // 폼 입력 변경을 처리합니다.
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // 선택된 항목을 수정 폼에 반영합니다.
   const handleEdit = (item: ResumeEducationItem) => {
     setFormData({
       educationNo: item.educationNo,
@@ -114,10 +119,12 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
     });
   };
 
+  // 폼을 신규 등록 상태로 초기화합니다.
   const handleResetForm = () => {
     setFormData(createEmptyForm());
   };
 
+  // 폼 입력 여부를 확인합니다.
   const hasFormInput = (data: ResumeEducationItem) => {
     return Boolean(
       data.educationNm ||
@@ -131,6 +138,7 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
     );
   };
 
+  // 신규 등록 모드로 전환합니다.
   const handleSwitchToNew = () => {
     if (!hasFormInput(formData)) {
       handleResetForm();
@@ -142,6 +150,7 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
     handleResetForm();
   };
 
+  // 필수 입력값을 검증합니다.
   const validateForm = (data: ResumeEducationItem) => {
     if (!data.educationNm || !data.department || !data.educationStatCd || !data.educationStartDt) {
       alert('학교명, 학과, 재학상태, 입학일은 필수 입력입니다.');
@@ -150,6 +159,7 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
     return true;
   };
 
+  // 학력 저장을 처리합니다.
   const saveEducation = async () => {
     if (!validateForm(formData)) {
       return false;
@@ -184,6 +194,7 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
     }
   };
 
+  // 학력 삭제를 처리합니다.
   const handleDelete = async (educationNo?: number) => {
     if (!educationNo) return;
 
@@ -210,6 +221,7 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
     }
   };
 
+  // 폼 제출을 처리합니다.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const saved = await saveEducation();
@@ -218,22 +230,19 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => 
     }
   };
 
+  // 파일 선택 창을 엽니다.
   const handleUploadButtonClick = () => {
     fileInputRef.current?.click();
   };
 
+  // 로고 파일 업로드를 처리합니다.
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const uploadFormData = new FormData();
-    uploadFormData.append('image', file);
-    uploadFormData.append('usrNo', String(usrNo));
-
     setUploading(true);
     try {
-      const response = await api.post('/api/upload/education-logo', uploadFormData);
-      const data = response.data;
+      const data = await uploadResumeImage('/api/upload/education-logo', file, usrNo);
       if (data?.error) {
         throw new Error(data.error);
       }

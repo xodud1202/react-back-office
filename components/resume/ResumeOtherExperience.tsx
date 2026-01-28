@@ -76,13 +76,13 @@ const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo, on
     }
   }, [usrNo]);
 
-  // 입력값 변경을 처리합니다.
+  // 폼 입력 변경을 처리합니다.
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // 목록의 항목을 수정용 폼에 반영합니다.
+  // 선택된 항목을 수정 폼에 반영합니다.
   const handleEdit = (item: ResumeOtherExperienceItem) => {
     setFormData({
       otherExperienceNo: item.otherExperienceNo,
@@ -96,12 +96,12 @@ const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo, on
     });
   };
 
-  // 폼을 신규 상태로 초기화합니다.
+  // 폼을 신규 등록 상태로 초기화합니다.
   const handleResetForm = () => {
     setFormData(createEmptyForm(nextSortSeq));
   };
 
-  // 입력 여부를 확인합니다.
+  // 폼 입력 여부를 확인합니다.
   const hasFormInput = (data: ResumeOtherExperienceItem) => {
     return Boolean(
       data.experienceTitle ||
@@ -126,7 +126,7 @@ const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo, on
     handleResetForm();
   };
 
-  // 폼 유효성 검사를 수행합니다.
+  // 필수 입력값을 검증합니다.
   const validateForm = (data: ResumeOtherExperienceItem) => {
     if (!data.experienceTitle || !data.experienceSubTitle) {
       alert('경험명과 타이틀은 필수 입력입니다.');
@@ -197,7 +197,7 @@ const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo, on
     }
   };
 
-  // 제출 이벤트를 처리합니다.
+  // 폼 제출을 처리합니다.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const saved = await saveOtherExperience();

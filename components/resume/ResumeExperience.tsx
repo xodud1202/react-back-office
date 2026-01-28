@@ -56,6 +56,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     }, {} as Record<string, string>);
   }, [employmentTypeOptions]);
 
+  // 경력 목록을 조회합니다.
   const fetchExperienceList = async () => {
     setLoading(true);
     try {
@@ -81,6 +82,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     }
   };
 
+  // 고용형태 공통코드를 조회합니다.
   const fetchEmploymentTypes = async () => {
     try {
       const response = await api.get('/api/admin/common/code', {
@@ -107,11 +109,13 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     }
   }, [usrNo]);
 
+  // 기본 정보 입력 변경을 처리합니다.
   const handleBaseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // 상세 정보 입력 변경을 처리합니다.
   const handleDetailChange = (index: number, field: keyof ResumeExperienceDetail, value: string) => {
     setFormData(prev => {
       const nextDetails = [...prev.resumeExperienceDetailList];
@@ -120,6 +124,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     });
   };
 
+  // 상세 행을 추가합니다.
   const addDetailRow = () => {
     setFormData(prev => ({
       ...prev,
@@ -130,6 +135,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     }));
   };
 
+  // 상세 행을 삭제합니다.
   const removeDetailRow = (index: number) => {
     setFormData(prev => {
       const nextDetails = prev.resumeExperienceDetailList.filter((_, idx) => idx !== index);
@@ -141,6 +147,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     });
   };
 
+  // 선택된 경력을 수정 폼에 반영합니다.
   const handleEdit = (item: ResumeExperienceBase) => {
     setFormData({
       experienceNo: item.experienceNo,
@@ -161,10 +168,12 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     });
   };
 
+  // 폼을 신규 등록 상태로 초기화합니다.
   const handleResetForm = () => {
     setFormData(createEmptyForm());
   };
 
+  // 신규 경력 등록 모드로 전환합니다.
   const handleSwitchToNew = () => {
     if (!hasFormInput(formData)) {
       handleResetForm();
@@ -176,6 +185,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     handleResetForm();
   };
 
+  // 폼 입력 여부를 확인합니다.
   const hasFormInput = (data: ResumeExperienceBase) => {
     return Boolean(
       data.companyNm ||
@@ -190,6 +200,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     );
   };
 
+  // 필수 입력값을 검증합니다.
   const validateForm = (data: ResumeExperienceBase) => {
     if (!data.companyNm || !data.employmentTypeCd || !data.position || !data.duty) {
       alert('회사명, 고용형태, 직급, 직책는 필수 입력입니다.');
@@ -198,6 +209,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     return true;
   };
 
+  // 경력 저장을 처리합니다.
   const saveExperience = async () => {
     if (!validateForm(formData)) {
       return false;
@@ -237,6 +249,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     }
   };
 
+  // 경력 삭제를 처리합니다.
   const handleDelete = async (experienceNo?: number) => {
     if (!experienceNo) return;
 
@@ -261,6 +274,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) =
     }
   };
 
+  // 폼 제출을 처리합니다.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const saved = await saveExperience();
