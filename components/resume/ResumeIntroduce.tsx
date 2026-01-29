@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import api from '@/utils/axios/axios';
+import useQuillImageUpload from '@/hooks/useQuillImageUpload';
 
 export interface ResumeIntroduceType {
   usrNo: string;
@@ -13,23 +14,45 @@ interface ResumeIntroduceProps {
   onClose?: () => void;
 }
 
-const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+// ref 전달을 위해 forwardRef로 감싼 에디터 컴포넌트를 동적으로 로드합니다.
+const ReactQuill = dynamic(
+  async () => {
+    const mod = await import('react-quill-new');
+    const Component = mod.default;
+    return React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
+      <Component ref={ref} {...props} />
+    ));
+  },
+  { ssr: false }
+);
 
 const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => {
   const [formData, setFormData] = useState<ResumeIntroduceType | null>(null);
   const [footerEl, setFooterEl] = useState<Element | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const quillModules = useMemo(
-    () => ({
-      toolbar: [
-        [{ header: [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['link'],
-        ['clean'],
-      ],
-    }),
+  const quillToolbarOptions = useMemo(
+    () => ([
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link'],
+      ['clean'],
+    ]),
+    []
+  );
+  const quillFormatsOptions = useMemo(
+    () => ([
+      'header',
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'list',
+      'bullet',
+      'link',
+      'image',
+    ]),
     []
   );
 
@@ -86,6 +109,22 @@ const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => 
     }
   };
 
+  const {
+    quillRef,
+    quillModules,
+    quillFormats,
+    handleEditorChange,
+  } = useQuillImageUpload({
+    toolbarOptions: quillToolbarOptions,
+    formats: quillFormatsOptions,
+    onChange: (value) => setFormData((prev) => ({
+      usrNo,
+      introduce: value,
+      ...(prev || {}),
+      introduce: value,
+    })),
+  });
+
   if (loading || !formData) {
     return <div>Loading...</div>;
   }
@@ -105,10 +144,12 @@ const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => 
                 <th className="align-middle">자기소개</th>
                 <td>
                   <ReactQuill
+                    ref={quillRef}
                     theme="snow"
                     value={formData.introduce || ''}
-                    onChange={(value) => setFormData({ ...formData, introduce: value })}
+                    onChange={handleEditorChange}
                     modules={quillModules}
+                    formats={quillFormats}
                   />
                 </td>
               </tr>

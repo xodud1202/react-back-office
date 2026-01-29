@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic';
 import { getCookie } from 'cookies-next';
 import api from '@/utils/axios/axios';
 import { dateFormatter } from '@/utils/common';
+import useQuillImageUpload from '@/hooks/useQuillImageUpload';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams, IDatasource, IGetRowsParams } from 'ag-grid-community';
 
@@ -46,6 +47,7 @@ const ReactQuill = dynamic(
 );
 
 const BoardList = () => {
+  // 상태 및 참조값을 초기화합니다.
   const [detailDivList, setDetailDivList] = useState<CommonCode[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -62,35 +64,25 @@ const BoardList = () => {
   });
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [isUploadingInlineImage, setIsUploadingInlineImage] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const quillRef = useRef<any>(null);
   const [searchParams, setSearchParams] = useState<Record<string, any>>({});
   const gridApiRef = useRef<GridReadyEvent<BoardData>['api'] | null>(null);
   // 게시글 본문 편집 에디터 옵션을 정의합니다.
-  const quillModules = useMemo(
-    () => ({
-      toolbar: {
-        container: [
-          [{ header: [1, 2, 3, false] }],
-          [{ color: [] }, { background: [] }],
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          ['code-block'],
-          ['image'],
-          ['link'],
-          ['clean'],
-        ],
-        // 이미지 업로드 버튼을 커스터마이징합니다.
-        handlers: {
-          image: () => {},
-        },
-      },
-    }),
+  const quillToolbarOptions = useMemo(
+    () => ([
+      [{ header: [1, 2, 3, false] }],
+      [{ color: [] }, { background: [] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['code-block'],
+      ['image'],
+      ['link'],
+      ['clean'],
+    ]),
     []
   );
   // 게시글 본문 편집에서 사용할 포맷 목록을 정의합니다.
-  const quillFormats = useMemo(
+  const quillFormatsOptions = useMemo(
     () => ([
       'header',
       'color',
@@ -120,90 +112,19 @@ const BoardList = () => {
     return null;
   }, []);
 
-  // 데이터 URL을 파일로 변환합니다.
-  const convertDataUrlToFile = async (dataUrl: string, fileName: string) => {
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    return new File([blob], fileName, { type: blob.type });
-  };
+  // 에디터 이미지 업로드 및 붙여넣기 처리를 공통 훅으로 연결합니다.
+  const {
+    quillRef,
+    quillModules,
+    quillFormats,
+    handleEditorChange,
+  } = useQuillImageUpload({
+    toolbarOptions: quillToolbarOptions,
+    formats: quillFormatsOptions,
+    onChange: (value) => setEditForm((prev) => ({ ...prev, content: value })),
+  });
 
-  // 에디터에 이미지를 업로드한 뒤 URL을 삽입합니다.
-  const uploadEditorImage = useCallback(async (file: File) => {
-    const formData = new FormData();
-    formData.append('image', file);
-    if (editForm.boardNo) {
-      formData.append('boardNo', String(editForm.boardNo));
-    }
-    const response = await api.post('/api/admin/board/image/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data?.imageUrl as string | undefined;
-  }, [editForm.boardNo]);
-
-  // 에디터 이미지 버튼 클릭 시 업로드를 처리합니다.
-  const handleImageUpload = useCallback(() => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async () => {
-      if (!input.files || input.files.length === 0) {
-        return;
-      }
-      const file = input.files[0];
-      try {
-        const imageUrl = await uploadEditorImage(file);
-        if (!imageUrl) {
-          return;
-        }
-        const quill = quillRef.current?.getEditor();
-        const range = quill?.getSelection(true);
-        if (quill && range) {
-          quill.insertEmbed(range.index, 'image', imageUrl, 'user');
-          quill.setSelection(range.index + 1, 0);
-        }
-      } catch (e) {
-        console.error('이미지 업로드를 실패했습니다.');
-        alert('이미지 업로드를 실패했습니다.');
-      }
-    };
-    input.click();
-  }, [editForm.boardNo, uploadEditorImage]);
-
-  // 붙여넣기된 Base64 이미지 데이터를 업로드 URL로 치환합니다.
-  const replaceInlineImage = useCallback(async (value: string) => {
-    if (isUploadingInlineImage) {
-      return;
-    }
-    const match = value.match(/<img[^>]+src=["'](data:image\/[^"']+)["']/i);
-    if (!match || !match[1]) {
-      return;
-    }
-    setIsUploadingInlineImage(true);
-    try {
-      const fileName = `paste_${Date.now()}.png`;
-      const file = await convertDataUrlToFile(match[1], fileName);
-      const imageUrl = await uploadEditorImage(file);
-      if (!imageUrl) {
-        return;
-      }
-      const replaced = value.replace(match[1], imageUrl);
-      setEditForm((prev) => ({ ...prev, content: replaced }));
-    } catch (e) {
-      console.error('붙여넣기 이미지 업로드를 실패했습니다.');
-    } finally {
-      setIsUploadingInlineImage(false);
-    }
-  }, [convertDataUrlToFile, editForm.boardNo, isUploadingInlineImage, uploadEditorImage]);
-
-  useEffect(() => {
-    // 에디터 툴바 이미지 업로드 핸들러를 연결합니다.
-    const editor = quillRef.current?.getEditor?.();
-    const toolbar = editor?.getModule?.('toolbar');
-    if (toolbar?.addHandler) {
-      toolbar.addHandler('image', handleImageUpload);
-    }
-  }, [handleImageUpload]);
-
+  // 게시판 상세 구분 공통코드를 조회합니다.
   const fetchBoardDetailDivList = useCallback(async () => {
     try {
       const response = await api.get('/api/admin/common/code', {
@@ -216,6 +137,7 @@ const BoardList = () => {
     }
   }, []);
 
+  // 검색 폼 제출 시 조회 파라미터를 갱신합니다.
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -224,6 +146,7 @@ const BoardList = () => {
     setSearchParams(nextParams);
   };
 
+  // 초기 로딩 시 상세 구분 코드를 조회합니다.
   useEffect(() => {
     fetchBoardDetailDivList();
   }, [fetchBoardDetailDivList]);
@@ -254,7 +177,7 @@ const BoardList = () => {
     }
   }, []);
 
-  // 게시글 상세 팝업을 닫습니다.
+  // 게시글 상세 팝업을 닫고 관련 상태를 초기화합니다.
   const handleCloseDetail = () => {
     setIsDetailModalOpen(false);
     setSelectedBoard(null);
@@ -270,7 +193,7 @@ const BoardList = () => {
     fetchBoardDetail(boardNo);
   }, [fetchBoardDetail]);
 
-  // 게시글 수정 팝업을 엽니다.
+  // 게시글 수정 팝업을 열고 기존 데이터를 폼에 채웁니다.
   const handleOpenEdit = () => {
     if (!selectedBoard) {
       return;
@@ -286,7 +209,7 @@ const BoardList = () => {
     setIsEditModalOpen(true);
   };
 
-  // 게시글 등록 팝업을 엽니다.
+  // 게시글 등록 팝업을 열고 폼을 초기화합니다.
   const handleOpenCreate = () => {
     setIsCreateMode(true);
     setEditForm({
@@ -314,7 +237,7 @@ const BoardList = () => {
     }));
   };
 
-  // 게시글 등록/수정 내용을 저장합니다.
+  // 게시글 등록/수정 저장을 처리합니다.
   const handleSubmitEdit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isCreateMode && !editForm.boardNo) {
@@ -356,7 +279,7 @@ const BoardList = () => {
     }
   };
 
-  // 게시글을 삭제 처리합니다.
+  // 게시글 삭제를 처리합니다.
   const handleDeleteBoard = async (boardNo?: number | null) => {
     if (!boardNo) {
       return;
@@ -481,7 +404,7 @@ const BoardList = () => {
     }
   }, []);
 
-  // 그리드 현재 페이지와 스크롤 위치를 유지한 채로 데이터를 다시 조회합니다.
+  // 현재 페이지/스크롤 위치를 보존한 채 목록을 새로 조회합니다.
   const refreshGridPreserveState = useCallback(() => {
     const api = gridApiRef.current;
     if (!api) {
@@ -517,11 +440,13 @@ const BoardList = () => {
   }, [applyDatasource, createDataSource]);
 
   // 게시판 목록 그리드를 초기화합니다.
+  // 그리드 준비 시 데이터소스를 연결합니다.
   const handleGridReady = useCallback((event: GridReadyEvent<BoardData>) => {
     gridApiRef.current = event.api;
     applyDatasource(event.api, createDataSource());
   }, [applyDatasource, createDataSource]);
 
+  // 검색 파라미터 변경 시 그리드를 갱신합니다.
   useEffect(() => {
     if (!gridApiRef.current) {
       return;
@@ -750,10 +675,7 @@ const BoardList = () => {
                       theme="snow"
                       className="board-editor"
                       value={editForm.content}
-                      onChange={(value) => {
-                        setEditForm((prev) => ({ ...prev, content: value }));
-                        replaceInlineImage(value);
-                      }}
+                      onChange={handleEditorChange}
                       modules={quillModules}
                       formats={quillFormats}
                     />

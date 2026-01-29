@@ -26,9 +26,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
       >
         <div className="modal-dialog modal-lg" role="document" style={{ maxWidth: '70vw', margin: 0 }}>
           <div className="modal-content d-flex flex-column" style={{ maxHeight: '80vh' }}>
-            <div className="modal-header">
+            <div className="modal-header d-flex align-items-center">
               <h5 className="modal-title">상세 정보</h5>
-              <button type="button" className="btn btn-link p-0 text-white" aria-label="닫기" onClick={onClose}>
+              <button type="button" className="btn btn-link p-0 text-white ms-auto" aria-label="닫기" onClick={onClose}>
                 <i className="fa fa-window-close"></i>
               </button>
             </div>
