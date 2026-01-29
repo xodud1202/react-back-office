@@ -7,14 +7,13 @@ import { MenuItem } from '@/types/menu';
 
 type AdminLayoutProps = {
   children: React.ReactNode;
-  menuItems?: MenuItem[];
 };
 
-const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menuItems }) => {
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const router = useRouter();
   const [userNm, setUserNm] = useState('');
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
-  const [resolvedMenuItems, setResolvedMenuItems] = useState<MenuItem[]>(menuItems ?? []);
+  const [resolvedMenuItems, setResolvedMenuItems] = useState<MenuItem[]>([]);
 
   useEffect(() => {
     // 사용자명을 쿠키에서 조회합니다.
@@ -25,30 +24,31 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, menuItems }) => {
   }, []);
 
   useEffect(() => {
-    // props로 받은 메뉴가 바뀌면 동기화합니다.
-    setResolvedMenuItems(menuItems ?? []);
-  }, [menuItems]);
+    // AdminLayout 진입 시 최신 메뉴를 조회합니다.
+    let isMounted = true;
 
-  useEffect(() => {
-    // 로그인 직후 등 메뉴가 비어있을 때만 1회 보강 조회합니다.
+    // 메뉴 목록을 API로 조회합니다.
     const fetchMenuItems = async () => {
-      if ((menuItems?.length ?? 0) > 0) {
-        return;
-      }
       const accessToken = getCookie('accessToken', { path: '/' });
       if (!accessToken) {
+        router.replace('/login');
         return;
       }
       try {
         const response = await api.get('/api/admin/menu/list');
-        setResolvedMenuItems(response.data || []);
+        if (isMounted) {
+          setResolvedMenuItems(response.data || []);
+        }
       } catch (error) {
         console.error('메뉴 조회 실패:', error);
       }
     };
 
     fetchMenuItems();
-  }, [menuItems]);
+    return () => {
+      isMounted = false;
+    };
+  }, [router.asPath]);
 
   // 로그아웃 처리 후 로그인 화면으로 이동합니다.
   const handleLogout = () => {

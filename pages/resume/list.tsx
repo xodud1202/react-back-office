@@ -1,4 +1,4 @@
-﻿import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {dateFormatter} from "@/utils/common";
 import Modal from '@/components/common/Modal';
 import ResumeBase from '@/components/resume/ResumeBase';
@@ -7,6 +7,8 @@ import ResumeExperience from '@/components/resume/ResumeExperience';
 import ResumeEducation from '@/components/resume/ResumeEducation';
 import ResumeOtherExperience from '@/components/resume/ResumeOtherExperience';
 import api from "@/utils/axios/axios";
+import { AgGridReact } from 'ag-grid-react';
+import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams, IDatasource, IGetRowsParams } from 'ag-grid-community';
 
 // 이력서 데이터 타입 정의
 interface ResumeData {
@@ -19,10 +21,18 @@ interface ResumeData {
   udtDt: string;
 }
 
+interface ResumeListResponse {
+  list: ResumeData[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
 const ResumeList = () => {
-  const [rowData, setRowData] = useState<ResumeData[]>([]);
   const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const [searchParams, setSearchParams] = useState<Record<string, any>>({});
+  const gridApiRef = useRef<GridReadyEvent<ResumeData>['api'] | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUsrNo, setSelectedUsrNo] = useState<string | null>(null);
   const [isIntroduceModalOpen, setIsIntroduceModalOpen] = useState(false);
@@ -88,17 +98,17 @@ const ResumeList = () => {
   // 저장이 성공했을 때 호출될 함수 >> 리스트 변경때 필요하나, 없음.
   const handleSaveSuccess = () => {
     handleCloseModal(); // 1. 모달 닫기
-    fetchResumes().then(r => setRowData(r || [])); // 2. 목록 새로고침
+    if (gridApiRef.current) {
+      applyDatasource(gridApiRef.current, createDataSource());
+    }
   };
 
   // 데이터 조회 함수
   const fetchResumes = useCallback(async (params: Record<string, any> = {}) => {
     setLoading(true);
-    let result = {};
-
     try {
       const response = await api.get('/api/admin/resume/list', { params });
-      return response.data;
+      return response.data as ResumeListResponse;
     } catch (e) {
       console.error('Failed to fetch resume list');
       alert('이력서 목록을 불러오는 데 실패했습니다.');
@@ -112,15 +122,135 @@ const ResumeList = () => {
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
-    const searchParams = Object.fromEntries(formData.entries());
-    fetchResumes(searchParams).then(r => setRowData(r || []));
+    const nextParams = Object.fromEntries(formData.entries());
+    setSearchParams(nextParams);
   };
 
-  // 컴포넌트 마운트 시 초기 데이터 로드
+  // 이력서 목록 그리드 컬럼을 정의합니다.
+  const columnDefs = useMemo<ColDef<ResumeData>[]>(() => [
+    { headerName: '사용자번호', field: 'usrNo', width: 120 },
+    { headerName: '사용자계정', field: 'loginId', width: 140 },
+    { headerName: '사용자명', field: 'userNm', width: 140 },
+    {
+      headerName: '기본정보',
+      field: 'base',
+      width: 100,
+      cellRenderer: (params: ICellRendererParams<ResumeData>) => (
+        <button type="button" onClick={() => params.data?.usrNo && handleOpenModal(params.data.usrNo)} className="btn btn-primary btn-sm">
+          기본정보
+        </button>
+      ),
+    },
+    {
+      headerName: '자기소개',
+      field: 'introduce',
+      width: 100,
+      cellRenderer: (params: ICellRendererParams<ResumeData>) => (
+        <button type="button" onClick={() => params.data?.usrNo && handleOpenIntroduceModal(params.data.usrNo)} className="btn btn-primary btn-sm">
+          자기소개
+        </button>
+      ),
+    },
+    {
+      headerName: '경력',
+      field: 'experience',
+      width: 90,
+      cellRenderer: (params: ICellRendererParams<ResumeData>) => (
+        <button type="button" onClick={() => params.data?.usrNo && handleOpenExperienceModal(params.data.usrNo)} className="btn btn-primary btn-sm">
+          경력
+        </button>
+      ),
+    },
+    {
+      headerName: '학력',
+      field: 'education',
+      width: 90,
+      cellRenderer: (params: ICellRendererParams<ResumeData>) => (
+        <button type="button" onClick={() => params.data?.usrNo && handleOpenEducationModal(params.data.usrNo)} className="btn btn-primary btn-sm">
+          학력
+        </button>
+      ),
+    },
+    {
+      headerName: '기타',
+      field: 'other',
+      width: 90,
+      cellRenderer: (params: ICellRendererParams<ResumeData>) => (
+        <button type="button" onClick={() => params.data?.usrNo && handleOpenOtherExperienceModal(params.data.usrNo)} className="btn btn-primary btn-sm">
+          기타
+        </button>
+      ),
+    },
+    {
+      headerName: '등록일',
+      field: 'regDt',
+      width: 140,
+      valueFormatter: (params) => dateFormatter({ value: params.value } as any),
+    },
+    {
+      headerName: '수정일',
+      field: 'udtDt',
+      width: 140,
+      valueFormatter: (params) => dateFormatter({ value: params.value } as any),
+    },
+  ], []);
+
+  // 그리드 기본 컬럼 속성을 정의합니다.
+  const defaultColDef = useMemo<ColDef>(() => ({
+    resizable: true,
+    sortable: false,
+    cellClass: 'text-center',
+  }), []);
+
+  // 이력서 목록 그리드 데이터소스를 생성합니다.
+  const createDataSource = useCallback((): IDatasource => ({
+    getRows: async (params: IGetRowsParams) => {
+      const pageSize = 20;
+      const startRow = params.request?.startRow ?? params.startRow ?? 0;
+      const page = Math.floor(startRow / pageSize) + 1;
+
+      setLoading(true);
+      try {
+        const response = await api.get('/api/admin/resume/list', {
+          params: {
+            ...searchParams,
+            page,
+          },
+        });
+        const data = (response.data || {}) as ResumeListResponse;
+        params.successCallback(data.list || [], data.totalCount || 0);
+      } catch (e) {
+        console.error('Failed to fetch resume list');
+        params.failCallback();
+      } finally {
+        setLoading(false);
+      }
+    },
+  }), [searchParams]);
+
+  // 그리드 데이터소스를 안전하게 설정합니다.
+  const applyDatasource = useCallback((api: GridApi<ResumeData>, datasource: IDatasource) => {
+    if (typeof (api as any).setGridOption === 'function') {
+      (api as any).setGridOption('datasource', datasource);
+      return;
+    }
+    if (typeof (api as any).setDatasource === 'function') {
+      (api as any).setDatasource(datasource);
+    }
+  }, []);
+
+  // 이력서 목록 그리드를 초기화합니다.
+  const handleGridReady = useCallback((event: GridReadyEvent<ResumeData>) => {
+    gridApiRef.current = event.api;
+    applyDatasource(event.api, createDataSource());
+  }, [applyDatasource, createDataSource]);
+
   useEffect(() => {
-    fetchResumes()
-        .then(r => setRowData(r || []));
-  }, [fetchResumes]);
+    if (!gridApiRef.current) {
+      return;
+    }
+    applyDatasource(gridApiRef.current, createDataSource());
+  }, [applyDatasource, createDataSource]);
 
   return (
     <>
@@ -182,64 +312,19 @@ const ResumeList = () => {
             <div className="card-body">
               <h4 className="card-title">이력서 목록</h4>
               <p className="card-description">조회 결과 목록입니다.</p>
-              <div className="table-responsive">
-                <table className="table table-fixed text-center">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '120px' }}>사용자번호</th>
-                      <th style={{ width: '140px' }}>사용자계정</th>
-                      <th style={{ width: '140px' }}>사용자명</th>
-                      <th style={{ width: '90px' }}>기본정보</th>
-                      <th style={{ width: '90px' }}>자기소개</th>
-                      <th style={{ width: '90px' }}>경력</th>
-                      <th style={{ width: '90px' }}>학력</th>
-                      <th style={{ width: '90px' }}>기타</th>
-                      <th style={{ width: '140px' }}>등록일</th>
-                      <th style={{ width: '140px' }}>수정일</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rowData.length === 0 && (
-                      <tr>
-                        <td colSpan={10} className="text-center">데이터가 없습니다.</td>
-                      </tr>
-                    )}
-                    {rowData.map((row) => (
-                      <tr key={row.usrNo}>
-                        <td style={{ width: '120px' }}>{row.usrNo}</td>
-                        <td style={{ width: '140px' }}>{row.loginId}</td>
-                        <td style={{ width: '140px' }}>{row.userNm}</td>
-                        <td>
-                          <button type="button" onClick={() => handleOpenModal(row.usrNo)} className="btn btn-primary btn-sm">
-                            기본정보
-                          </button>
-                        </td>
-                        <td>
-                          <button type="button" onClick={() => handleOpenIntroduceModal(row.usrNo)} className="btn btn-primary btn-sm">
-                            자기소개
-                          </button>
-                        </td>
-                        <td>
-                          <button type="button" onClick={() => handleOpenExperienceModal(row.usrNo)} className="btn btn-primary btn-sm">
-                            경력
-                          </button>
-                        </td>
-                        <td>
-                          <button type="button" onClick={() => handleOpenEducationModal(row.usrNo)} className="btn btn-primary btn-sm">
-                            학력
-                          </button>
-                        </td>
-                        <td>
-                          <button type="button" onClick={() => handleOpenOtherExperienceModal(row.usrNo)} className="btn btn-primary btn-sm">
-                            기타
-                          </button>
-                        </td>
-                        <td style={{ width: '140px' }}>{dateFormatter({ value: row.regDt } as any)}</td>
-                        <td style={{ width: '140px' }}>{dateFormatter({ value: row.udtDt } as any)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="ag-theme-alpine-dark" style={{ width: '100%' }}>
+                <AgGridReact<ResumeData>
+                  columnDefs={columnDefs}
+                  defaultColDef={defaultColDef}
+                  domLayout="autoHeight"
+                  overlayNoRowsTemplate="데이터가 없습니다."
+                  rowModelType="infinite"
+                  cacheBlockSize={20}
+                  pagination
+                  paginationPageSize={20}
+                  getRowId={(params) => String(params.data?.usrNo ?? '')}
+                  onGridReady={handleGridReady}
+                />
               </div>
             </div>
           </div>

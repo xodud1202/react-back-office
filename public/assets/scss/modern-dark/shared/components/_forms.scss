@@ -48,6 +48,9 @@
 .form-select {
   color: $input-placeholder-color !important;
 }
+.form-select > option{
+  color: white;
+}
 .navbar {
   .form-control {
     width: 75%;

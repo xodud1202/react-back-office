@@ -3,8 +3,7 @@ import '/styles/globals.css'
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import 'react-quill-new/dist/quill.snow.css';
-import type {AppContext, AppProps} from 'next/app'
-import App from 'next/app';
+import type {AppProps} from 'next/app'
 import {useRouter} from 'next/router'
 import {CookiesProvider} from 'react-cookie';
 import Cookies from 'universal-cookie';
@@ -14,13 +13,7 @@ import Head from "next/head";
 import Script from 'next/script';
 import {Provider} from 'react-redux';
 import {store} from '@/store/setting/store';
-import { MenuItem } from '@/types/menu';
-import { getCookie } from 'cookies-next';
-
-let cachedMenuItems: MenuItem[] | null = null;
-let cachedMenuToken: string | null = null;
-
-function MyApp({Component, pageProps}: AppProps & { cookies?: string; menuItems?: MenuItem[] }) {
+function MyApp({Component, pageProps}: AppProps & { cookies?: string }) {
   // SSR로부터 받는 쿠키 문자열 초기화
   const cookies = pageProps.cookies ? new Cookies(pageProps.cookies) : undefined
 
@@ -66,7 +59,7 @@ function MyApp({Component, pageProps}: AppProps & { cookies?: string; menuItems?
         />
 
         {isLayoutNeeded ? (
-          <AdminLayout menuItems={pageProps.menuItems}>
+          <AdminLayout>
             <Component {...pageProps} />
           </AdminLayout>
         ) : (
@@ -76,64 +69,5 @@ function MyApp({Component, pageProps}: AppProps & { cookies?: string; menuItems?
     </CookiesProvider>
   )
 }
-
-// SSR/CSR 모두에서 최초 1회 메뉴를 가져오고 캐시합니다.
-MyApp.getInitialProps = async (appContext: AppContext) => {
-  const appProps = await App.getInitialProps(appContext);
-  const { ctx } = appContext;
-  const isServer = Boolean(ctx.req);
-  const accessToken = (await getCookie('accessToken', ctx)) as string | undefined;
-  let menuItems: MenuItem[] = [];
-
-  // CSR에서는 메뉴를 다시 요청하지 않습니다.
-  if (!isServer) {
-    return {
-      ...appProps,
-      pageProps: {
-        ...appProps.pageProps,
-        menuItems: cachedMenuItems ?? appProps.pageProps.menuItems ?? [],
-      },
-    };
-  }
-
-  // 서버에서만 메뉴를 조회합니다.
-  if (!accessToken) {
-    cachedMenuItems = null;
-    cachedMenuToken = null;
-    return {
-      ...appProps,
-      pageProps: {
-        ...appProps.pageProps,
-        menuItems,
-      },
-    };
-  }
-
-  try {
-    const baseUrl = process.env.BACKEND_URL || '';
-    const requestUrl = `${baseUrl}/api/admin/menu/list`;
-    const response = await fetch(requestUrl, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (response.ok) {
-      menuItems = await response.json();
-      cachedMenuItems = menuItems;
-      cachedMenuToken = accessToken;
-    }
-  } catch (error) {
-    console.error('메뉴 조회 실패:', error);
-  }
-
-  return {
-    ...appProps,
-    pageProps: {
-      ...appProps.pageProps,
-      menuItems,
-    },
-  };
-};
 
 export default MyApp
