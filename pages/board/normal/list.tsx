@@ -33,7 +33,17 @@ interface BoardListResponse {
   pageSize: number;
 }
 
-const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+// ref 전달을 위해 forwardRef로 감싼 에디터 컴포넌트를 동적으로 로드합니다.
+const ReactQuill = dynamic(
+  async () => {
+    const mod = await import('react-quill-new');
+    const Component = mod.default;
+    return React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
+      <Component ref={ref} {...props} />
+    ));
+  },
+  { ssr: false }
+);
 
 const BoardList = () => {
   const [detailDivList, setDetailDivList] = useState<CommonCode[]>([]);
@@ -52,22 +62,30 @@ const BoardList = () => {
   });
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [isUploadingInlineImage, setIsUploadingInlineImage] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const quillRef = useRef<any>(null);
   const [searchParams, setSearchParams] = useState<Record<string, any>>({});
   const gridApiRef = useRef<GridReadyEvent<BoardData>['api'] | null>(null);
   // 게시글 본문 편집 에디터 옵션을 정의합니다.
   const quillModules = useMemo(
     () => ({
-      toolbar: [
-        [{ header: [1, 2, 3, false] }],
-        [{ color: [] }, { background: [] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['code-block'],
-        ['image'],
-        ['link'],
-        ['clean'],
-      ],
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, false] }],
+          [{ color: [] }, { background: [] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['code-block'],
+          ['image'],
+          ['link'],
+          ['clean'],
+        ],
+        // 이미지 업로드 버튼을 커스터마이징합니다.
+        handlers: {
+          image: () => {},
+        },
+      },
     }),
     []
   );
@@ -101,6 +119,90 @@ const BoardList = () => {
     }
     return null;
   }, []);
+
+  // 데이터 URL을 파일로 변환합니다.
+  const convertDataUrlToFile = async (dataUrl: string, fileName: string) => {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    return new File([blob], fileName, { type: blob.type });
+  };
+
+  // 에디터에 이미지를 업로드한 뒤 URL을 삽입합니다.
+  const uploadEditorImage = useCallback(async (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    if (editForm.boardNo) {
+      formData.append('boardNo', String(editForm.boardNo));
+    }
+    const response = await api.post('/api/admin/board/image/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data?.imageUrl as string | undefined;
+  }, [editForm.boardNo]);
+
+  // 에디터 이미지 버튼 클릭 시 업로드를 처리합니다.
+  const handleImageUpload = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async () => {
+      if (!input.files || input.files.length === 0) {
+        return;
+      }
+      const file = input.files[0];
+      try {
+        const imageUrl = await uploadEditorImage(file);
+        if (!imageUrl) {
+          return;
+        }
+        const quill = quillRef.current?.getEditor();
+        const range = quill?.getSelection(true);
+        if (quill && range) {
+          quill.insertEmbed(range.index, 'image', imageUrl, 'user');
+          quill.setSelection(range.index + 1, 0);
+        }
+      } catch (e) {
+        console.error('이미지 업로드를 실패했습니다.');
+        alert('이미지 업로드를 실패했습니다.');
+      }
+    };
+    input.click();
+  }, [editForm.boardNo, uploadEditorImage]);
+
+  // 붙여넣기된 Base64 이미지 데이터를 업로드 URL로 치환합니다.
+  const replaceInlineImage = useCallback(async (value: string) => {
+    if (isUploadingInlineImage) {
+      return;
+    }
+    const match = value.match(/<img[^>]+src=["'](data:image\/[^"']+)["']/i);
+    if (!match || !match[1]) {
+      return;
+    }
+    setIsUploadingInlineImage(true);
+    try {
+      const fileName = `paste_${Date.now()}.png`;
+      const file = await convertDataUrlToFile(match[1], fileName);
+      const imageUrl = await uploadEditorImage(file);
+      if (!imageUrl) {
+        return;
+      }
+      const replaced = value.replace(match[1], imageUrl);
+      setEditForm((prev) => ({ ...prev, content: replaced }));
+    } catch (e) {
+      console.error('붙여넣기 이미지 업로드를 실패했습니다.');
+    } finally {
+      setIsUploadingInlineImage(false);
+    }
+  }, [convertDataUrlToFile, editForm.boardNo, isUploadingInlineImage, uploadEditorImage]);
+
+  useEffect(() => {
+    // 에디터 툴바 이미지 업로드 핸들러를 연결합니다.
+    const editor = quillRef.current?.getEditor?.();
+    const toolbar = editor?.getModule?.('toolbar');
+    if (toolbar?.addHandler) {
+      toolbar.addHandler('image', handleImageUpload);
+    }
+  }, [handleImageUpload]);
 
   const fetchBoardDetailDivList = useCallback(async () => {
     try {
@@ -644,10 +746,14 @@ const BoardList = () => {
                   <div className="form-group mb-3">
                     <label>본문</label>
                     <ReactQuill
+                      ref={quillRef}
                       theme="snow"
                       className="board-editor"
                       value={editForm.content}
-                      onChange={(value) => setEditForm((prev) => ({ ...prev, content: value }))}
+                      onChange={(value) => {
+                        setEditForm((prev) => ({ ...prev, content: value }));
+                        replaceInlineImage(value);
+                      }}
                       modules={quillModules}
                       formats={quillFormats}
                     />
