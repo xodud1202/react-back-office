@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { getCookie } from 'cookies-next';
 import api from '@/utils/axios/axios';
 import { dateFormatter } from '@/utils/common';
 import { AgGridReact } from 'ag-grid-react';
@@ -63,6 +64,7 @@ const BoardList = () => {
         ['bold', 'italic', 'underline', 'strike'],
         [{ list: 'ordered' }, { list: 'bullet' }],
         ['code-block'],
+        ['image'],
         ['link'],
         ['clean'],
       ],
@@ -82,10 +84,23 @@ const BoardList = () => {
       'list',
       'bullet',
       'code-block',
+      'image',
       'link',
     ]),
     []
   );
+
+  // 기본 에디터 설정을 사용합니다.
+
+  // 로그인 사용자 번호를 쿠키에서 조회합니다.
+  const resolveLoginUsrNo = useCallback(() => {
+    const cookieValue = getCookie('usrNo', { path: '/' });
+    if (typeof cookieValue === 'string' && cookieValue.trim() !== '') {
+      const parsed = Number(cookieValue);
+      return Number.isNaN(parsed) ? null : parsed;
+    }
+    return null;
+  }, []);
 
   const fetchBoardDetailDivList = useCallback(async () => {
     try {
@@ -203,6 +218,11 @@ const BoardList = () => {
     if (!isCreateMode && !editForm.boardNo) {
       return;
     }
+    const usrNo = resolveLoginUsrNo();
+    if (!usrNo) {
+      setEditError('로그인 사용자 정보를 확인할 수 없습니다.');
+      return;
+    }
     setEditSaving(true);
     setEditError(null);
     try {
@@ -212,6 +232,8 @@ const BoardList = () => {
         boardDetailDivCd: editForm.boardDetailDivCd,
         title: editForm.title,
         content: editForm.content,
+        regNo: isCreateMode ? usrNo : undefined,
+        udtNo: usrNo,
       });
       if (isCreateMode) {
         refreshGridPreserveState();
@@ -229,6 +251,35 @@ const BoardList = () => {
       setEditError(message);
     } finally {
       setEditSaving(false);
+    }
+  };
+
+  // 게시글을 삭제 처리합니다.
+  const handleDeleteBoard = async (boardNo?: number | null) => {
+    if (!boardNo) {
+      return;
+    }
+    const usrNo = resolveLoginUsrNo();
+    if (!usrNo) {
+      alert('로그인 사용자 정보를 확인할 수 없습니다.');
+      return;
+    }
+    if (!confirm('게시글을 삭제하시겠습니까?')) {
+      return;
+    }
+    try {
+      await api.post('/api/admin/board/delete', {
+        boardNo,
+        udtNo: usrNo,
+      });
+      if (selectedBoard?.boardNo === boardNo) {
+        handleCloseDetail();
+      }
+      refreshGridPreserveState();
+      alert('게시글이 삭제되었습니다.');
+    } catch (e) {
+      console.error('게시글 삭제를 실패했습니다.');
+      alert('게시글 삭제를 실패했습니다.');
     }
   };
 
@@ -257,7 +308,6 @@ const BoardList = () => {
         </button>
       ),
     },
-    { headerName: '조회수', field: 'readCnt', width: 90 },
     {
       headerName: '등록일',
       field: 'regDt',
@@ -270,7 +320,20 @@ const BoardList = () => {
       width: 160,
       valueFormatter: (params) => dateFormatter({ value: params.value } as any),
     },
-  ], [handleOpenDetail]);
+    {
+      headerName: '삭제',
+      width: 90,
+      cellRenderer: (params: ICellRendererParams<BoardData>) => (
+        <button
+          type="button"
+          className="btn btn-danger btn-sm"
+          onClick={() => handleDeleteBoard(params.data?.boardNo)}
+        >
+          삭제
+        </button>
+      ),
+    },
+  ], [handleOpenDetail, handleDeleteBoard]);
 
   // 그리드 기본 컬럼 속성을 정의합니다.
   const defaultColDef = useMemo<ColDef>(() => ({
