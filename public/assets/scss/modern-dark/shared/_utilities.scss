@@ -114,7 +114,7 @@
 }
 //
 .bg-gray-dark {
-  background: color(gray-dark);
+  background: $gray-dark;
 }
 
 @each $color,

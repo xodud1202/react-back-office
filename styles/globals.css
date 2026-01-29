@@ -9,3 +9,7 @@ button {
 .max-w-70vw {
   max-width: 70vw;
 }
+
+.board-editor .ql-editor {
+  min-height: 300px;
+}

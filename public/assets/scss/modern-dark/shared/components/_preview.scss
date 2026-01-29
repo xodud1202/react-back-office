@@ -34,7 +34,7 @@
         }
       }
       .badge {
-        border: 2px solid color(white);
+        border: 2px solid $white;
         border-radius: 100%;
         bottom: 5px;
         display: block;
@@ -82,9 +82,9 @@
       @include flex-direction(row);
       i {
         width: 29px;
-        color: color(gray-lightest);
+        color: $gray-lightest;
         height: 29px;
-        border: 2px solid color(gray-lightest);
+        border: 2px solid $gray-lightest;
         border-radius: 100%;
         padding: 3px 6px;
         display: inline-block;
@@ -134,7 +134,6 @@
     }
   }
 }
-
 
 
 

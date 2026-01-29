@@ -6,7 +6,9 @@
     "build": "next build",
     "lint": "next lint",
     "dev": "cross-env PORT=3011 next dev",
-    "start": "cross-env PORT=3011 next start"
+    "start": "cross-env PORT=3011 next start",
+    "sass:build": "sass --source-map public/assets/scss/style.scss public/assets/css/style.css",
+    "sass:watch": "sass --watch public/assets/scss/style.scss public/assets/css/style.css"
   },
   "dependencies": {
     "@mdi/font": "^7.3.67",
@@ -48,6 +50,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "compass-mixins": "^0.12.12",
     "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import api from '@/utils/axios/axios';
 import { dateFormatter } from '@/utils/common';
 import { AgGridReact } from 'ag-grid-react';
@@ -31,6 +32,8 @@ interface BoardListResponse {
   pageSize: number;
 }
 
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+
 const BoardList = () => {
   const [detailDivList, setDetailDivList] = useState<CommonCode[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,9 +41,51 @@ const BoardList = () => {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [selectedBoard, setSelectedBoard] = useState<BoardData | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateMode, setIsCreateMode] = useState(false);
+  const [editForm, setEditForm] = useState<{ boardNo: number | null; boardDetailDivCd: string; title: string; content: string }>({
+    boardNo: null,
+    boardDetailDivCd: '',
+    title: '',
+    content: '',
+  });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [searchParams, setSearchParams] = useState<Record<string, any>>({});
   const gridApiRef = useRef<GridReadyEvent<BoardData>['api'] | null>(null);
+  // 게시글 본문 편집 에디터 옵션을 정의합니다.
+  const quillModules = useMemo(
+    () => ({
+      toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        [{ color: [] }, { background: [] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['code-block'],
+        ['link'],
+        ['clean'],
+      ],
+    }),
+    []
+  );
+  // 게시글 본문 편집에서 사용할 포맷 목록을 정의합니다.
+  const quillFormats = useMemo(
+    () => ([
+      'header',
+      'color',
+      'background',
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'list',
+      'bullet',
+      'code-block',
+      'link',
+    ]),
+    []
+  );
 
   const fetchBoardDetailDivList = useCallback(async () => {
     try {
@@ -68,14 +113,14 @@ const BoardList = () => {
 
   useEffect(() => {
     // 팝업 열림 상태에 따라 바디 스크롤을 제어합니다.
-    if (isDetailModalOpen) {
+    if (isDetailModalOpen || isEditModalOpen) {
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = '';
       };
     }
     document.body.style.overflow = '';
-  }, [isDetailModalOpen]);
+  }, [isDetailModalOpen, isEditModalOpen]);
 
   // 게시글 상세 정보를 조회합니다.
   const fetchBoardDetail = useCallback(async (boardNo: number) => {
@@ -97,6 +142,8 @@ const BoardList = () => {
     setIsDetailModalOpen(false);
     setSelectedBoard(null);
     setDetailError(null);
+    setIsEditModalOpen(false);
+    setEditError(null);
   };
 
   // 게시글 상세 팝업을 엽니다.
@@ -105,6 +152,85 @@ const BoardList = () => {
     setSelectedBoard(null);
     fetchBoardDetail(boardNo);
   }, [fetchBoardDetail]);
+
+  // 게시글 수정 팝업을 엽니다.
+  const handleOpenEdit = () => {
+    if (!selectedBoard) {
+      return;
+    }
+    setIsCreateMode(false);
+    setEditForm({
+      boardNo: selectedBoard.boardNo,
+      boardDetailDivCd: selectedBoard.boardDetailDivCd || '',
+      title: selectedBoard.title || '',
+      content: selectedBoard.content || '',
+    });
+    setEditError(null);
+    setIsEditModalOpen(true);
+  };
+
+  // 게시글 등록 팝업을 엽니다.
+  const handleOpenCreate = () => {
+    setIsCreateMode(true);
+    setEditForm({
+      boardNo: null,
+      boardDetailDivCd: '',
+      title: '',
+      content: '',
+    });
+    setEditError(null);
+    setIsEditModalOpen(true);
+  };
+
+  // 게시글 수정 팝업을 닫습니다.
+  const handleCloseEdit = () => {
+    setIsEditModalOpen(false);
+    setEditError(null);
+  };
+
+  // 게시글 수정 입력값을 변경합니다.
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // 게시글 등록/수정 내용을 저장합니다.
+  const handleSubmitEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!isCreateMode && !editForm.boardNo) {
+      return;
+    }
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const apiUrl = isCreateMode ? '/api/admin/board/create' : '/api/admin/board/update';
+      await api.post(apiUrl, {
+        boardNo: editForm.boardNo,
+        boardDetailDivCd: editForm.boardDetailDivCd,
+        title: editForm.title,
+        content: editForm.content,
+      });
+      if (isCreateMode) {
+        refreshGridPreserveState();
+        setIsEditModalOpen(false);
+        alert('게시글이 등록되었습니다.');
+      } else if (editForm.boardNo) {
+        await fetchBoardDetail(editForm.boardNo);
+        refreshGridPreserveState();
+        setIsEditModalOpen(false);
+        alert('게시글이 수정되었습니다.');
+      }
+    } catch (e) {
+      const message = isCreateMode ? '게시글 등록을 실패했습니다.' : '게시글 수정을 실패했습니다.';
+      console.error(message);
+      setEditError(message);
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   // 게시글 목록 그리드 컬럼을 정의합니다.
   const columnDefs = useMemo<ColDef<BoardData>[]>(() => [
@@ -124,14 +250,13 @@ const BoardList = () => {
       cellRenderer: (params: ICellRendererParams<BoardData>) => (
         <button
           type="button"
-          className="btn btn-link p-0 text-decoration-none"
+          className="btn p-0 text-decoration-none fw-bold"
           onClick={() => params.data?.boardNo && handleOpenDetail(params.data.boardNo)}
         >
           {params.data?.title || '제목 없음'}
         </button>
       ),
     },
-    { headerName: '노출', field: 'viewYn', width: 90 },
     { headerName: '조회수', field: 'readCnt', width: 90 },
     {
       headerName: '등록일',
@@ -191,6 +316,41 @@ const BoardList = () => {
     }
   }, []);
 
+  // 그리드 현재 페이지와 스크롤 위치를 유지한 채로 데이터를 다시 조회합니다.
+  const refreshGridPreserveState = useCallback(() => {
+    const api = gridApiRef.current;
+    if (!api) {
+      return;
+    }
+    const currentPage = typeof api.paginationGetCurrentPage === 'function' ? api.paginationGetCurrentPage() : 0;
+    const firstRow = typeof api.getFirstDisplayedRowIndex === 'function'
+      ? api.getFirstDisplayedRowIndex()
+      : (typeof api.getFirstDisplayedRow === 'function' ? api.getFirstDisplayedRow() : 0);
+    const windowScrollTop = typeof window !== 'undefined' ? window.scrollY : 0;
+
+    const restorePosition = () => {
+      if (typeof api.paginationGetTotalPages === 'function' && typeof api.paginationGoToPage === 'function') {
+        const totalPages = api.paginationGetTotalPages();
+        const targetPage = Math.min(currentPage, Math.max(totalPages - 1, 0));
+        api.paginationGoToPage(targetPage);
+      }
+      if (typeof api.ensureIndexVisible === 'function') {
+        api.ensureIndexVisible(firstRow, 'top');
+      }
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: windowScrollTop });
+      }
+      api.removeEventListener('modelUpdated', restorePosition);
+    };
+
+    api.addEventListener('modelUpdated', restorePosition);
+    if (typeof (api as any).refreshInfiniteCache === 'function') {
+      (api as any).refreshInfiniteCache();
+      return;
+    }
+    applyDatasource(api, createDataSource());
+  }, [applyDatasource, createDataSource]);
+
   // 게시판 목록 그리드를 초기화합니다.
   const handleGridReady = useCallback((event: GridReadyEvent<BoardData>) => {
     gridApiRef.current = event.api;
@@ -220,8 +380,6 @@ const BoardList = () => {
         <div className="col-12 grid-margin stretch-card">
           <div className="card">
             <div className="card-body">
-              <h4 className="card-title">검색 조건</h4>
-              <p className="card-description">게시판 목록 조회 조건을 입력하세요.</p>
               <form ref={formRef} onSubmit={handleSearch} className="forms-sample">
                 <div className="row">
                   <div className="col-md-3">
@@ -247,12 +405,14 @@ const BoardList = () => {
                     </div>
                   </div>
                 </div>
-                <button type="submit" className="btn btn-primary me-2" disabled={loading}>
-                  {loading ? '검색중...' : '검색'}
-                </button>
-                <button type="reset" className="btn btn-dark">
-                  초기화
-                </button>
+                <div className="d-flex justify-content-center gap-2">
+                  <button type="submit" className="btn btn-primary" disabled={loading}>
+                    {loading ? '검색중...' : '검색'}
+                  </button>
+                  <button type="reset" className="btn btn-dark">
+                    초기화
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -263,9 +423,7 @@ const BoardList = () => {
         <div className="col-lg-12 grid-margin stretch-card">
           <div className="card">
             <div className="card-body">
-              <h4 className="card-title">게시판 목록</h4>
-              <p className="card-description">조회 결과 목록입니다.</p>
-              <div className="ag-theme-alpine-dark" style={{ width: '100%' }}>
+              <div className="ag-theme-alpine-dark header-center" style={{ width: '100%' }}>
                 <AgGridReact<BoardData>
                   columnDefs={columnDefs}
                   defaultColDef={defaultColDef}
@@ -278,6 +436,11 @@ const BoardList = () => {
                   getRowId={(params) => String(params.data?.boardNo ?? '')}
                   onGridReady={handleGridReady}
                 />
+              </div>
+              <div className="d-flex justify-content-end mt-3">
+                <button type="button" className="btn btn-primary" onClick={handleOpenCreate}>
+                  등록
+                </button>
               </div>
             </div>
           </div>
@@ -305,7 +468,7 @@ const BoardList = () => {
                   <h2 className="modal-title w-100 text-center">
                     {selectedBoard?.title || '게시글 상세'}
                   </h2>
-                  <button type="button" className="btn btn-link text-white p-0 position-absolute end-0 me-3" aria-label="닫기" onClick={handleCloseDetail}>
+                  <button type="button" className="btn p-0 position-absolute end-0 me-3" aria-label="닫기" onClick={handleCloseDetail}>
                     <i className="fa fa-window-close" aria-hidden="true"></i>
                   </button>
                 </div>
@@ -343,6 +506,14 @@ const BoardList = () => {
                   )}
                 </div>
                 <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleOpenEdit}
+                    disabled={!selectedBoard}
+                  >
+                    수정
+                  </button>
                   <button type="button" className="btn btn-secondary" onClick={handleCloseDetail}>
                     닫기
                   </button>
@@ -354,6 +525,86 @@ const BoardList = () => {
             className="modal-backdrop fade show"
             style={{ position: 'fixed', inset: 0, zIndex: 1040 }}
             onClick={handleCloseDetail}
+          ></div>
+        </>
+      )}
+
+      {isEditModalOpen && (
+        <>
+          <div
+            className="modal fade show"
+            style={{
+              display: 'flex',
+              position: 'fixed',
+              inset: 0,
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1060,
+            }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="modal-dialog modal-lg" style={{ margin: 0, maxWidth: '90vw', width: '100%', maxHeight: '90vh' }}>
+              <div className="modal-content" style={{ height: '90vh', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <div className="modal-header position-relative">
+                  <h2 className="modal-title w-100 text-center">{isCreateMode ? '게시글 등록' : '게시글 수정'}</h2>
+                  <button type="button" className="btn p-0 position-absolute end-0 me-3" aria-label="닫기" onClick={handleCloseEdit}>
+                    <i className="fa fa-window-close" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <form className="modal-body" style={{ overflowY: 'auto', flex: 1 }} onSubmit={handleSubmitEdit}>
+                  {editError && <div className="text-danger mb-3">{editError}</div>}
+                  <div className="form-group mb-3">
+                    <label>게시판 상세 구분</label>
+                    <select
+                      name="boardDetailDivCd"
+                      className="form-select"
+                      value={editForm.boardDetailDivCd}
+                      onChange={handleEditChange}
+                    >
+                      <option value="">선택</option>
+                      {detailDivList.map((code) => (
+                        <option key={code.cd} value={code.cd}>{code.cdNm}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group mb-3">
+                    <label>타이틀</label>
+                    <input
+                      type="text"
+                      name="title"
+                      className="form-control"
+                      value={editForm.title}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+                  <div className="form-group mb-3">
+                    <label>본문</label>
+                    <ReactQuill
+                      theme="snow"
+                      className="board-editor"
+                      value={editForm.content}
+                      onChange={(value) => setEditForm((prev) => ({ ...prev, content: value }))}
+                      modules={quillModules}
+                      formats={quillFormats}
+                    />
+                  </div>
+                  <div className="modal-footer">
+                    <button type="submit" className="btn btn-primary" disabled={editSaving}>
+                      {editSaving ? '저장중...' : '저장'}
+                    </button>
+                    <button type="button" className="btn btn-secondary" onClick={handleCloseEdit}>
+                      닫기
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop fade show"
+            style={{ position: 'fixed', inset: 0, zIndex: 1055 }}
+            onClick={handleCloseEdit}
           ></div>
         </>
       )}

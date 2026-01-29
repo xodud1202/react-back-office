@@ -19,6 +19,11 @@ interface ResumeData {
   subTitle: string;
   regDt: string;
   udtDt: string;
+  base?: string;
+  introduce?: string;
+  experience?: string;
+  education?: string;
+  other?: string;
 }
 
 interface ResumeListResponse {
@@ -134,7 +139,7 @@ const ResumeList = () => {
     {
       headerName: '기본정보',
       field: 'base',
-      width: 100,
+      width: 120,
       cellRenderer: (params: ICellRendererParams<ResumeData>) => (
         <button type="button" onClick={() => params.data?.usrNo && handleOpenModal(params.data.usrNo)} className="btn btn-primary btn-sm">
           기본정보
@@ -144,7 +149,7 @@ const ResumeList = () => {
     {
       headerName: '자기소개',
       field: 'introduce',
-      width: 100,
+      width: 120,
       cellRenderer: (params: ICellRendererParams<ResumeData>) => (
         <button type="button" onClick={() => params.data?.usrNo && handleOpenIntroduceModal(params.data.usrNo)} className="btn btn-primary btn-sm">
           자기소개
@@ -184,13 +189,13 @@ const ResumeList = () => {
     {
       headerName: '등록일',
       field: 'regDt',
-      width: 140,
+      width: 180,
       valueFormatter: (params) => dateFormatter({ value: params.value } as any),
     },
     {
       headerName: '수정일',
       field: 'udtDt',
-      width: 140,
+      width: 180,
       valueFormatter: (params) => dateFormatter({ value: params.value } as any),
     },
   ], []);
@@ -206,7 +211,7 @@ const ResumeList = () => {
   const createDataSource = useCallback((): IDatasource => ({
     getRows: async (params: IGetRowsParams) => {
       const pageSize = 20;
-      const startRow = params.request?.startRow ?? params.startRow ?? 0;
+      const startRow = params.startRow ?? 0;
       const page = Math.floor(startRow / pageSize) + 1;
 
       setLoading(true);
@@ -268,8 +273,6 @@ const ResumeList = () => {
         <div className="col-12 grid-margin stretch-card">
           <div className="card">
             <div className="card-body">
-              <h4 className="card-title">검색 조건</h4>
-              <p className="card-description">이력서 목록 조회 조건을 입력하세요.</p>
               <form ref={formRef} onSubmit={handleSearch} className="forms-sample">
                 <div className="row">
                   <div className="col-md-2">
@@ -294,12 +297,14 @@ const ResumeList = () => {
                     </div>
                   </div>
                 </div>
-                <button type="submit" className="btn btn-primary me-2" disabled={loading}>
-                  {loading ? '검색중...' : '검색'}
-                </button>
-                <button type="reset" className="btn btn-dark">
-                  초기화
-                </button>
+                <div className="d-flex justify-content-center gap-2">
+                  <button type="submit" className="btn btn-primary" disabled={loading}>
+                    {loading ? '검색중...' : '검색'}
+                  </button>
+                  <button type="reset" className="btn btn-dark">
+                    초기화
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -312,7 +317,7 @@ const ResumeList = () => {
             <div className="card-body">
               <h4 className="card-title">이력서 목록</h4>
               <p className="card-description">조회 결과 목록입니다.</p>
-              <div className="ag-theme-alpine-dark" style={{ width: '100%' }}>
+              <div className="ag-theme-alpine-dark header-center" style={{ width: '100%' }}>
                 <AgGridReact<ResumeData>
                   columnDefs={columnDefs}
                   defaultColDef={defaultColDef}
