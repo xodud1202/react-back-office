@@ -1,5 +1,5 @@
 // pages/_app.tsx
-import '/styles/globals.css'
+import '../styles/globals.css'
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import 'react-quill-new/dist/quill.snow.css';
