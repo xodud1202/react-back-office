@@ -13,3 +13,25 @@ button {
 .board-editor .ql-editor {
   min-height: 300px;
 }
+
+@media screen and (max-width: 576px) {
+  .ag-theme-alpine-dark .ag-paging-panel {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    height: auto;
+  }
+
+  .ag-theme-alpine-dark .ag-paging-panel > * {
+    flex: 1 1 auto;
+  }
+
+  .ag-theme-alpine-dark .ag-paging-page-summary-panel {
+    order: 2;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .ag-theme-alpine-dark .ag-paging-button {
+    min-width: 28px;
+  }
+}

@@ -14,6 +14,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [userNm, setUserNm] = useState('');
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [resolvedMenuItems, setResolvedMenuItems] = useState<MenuItem[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     // 사용자명을 쿠키에서 조회합니다.
@@ -50,6 +51,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     };
   }, [router.asPath]);
 
+  useEffect(() => {
+    // 라우팅 변경 시 모바일 사이드바를 닫습니다.
+    setIsSidebarOpen(false);
+  }, [router.asPath]);
+
   // 로그아웃 처리 후 로그인 화면으로 이동합니다.
   const handleLogout = () => {
     localStorage.removeItem('refreshToken');
@@ -65,6 +71,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // 메뉴 접힘 상태를 토글합니다.
   const toggleMenu = (name: string) => {
     setOpenMenus((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  // 모바일 화면에서 사이드바를 닫습니다.
+  const closeSidebarOnMobile = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 992) {
+      setIsSidebarOpen(false);
+    }
   };
 
   // 템플릿 구조에 맞춰 메뉴를 재귀적으로 렌더링합니다.
@@ -107,7 +120,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               </div>
             </>
           ) : (
-            <Link className="nav-link" href={item.menuUrl}>
+            <Link className="nav-link" href={item.menuUrl} onClick={closeSidebarOnMobile}>
               {level === 0 ? (
                 <>
                   <span className="menu-icon">
@@ -127,7 +140,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   return (
     <div className="container-scroller">
-      <nav className="sidebar sidebar-offcanvas" id="sidebar">
+      <nav className={`sidebar sidebar-offcanvas ${isSidebarOpen ? 'active' : ''}`} id="sidebar">
         <div className="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
           <Link className="sidebar-brand brand-logo" href="/main">
             <img src="https://image.xodud1202.kro.kr/publist/HDD1/Media/nas/upload/common/xodud1202_logo.png" alt="logo" />
@@ -183,7 +196,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 </button>
               </li>
             </ul>
-            <button className="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+            <button
+              className="navbar-toggler navbar-toggler-right d-lg-none align-self-center"
+              type="button"
+              onClick={() => setIsSidebarOpen((prev) => !prev)}
+            >
               <span className="mdi mdi-format-line-spacing"></span>
             </button>
           </div>
