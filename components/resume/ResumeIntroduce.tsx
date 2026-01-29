@@ -118,9 +118,8 @@ const ResumeIntroduce: React.FC<ResumeIntroduceProps> = ({ usrNo, onClose }) => 
     toolbarOptions: quillToolbarOptions,
     formats: quillFormatsOptions,
     onChange: (value) => setFormData((prev) => ({
-      usrNo,
-      introduce: value,
       ...(prev || {}),
+      usrNo,
       introduce: value,
     })),
   });
