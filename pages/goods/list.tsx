@@ -1,114 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '@/utils/axios/axios';
 import { dateFormatter } from '@/utils/common';
-import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, GridApi, GridReadyEvent, IDatasource, IGetRowsParams, ICellRendererParams, RowDragEndEvent, CellValueChangedEvent, CellEditingStoppedEvent, CellFocusedEvent } from 'ag-grid-community';
-import Modal from '@/components/common/Modal';
 import { getCookie } from 'cookies-next';
-
-// 상품 목록 데이터 타입 정의
-interface GoodsData {
-  goodsId: string;
-  erpStyleCd: string;
-  goodsNm: string;
-  goodsStatCd: string;
-  goodsStatNm: string;
-  goodsDivCd: string;
-  goodsDivNm: string;
-  showYn: string;
-  regDt: string;
-  udtDt: string;
-}
-
-interface CommonCode {
-  grpCd: string;
-  cd: string;
-  cdNm: string;
-  dispOrd: number;
-}
-
-interface GoodsMerch {
-  goodsMerchId: string;
-  goodsMerchNm: string;
-}
-
-interface GoodsDetail {
-  goodsId: string;
-  goodsDivCd: string;
-  goodsStatCd: string;
-  goodsNm: string;
-  goodsGroupId: string;
-  goodsMerchId: string;
-  supplyAmt: number | string;
-  saleAmt: number | string;
-  showYn: string;
-  erpSupplyAmt: number | string;
-  erpCostAmt: number | string;
-  erpStyleCd: string;
-  erpColorCd: string;
-  erpMerchCd: string;
-}
-
-interface GoodsSizeRow {
-  rowKey: string;
-  goodsId: string;
-  sizeId: string;
-  originSizeId?: string;
-  stockQty: number | string;
-  addAmt: number | string;
-  erpSyncYn: string;
-  erpSizeCd: string;
-  dispOrd: number | string;
-  delYn?: string;
-  isNew: boolean;
-}
-
-interface GoodsSizeApi {
-  goodsId: string;
-  sizeId: string;
-  stockQty: number;
-  addAmt: number;
-  erpSyncYn: string;
-  erpSizeCd: string;
-  dispOrd: number;
-  delYn: string;
-}
-
-interface CategoryOption {
-  categoryId: string;
-  parentCategoryId: string;
-  categoryLevel: number;
-  categoryNm: string;
-  dispOrd: number;
-}
-
-interface GoodsCategoryApi {
-  goodsId: string;
-  categoryId: string;
-  level1Id: string | null;
-  level2Id: string | null;
-  level3Id: string | null;
-  dispOrd: number;
-}
-
-interface CategoryRow {
-  rowKey: string;
-  level1Id: string;
-  level2Id: string;
-  level3Id: string;
-  level2Options: CategoryOption[];
-  level3Options: CategoryOption[];
-  level2Disabled: boolean;
-  level3Disabled: boolean;
-  originCategoryId?: string;
-}
-
-interface GoodsListResponse {
-  list: GoodsData[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-}
+import GoodsSearchForm from '@/components/goods/GoodsSearchForm';
+import GoodsListGrid from '@/components/goods/GoodsListGrid';
+import GoodsEditModal from '@/components/goods/GoodsEditModal';
+import type { CategoryOption, CategoryRow, CommonCode, GoodsCategoryApi, GoodsData, GoodsDetail, GoodsListResponse, GoodsMerch, GoodsSizeApi, GoodsSizeRow } from '@/components/goods/types';
+import { formatNumber, normalizeNumberInput, parseNumber } from '@/components/goods/utils';
 
 const GoodsList = () => {
   // 공통코드 및 상태값 목록을 저장합니다.
@@ -130,30 +29,6 @@ const GoodsList = () => {
   const [searchParams, setSearchParams] = useState<Record<string, any>>({});
   const gridApiRef = useRef<GridReadyEvent<GoodsData>['api'] | null>(null);
   const sizeRowSeqRef = useRef(0);
-
-  // 숫자 입력에서 숫자만 추출합니다.
-  const normalizeNumberInput = useCallback((value: string) => value.replace(/[^0-9]/g, ''), []);
-
-  // 숫자 값을 천 단위 콤마로 표시합니다.
-  const formatNumber = useCallback((value: number | string | null | undefined) => {
-    if (value === null || value === undefined) {
-      return '';
-    }
-    const digits = String(value).replace(/[^0-9]/g, '');
-    if (digits === '') {
-      return '';
-    }
-    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  }, []);
-
-  // 숫자 문자열을 숫자로 변환합니다.
-  const parseNumber = useCallback((value: number | string | null | undefined) => {
-    if (value === null || value === undefined) {
-      return null;
-    }
-    const digits = String(value).replace(/[^0-9]/g, '');
-    return digits === '' ? null : Number(digits);
-  }, []);
 
   // 로그인 사용자 번호를 쿠키에서 조회합니다.
   const resolveLoginUsrNo = useCallback(() => {
@@ -1013,344 +888,54 @@ const GoodsList = () => {
         </nav>
       </div>
 
-      <div className="row">
-        <div className="col-12 grid-margin stretch-card">
-          <div className="card">
-            <div className="card-body">
-              <form ref={formRef} onSubmit={handleSearch} onReset={handleReset} className="forms-sample">
-                <div className="row">
-                  <div className="col-md-2">
-                    <div className="form-group">
-                      <label>검색 구분</label>
-                      <select name="searchGb" defaultValue="goodsId" className="form-select">
-                        <option value="goodsId">상품코드</option>
-                        <option value="erpStyleCd">ERP품번코드</option>
-                        <option value="goodsNm">상품명</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="form-group">
-                      <label>검색어</label>
-                      <input
-                        type="text"
-                        name="searchValue"
-                        className="form-control"
-                        placeholder="검색어를 입력하세요"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-2">
-                    <div className="form-group">
-                      <label>상품상태</label>
-                      <select name="goodsStatCd" defaultValue="" className="form-select">
-                        <option value="">전체</option>
-                        {goodsStatList.map((item) => (
-                          <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-md-2">
-                    <div className="form-group">
-                      <label>상품분류</label>
-                      <select name="goodsDivCd" defaultValue="" className="form-select">
-                        <option value="">전체</option>
-                        {goodsDivList.map((item) => (
-                          <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-md-2">
-                    <div className="form-group">
-                      <label>노출여부</label>
-                      <select name="showYn" defaultValue="" className="form-select">
-                        <option value="">전체</option>
-                        <option value="Y">Y</option>
-                        <option value="N">N</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div className="d-flex justify-content-center gap-2">
-                  <button type="submit" className="btn btn-primary" disabled={loading}>
-                    {loading ? '검색중...' : '검색'}
-                  </button>
-                  <button type="reset" className="btn btn-dark">
-                    초기화
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
+      <GoodsSearchForm
+        goodsStatList={goodsStatList}
+        goodsDivList={goodsDivList}
+        loading={loading}
+        formRef={formRef}
+        onSearch={handleSearch}
+        onReset={handleReset}
+      />
 
-      <div className="row">
-        <div className="col-lg-12 grid-margin stretch-card">
-          <div className="card">
-            <div className="card-body">
-              <div className="ag-theme-alpine-dark header-center" style={{ width: '100%' }}>
-                <AgGridReact<GoodsData>
-                  columnDefs={columnDefs}
-                  defaultColDef={defaultColDef}
-                  domLayout="autoHeight"
-                  overlayNoRowsTemplate="데이터가 없습니다."
-                  rowModelType="infinite"
-                  cacheBlockSize={20}
-                  pagination
-                  paginationPageSize={20}
-                  getRowId={(params) => String(params.data?.goodsId ?? '')}
-                  onGridReady={handleGridReady}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <GoodsListGrid
+        columnDefs={columnDefs}
+        defaultColDef={defaultColDef}
+        onGridReady={handleGridReady}
+      />
 
-      <Modal
+      <GoodsEditModal
         isOpen={isEditModalOpen}
         onClose={closeEditModal}
-        title="상품정보 수정"
-        width="80vw"
-        footerActions={(
-          <button
-            type="submit"
-            form="goods-edit-form"
-            className="btn btn-primary"
-            disabled={editSaving || editLoading || !editForm}
-          >
-            {editSaving ? '저장중...' : '저장'}
-          </button>
-        )}
-      >
-        {editLoading || !editForm ? (
-          <div className="text-center">로딩중...</div>
-        ) : (
-          <>
-            <form id="goods-edit-form" onSubmit={handleEditSubmit} className="forms-sample">
-            <div className="row">
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label>상품코드</label>
-                  <input name="goodsId" type="text" className="form-control" value={editForm.goodsId || ''} disabled />
-                </div>
-              </div>
-                <div className="col-md-4">
-                <div className="form-group">
-                  <label>ERP 품번코드</label>
-                  <input name="erpStyleCd" type="text" className="form-control" value={editForm.erpStyleCd || ''} onChange={handleEditChange} disabled />
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label>상품그룹코드 <span className="text-danger">*</span></label>
-                  <input name="goodsGroupId" type="text" className="form-control" value={editForm.goodsGroupId || ''} onChange={handleEditChange} required />
-                </div>
-              </div>
-            </div>
-
-            <div className="row">
-              <div className="col-md-12">
-                <div className="form-group">
-                  <label>상품명 <span className="text-danger">*</span></label>
-                  <input name="goodsNm" type="text" className="form-control" value={editForm.goodsNm || ''} onChange={handleEditChange} required />
-                </div>
-              </div>
-            </div>
-
-            <div className="row">
-                <div className="col-md-3">
-                <div className="form-group">
-                  <label>상품분류 <span className="text-danger">*</span></label>
-                  <select name="goodsMerchId" className="form-select" value={editForm.goodsMerchId || ''} onChange={handleEditChange} required>
-                    <option value="">선택</option>
-                    {goodsMerchList.map((item) => (
-                      <option key={item.goodsMerchId} value={item.goodsMerchId}>{item.goodsMerchNm}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label>상품구분 <span className="text-danger">*</span></label>
-                  <select name="goodsDivCd" className="form-select" value={editForm.goodsDivCd || ''} onChange={handleEditChange} required>
-                    <option value="">선택</option>
-                    {goodsDivList.map((item) => (
-                      <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label>상품상태 <span className="text-danger">*</span></label>
-                  <select name="goodsStatCd" className="form-select" value={editForm.goodsStatCd || ''} onChange={handleEditChange} required>
-                    <option value="">선택</option>
-                    {goodsStatList.map((item) => (
-                      <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label>노출여부 <span className="text-danger">*</span></label>
-                  <select name="showYn" className="form-select" value={editForm.showYn || ''} onChange={handleEditChange} required>
-                    <option value="">선택</option>
-                    <option value="Y">Y</option>
-                    <option value="N">N</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="row">
-                <div className="col-md-4">
-                <div className="form-group">
-                  <label>공급가 <span className="text-danger">*</span></label>
-                  <input name="supplyAmt" type="text" className="form-control" value={formatNumber(editForm.supplyAmt ?? '')} onChange={handleEditNumberChange('supplyAmt')} onBlur={handleEditNumberBlur('supplyAmt')} required />
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label>판매가 <span className="text-danger">*</span></label>
-                  <input name="saleAmt" type="text" className="form-control" value={formatNumber(editForm.saleAmt ?? '')} onChange={handleEditNumberChange('saleAmt')} onBlur={handleEditNumberBlur('saleAmt')} required />
-                </div>
-              </div>
-            </div>
-
-            <div className="row">
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label>ERP 공급가</label>
-                  <input name="erpSupplyAmt" type="text" className="form-control" value={formatNumber(editForm.erpSupplyAmt ?? '')} onChange={handleEditNumberChange('erpSupplyAmt')} disabled />
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label>ERP 원가</label>
-                  <input name="erpCostAmt" type="text" className="form-control" value={formatNumber(editForm.erpCostAmt ?? '')} onChange={handleEditNumberChange('erpCostAmt')} disabled />
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label>ERP 컬러코드</label>
-                  <input name="erpColorCd" type="text" className="form-control" value={editForm.erpColorCd || ''} onChange={handleEditChange} disabled />
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label>ERP 상품구분코드</label>
-                  <input name="erpMerchCd" type="text" className="form-control" value={editForm.erpMerchCd || ''} onChange={handleEditChange} disabled />
-                </div>
-              </div>
-            </div>
-          </form>
-            <div className="mt-4">
-              <div className="d-flex align-items-center justify-content-between mb-2">
-                <h5 className="mb-0">카테고리</h5>
-                <button type="button" className="btn btn-sm btn-secondary" onClick={handleAddCategoryRow}>
-                  추가
-                </button>
-              </div>
-              {categoryLoading ? (
-                <div className="text-center">카테고리 로딩중...</div>
-              ) : (
-                <div className="d-flex flex-column gap-2">
-                  {categoryRows.length === 0 ? (
-                    <div className="text-muted">등록된 카테고리가 없습니다.</div>
-                  ) : (
-                    categoryRows.map((row) => (
-                      <div key={row.rowKey} className="row">
-                        <div className="col-md-3">
-                          <select
-                            className="form-select"
-                            value={row.level1Id}
-                            onChange={(e) => handleCategoryLevel1Change(row.rowKey, e.target.value)}
-                          >
-                            <option value="">1차 카테고리</option>
-                            {categoryLevel1Options.map((item) => (
-                              <option key={item.categoryId} value={item.categoryId}>{item.categoryNm}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="col-md-3">
-                          <select
-                            className="form-select"
-                            value={row.level2Id}
-                            onChange={(e) => handleCategoryLevel2Change(row.rowKey, e.target.value)}
-                            disabled={row.level2Disabled}
-                          >
-                            <option value="">2차 카테고리</option>
-                            {row.level2Options.map((item) => (
-                              <option key={item.categoryId} value={item.categoryId}>{item.categoryNm}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="col-md-3">
-                          <select
-                            className="form-select"
-                            value={row.level3Id}
-                            onChange={(e) => handleCategoryLevel3Change(row.rowKey, e.target.value)}
-                            disabled={row.level3Disabled}
-                          >
-                            <option value="">3차 카테고리</option>
-                            {row.level3Options.map((item) => (
-                              <option key={item.categoryId} value={item.categoryId}>{item.categoryNm}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="col-md-3 d-flex gap-2">
-                          <button type="button" className="btn btn-sm btn-primary" onClick={() => handleSaveCategoryRow(row.rowKey)}>
-                            저장
-                          </button>
-                          <button type="button" className="btn btn-sm btn-danger" onClick={() => handleDeleteCategoryRow(row.rowKey)}>
-                            삭제
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-4">
-              <div className="d-flex align-items-center justify-content-between mb-2">
-                <h5 className="mb-0">사이즈 및 재고</h5>
-                <div className="d-flex gap-2">
-                  <button type="button" className="btn btn-sm btn-secondary" onClick={handleAddGoodsSizeRow}>
-                    사이즈 추가
-                  </button>
-                </div>
-              </div>
-              {goodsSizeLoading ? (
-                <div className="text-center">사이즈 로딩중...</div>
-              ) : (
-                <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '150px' }}>
-                  <AgGridReact<GoodsSizeRow>
-                    columnDefs={sizeColumnDefs}
-                    defaultColDef={defaultColDef}
-                    rowData={goodsSizeRows}
-                    domLayout="normal"
-                    overlayNoRowsTemplate="데이터가 없습니다."
-                    getRowId={(params) => String(params.data?.rowKey ?? '')}
-                    rowDragManaged
-                    animateRows
-                    stopEditingWhenCellsLoseFocus
-                    onRowDragEnd={handleSizeRowDragEnd}
-                    onCellValueChanged={handleSizeCellValueChanged}
-                    onCellEditingStopped={handleSizeCellEditingStopped}
-                    onCellFocused={handleSizeCellFocused}
-                  />
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </Modal>
+        editLoading={editLoading}
+        editSaving={editSaving}
+        editForm={editForm}
+        goodsStatList={goodsStatList}
+        goodsDivList={goodsDivList}
+        goodsMerchList={goodsMerchList}
+        onSubmit={handleEditSubmit}
+        onEditChange={handleEditChange}
+        onEditNumberChange={handleEditNumberChange}
+        onEditNumberBlur={handleEditNumberBlur}
+        formatNumber={formatNumber}
+        categoryRows={categoryRows}
+        categoryLevel1Options={categoryLevel1Options}
+        categoryLoading={categoryLoading}
+        onAddCategoryRow={handleAddCategoryRow}
+        onCategoryLevel1Change={handleCategoryLevel1Change}
+        onCategoryLevel2Change={handleCategoryLevel2Change}
+        onCategoryLevel3Change={handleCategoryLevel3Change}
+        onSaveCategoryRow={handleSaveCategoryRow}
+        onDeleteCategoryRow={handleDeleteCategoryRow}
+        goodsSizeRows={goodsSizeRows}
+        goodsSizeLoading={goodsSizeLoading}
+        sizeColumnDefs={sizeColumnDefs}
+        defaultColDef={defaultColDef}
+        onAddGoodsSizeRow={handleAddGoodsSizeRow}
+        onSizeRowDragEnd={handleSizeRowDragEnd}
+        onSizeCellValueChanged={handleSizeCellValueChanged}
+        onSizeCellEditingStopped={handleSizeCellEditingStopped}
+        onSizeCellFocused={handleSizeCellFocused}
+      />
     </>
   );
 };
