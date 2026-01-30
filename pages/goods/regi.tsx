@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GetServerSideProps, GetServerSidePropsContext } from 'next';
-import { getCookie } from 'cookies-next';
 import api from '@/utils/axios/axios';
+import { getLoginUsrNo } from '@/utils/auth';
+import { fetchSSRList } from '@/utils/ssrFetch';
 
 interface CommonCode {
   grpCd: string;
@@ -23,41 +24,10 @@ interface GoodsRegiProps {
 
 // SSR에서 상품 등록 화면의 기본 옵션 데이터를 조회합니다.
 export const getServerSideProps: GetServerSideProps<GoodsRegiProps> = async (ctx: GetServerSidePropsContext) => {
-  const host = ctx.req.headers.host;
-  const protocol = (ctx.req.headers['x-forwarded-proto'] as string) || 'http';
-  const backendUrl = process.env.BACKEND_URL || (host ? `${protocol}://${host}` : '');
-  const accessToken = (getCookie('accessToken', ctx) as string) ?? '';
-  const cookieHeader = ctx.req.headers.cookie;
-
-  const headers: Record<string, string> = {};
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-  if (cookieHeader) {
-    headers.Cookie = cookieHeader;
-  }
-
-  // 공통코드/분류 데이터를 병렬로 조회합니다.
-  const fetchJson = async <T,>(url: string): Promise<T[]> => {
-    if (!backendUrl) {
-      return [];
-    }
-    try {
-      const response = await fetch(`${backendUrl}${url}`, { headers });
-      if (!response.ok) {
-        return [];
-      }
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    } catch (e) {
-      return [];
-    }
-  };
-
   const [goodsStatList, goodsDivList, goodsMerchList] = await Promise.all([
-    fetchJson<CommonCode>(`/api/admin/common/code?grpCd=${encodeURIComponent('GOODS_STAT')}`),
-    fetchJson<CommonCode>(`/api/admin/common/code?grpCd=${encodeURIComponent('GOODS_DIV')}`),
-    fetchJson<GoodsMerch>('/api/admin/goods/merch/list'),
+    fetchSSRList<CommonCode>(ctx, `/api/admin/common/code?grpCd=${encodeURIComponent('GOODS_STAT')}`),
+    fetchSSRList<CommonCode>(ctx, `/api/admin/common/code?grpCd=${encodeURIComponent('GOODS_DIV')}`),
+    fetchSSRList<GoodsMerch>(ctx, '/api/admin/goods/merch/list'),
   ]);
 
   return {
@@ -75,16 +45,6 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
   const [goodsStatList, setGoodsStatList] = useState<CommonCode[]>(initialGoodsStatList || []);
   const [goodsDivList, setGoodsDivList] = useState<CommonCode[]>(initialGoodsDivList || []);
   const [goodsMerchList, setGoodsMerchList] = useState<GoodsMerch[]>(initialGoodsMerchList || []);
-
-  // 로그인 사용자 번호를 쿠키에서 조회합니다.
-  const resolveLoginUsrNo = useCallback(() => {
-    const cookieValue = getCookie('usrNo', { path: '/' });
-    if (typeof cookieValue === 'string' && cookieValue.trim() !== '') {
-      const parsed = Number(cookieValue);
-      return Number.isNaN(parsed) ? null : parsed;
-    }
-    return null;
-  }, []);
 
   // 상품 상태 공통코드를 조회합니다.
   const fetchGoodsStatList = useCallback(async () => {
@@ -148,7 +108,7 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
       return;
     }
 
-    const regNo = resolveLoginUsrNo();
+    const regNo = getLoginUsrNo();
     if (!regNo) {
       alert('로그인 정보를 확인할 수 없습니다.');
       return;

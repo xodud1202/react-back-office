@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { getCookie } from 'cookies-next';
 import api from '@/utils/axios/axios';
 import { dateFormatter } from '@/utils/common';
+import { getLoginUsrNo } from '@/utils/auth';
 import useQuillImageUpload from '@/hooks/useQuillImageUpload';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams, IDatasource, IGetRowsParams } from 'ag-grid-community';
@@ -101,16 +101,6 @@ const BoardList = () => {
   );
 
   // 기본 에디터 설정을 사용합니다.
-
-  // 로그인 사용자 번호를 쿠키에서 조회합니다.
-  const resolveLoginUsrNo = useCallback(() => {
-    const cookieValue = getCookie('usrNo', { path: '/' });
-    if (typeof cookieValue === 'string' && cookieValue.trim() !== '') {
-      const parsed = Number(cookieValue);
-      return Number.isNaN(parsed) ? null : parsed;
-    }
-    return null;
-  }, []);
 
   // 에디터 이미지 업로드 및 붙여넣기 처리를 공통 훅으로 연결합니다.
   const {
@@ -243,7 +233,7 @@ const BoardList = () => {
     if (!isCreateMode && !editForm.boardNo) {
       return;
     }
-    const usrNo = resolveLoginUsrNo();
+    const usrNo = getLoginUsrNo();
     if (!usrNo) {
       setEditError('로그인 사용자 정보를 확인할 수 없습니다.');
       return;
@@ -284,7 +274,7 @@ const BoardList = () => {
     if (!boardNo) {
       return;
     }
-    const usrNo = resolveLoginUsrNo();
+    const usrNo = getLoginUsrNo();
     if (!usrNo) {
       alert('로그인 사용자 정보를 확인할 수 없습니다.');
       return;
