@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import api from '@/utils/axios/axios';
 import { dateFormatter } from '@/utils/common';
 import { AgGridReact } from 'ag-grid-react';
-import type { ColDef, GridApi, GridReadyEvent, IDatasource, IGetRowsParams, ICellRendererParams } from 'ag-grid-community';
+import type { ColDef, GridApi, GridReadyEvent, IDatasource, IGetRowsParams, ICellRendererParams, RowDragEndEvent, CellValueChangedEvent, CellEditingStoppedEvent, CellFocusedEvent } from 'ag-grid-community';
 import Modal from '@/components/common/Modal';
 import { getCookie } from 'cookies-next';
 
@@ -284,10 +284,26 @@ const GoodsList = () => {
     setEditForm((prev) => (prev ? { ...prev, [field]: nextValue } : prev));
   }, [normalizeNumberInput]);
 
-  // 상품 사이즈 입력값을 갱신합니다.
-  const handleGoodsSizeChange = useCallback((rowKey: string, field: keyof GoodsSizeRow, value: string) => {
-    setGoodsSizeRows((prev) => prev.map((row) => (row.rowKey === rowKey ? { ...row, [field]: value } : row)));
+  // 숫자 입력에서 빈 값일 때 0으로 보정합니다.
+  const handleEditNumberBlur = useCallback((field: keyof GoodsDetail) => () => {
+    setEditForm((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      const value = prev[field];
+      if (value === '' || value === null || value === undefined) {
+        return { ...prev, [field]: '0' };
+      }
+      return prev;
+    });
   }, []);
+
+  // 상품 사이즈 입력값을 갱신합니다.
+  // 상품 사이즈 순서 정보를 계산합니다.
+  const buildGoodsSizeOrders = useCallback((rows: GoodsSizeRow[]) => rows.map((row, index) => ({
+    sizeId: row.isNew ? row.sizeId : (row.originSizeId || row.sizeId),
+    dispOrd: index + 1,
+  })), []);
 
   // 상품 사이즈 행을 삭제합니다.
   const handleDeleteGoodsSizeRow = useCallback(async (rowKey: string) => {
@@ -321,6 +337,86 @@ const GoodsList = () => {
     }
   }, [fetchGoodsSizeList, goodsSizeRows, resolveLoginUsrNo, selectedGoodsId]);
 
+  // 상품 사이즈 순서를 저장합니다.
+  const saveGoodsSizeOrder = useCallback(async (rows: GoodsSizeRow[], showAlert: boolean) => {
+    if (!selectedGoodsId) {
+      if (showAlert) {
+        alert('상품코드를 확인해주세요.');
+      }
+      return;
+    }
+    const loginUsrNo = resolveLoginUsrNo();
+    if (!loginUsrNo) {
+      if (showAlert) {
+        alert('로그인 정보를 확인할 수 없습니다.');
+      }
+      return;
+    }
+    const orders = buildGoodsSizeOrders(rows);
+    if (orders.some((order) => !order.sizeId || order.sizeId.trim() === '')) {
+      if (showAlert) {
+        alert('사이즈코드를 확인해주세요.');
+      }
+      return;
+    }
+    try {
+      await api.post('/api/admin/goods/size/order/save', {
+        goodsId: selectedGoodsId,
+        udtNo: loginUsrNo,
+        orders,
+      });
+      if (showAlert) {
+        alert('사이즈 순서가 저장되었습니다.');
+      }
+    } catch (e: any) {
+      console.error('사이즈 순서 저장에 실패했습니다.');
+      const message = e?.response?.data?.message;
+      if (showAlert) {
+        alert(message || '사이즈 순서 저장에 실패했습니다.');
+      }
+    }
+  }, [buildGoodsSizeOrders, fetchGoodsSizeList, resolveLoginUsrNo, selectedGoodsId]);
+
+  // 드래그 후 순서 변경을 반영합니다.
+  const handleSizeRowDragEnd = useCallback((event: RowDragEndEvent<GoodsSizeRow>) => {
+    const api = event.api;
+    const rowCount = api.getDisplayedRowCount();
+    const nextRows: GoodsSizeRow[] = [];
+    for (let i = 0; i < rowCount; i += 1) {
+      const node = api.getDisplayedRowAtIndex(i);
+      if (node?.data) {
+        nextRows.push({ ...node.data, dispOrd: i + 1 });
+      }
+    }
+    setGoodsSizeRows(nextRows);
+    saveGoodsSizeOrder(nextRows, false);
+  }, [saveGoodsSizeOrder]);
+
+  const handleSizeCellValueChanged = useCallback((event: CellValueChangedEvent<GoodsSizeRow>) => {
+    const rowKey = event.data?.rowKey;
+    if (!rowKey) {
+      return;
+    }
+    setGoodsSizeRows((prev) => prev.map((row) => (row.rowKey === rowKey ? { ...row, ...event.data } : row)));
+  }, []);
+
+  // 셀 편집 종료 시 편집 스타일을 정리합니다.
+  const handleSizeCellEditingStopped = useCallback((event: CellEditingStoppedEvent<GoodsSizeRow>) => {
+    event.api.refreshCells({
+      rowNodes: [event.node],
+      columns: [event.column.getColId()],
+      force: true,
+    });
+  }, []);
+
+  // 그리드 외부 클릭 시 편집 상태를 종료합니다.
+  const handleSizeCellFocused = useCallback((event: CellFocusedEvent) => {
+    if (event.rowIndex == null) {
+      event.api.stopEditing();
+      event.api.clearFocusedCell();
+    }
+  }, []);
+
   // 상품 사이즈 저장 요청을 처리합니다.
   const handleSaveGoodsSizeRow = useCallback(async (rowKey: string) => {
     const row = goodsSizeRows.find((item) => item.rowKey === rowKey);
@@ -331,9 +427,9 @@ const GoodsList = () => {
       alert('사이즈코드를 입력해주세요.');
       return;
     }
-    const stockQtyValue = parseNumber(row.stockQty);
-    const addAmtValue = parseNumber(row.addAmt);
-    const dispOrdValue = parseNumber(row.dispOrd) ?? 0;
+    const stockQtyValue = parseNumber(row.stockQty) ?? 0;
+    const addAmtValue = parseNumber(row.addAmt) ?? 0;
+    const dispOrdValue = goodsSizeRows.findIndex((item) => item.rowKey === rowKey) + 1;
     if (stockQtyValue === null) {
       alert('재고를 입력해주세요.');
       return;
@@ -364,7 +460,7 @@ const GoodsList = () => {
       addAmt: addAmtValue,
       erpSyncYn: row.erpSyncYn,
       erpSizeCd: row.erpSizeCd?.trim(),
-      dispOrd: dispOrdValue,
+      dispOrd: dispOrdValue <= 0 ? 0 : dispOrdValue,
       regNo: row.isNew ? loginUsrNo : undefined,
       udtNo: loginUsrNo,
     };
@@ -372,15 +468,30 @@ const GoodsList = () => {
     try {
       await api.post('/api/admin/goods/size/save', requestBody);
       alert('상품 사이즈가 저장되었습니다.');
-      if (selectedGoodsId) {
-        fetchGoodsSizeList(selectedGoodsId);
-      }
+      setGoodsSizeRows((prev) => prev.map((item) => {
+        if (item.rowKey !== rowKey) {
+          return item;
+        }
+        return {
+          ...item,
+          goodsId: requestBody.goodsId,
+          sizeId: requestBody.sizeId,
+          originSizeId: requestBody.sizeId,
+          stockQty: stockQtyValue,
+          addAmt: addAmtValue,
+          erpSyncYn: requestBody.erpSyncYn,
+          erpSizeCd: requestBody.erpSizeCd ?? '',
+          dispOrd: dispOrdValue <= 0 ? 0 : dispOrdValue,
+          delYn: 'N',
+          isNew: false,
+        };
+      }));
     } catch (e: any) {
       console.error('상품 사이즈 저장에 실패했습니다.');
       const message = e?.response?.data?.message;
       alert(message || '상품 사이즈 저장에 실패했습니다.');
     }
-  }, [fetchGoodsSizeList, goodsSizeRows, resolveLoginUsrNo, selectedGoodsId]);
+  }, [goodsSizeRows, resolveLoginUsrNo]);
 
   // 수정 내용을 저장합니다.
   const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -402,11 +513,11 @@ const GoodsList = () => {
       goodsDivCd: editForm.goodsDivCd,
       goodsMerchId: editForm.goodsMerchId,
       goodsGroupId: editForm.goodsGroupId?.trim(),
-      supplyAmt: parseNumber(editForm.supplyAmt),
-      saleAmt: parseNumber(editForm.saleAmt),
+      supplyAmt: parseNumber(editForm.supplyAmt) ?? 0,
+      saleAmt: parseNumber(editForm.saleAmt) ?? 0,
       showYn: editForm.showYn,
-      erpSupplyAmt: parseNumber(editForm.erpSupplyAmt),
-      erpCostAmt: parseNumber(editForm.erpCostAmt),
+      erpSupplyAmt: parseNumber(editForm.erpSupplyAmt) ?? 0,
+      erpCostAmt: parseNumber(editForm.erpCostAmt) ?? 0,
       erpStyleCd: editForm.erpStyleCd?.trim(),
       erpColorCd: editForm.erpColorCd?.trim(),
       erpMerchCd: editForm.erpMerchCd?.trim(),
@@ -477,108 +588,53 @@ const GoodsList = () => {
   // 상품 사이즈 그리드 컬럼을 정의합니다.
   const sizeColumnDefs = useMemo<ColDef<GoodsSizeRow>[]>(() => [
     {
-      headerName: '노출순서',
-      field: 'dispOrd',
-      width: 120,
-      cellRenderer: (params: ICellRendererParams<GoodsSizeRow>) => (
-        <input
-          type="number"
-          className="form-control"
-          value={params.data?.dispOrd ?? ''}
-          onChange={(e) => handleGoodsSizeChange(params.data?.rowKey || '', 'dispOrd', normalizeNumberInput(e.target.value))}
-        />
-      ),
+      headerName: '',
+      field: 'rowKey',
+      width: 50,
+      rowDrag: true,
     },
     {
       headerName: '사이즈코드',
       field: 'sizeId',
       width: 120,
-      cellRenderer: (params: ICellRendererParams<GoodsSizeRow>) => (
-        <input
-          type="text"
-          className="form-control"
-          value={params.data?.sizeId ?? ''}
-          onChange={(e) => handleGoodsSizeChange(params.data?.rowKey || '', 'sizeId', e.target.value)}
-        />
-      ),
+      editable: true,
     },
     {
       headerName: '재고',
       field: 'stockQty',
       width: 120,
-      cellRenderer: (params: ICellRendererParams<GoodsSizeRow>) => {
-        const row = params.data;
-        const disabled = row?.erpSyncYn !== 'N';
-        return (
-          <input
-            type="number"
-            className="form-control"
-            value={row?.stockQty ?? ''}
-            onChange={(e) => handleGoodsSizeChange(row?.rowKey || '', 'stockQty', normalizeNumberInput(e.target.value))}
-            disabled={disabled}
-          />
-        );
+      editable: (params) => params.data?.erpSyncYn === 'N',
+      valueParser: (params) => {
+        const parsed = normalizeNumberInput(params.newValue ?? '');
+        return parsed === '' ? '0' : parsed;
       },
     },
     {
       headerName: '추가금액',
       field: 'addAmt',
       width: 120,
-      cellRenderer: (params: ICellRendererParams<GoodsSizeRow>) => (
-        <input
-          type="text"
-          className="form-control"
-          value={formatNumber(params.data?.addAmt ?? '')}
-          onChange={(e) => handleGoodsSizeChange(params.data?.rowKey || '', 'addAmt', normalizeNumberInput(e.target.value))}
-        />
-      ),
+      editable: true,
+      valueFormatter: (params) => formatNumber(params.value),
+      valueParser: (params) => {
+        const parsed = normalizeNumberInput(params.newValue ?? '');
+        return parsed === '' ? '0' : parsed;
+      },
     },
     {
       headerName: 'ERP연동',
       field: 'erpSyncYn',
       width: 120,
-      cellRenderer: (params: ICellRendererParams<GoodsSizeRow>) => (
-        <select
-          className="form-select"
-          value={params.data?.erpSyncYn ?? 'Y'}
-          onChange={(e) => handleGoodsSizeChange(params.data?.rowKey || '', 'erpSyncYn', e.target.value)}
-        >
-          <option value="Y">Y</option>
-          <option value="N">N</option>
-        </select>
-      ),
+      editable: true,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: {
+        values: ['Y', 'N'],
+      },
     },
     {
       headerName: 'ERP사이즈코드',
       field: 'erpSizeCd',
       width: 150,
-      cellRenderer: (params: ICellRendererParams<GoodsSizeRow>) => {
-        const row = params.data;
-        const disabled = !row?.isNew;
-        return (
-          <input
-            type="text"
-            className="form-control"
-            value={row?.erpSizeCd ?? ''}
-            onChange={(e) => handleGoodsSizeChange(row?.rowKey || '', 'erpSizeCd', e.target.value)}
-            disabled={disabled}
-          />
-        );
-      },
-    },
-    {
-      headerName: '삭제',
-      field: 'rowKey',
-      width: 110,
-      cellRenderer: (params: ICellRendererParams<GoodsSizeRow>) => (
-        <button
-          type="button"
-          className="btn btn-sm btn-danger"
-          onClick={() => handleDeleteGoodsSizeRow(params.data?.rowKey || '')}
-        >
-          삭제
-        </button>
-      ),
+      editable: (params) => params.data?.isNew === true,
     },
     {
       headerName: '저장',
@@ -594,7 +650,21 @@ const GoodsList = () => {
         </button>
       ),
     },
-  ], [formatNumber, handleDeleteGoodsSizeRow, handleGoodsSizeChange, handleSaveGoodsSizeRow, normalizeNumberInput]);
+    {
+      headerName: '삭제',
+      field: 'rowKey',
+      width: 110,
+      cellRenderer: (params: ICellRendererParams<GoodsSizeRow>) => (
+        <button
+          type="button"
+          className="btn btn-sm btn-danger"
+          onClick={() => handleDeleteGoodsSizeRow(params.data?.rowKey || '')}
+        >
+          삭제
+        </button>
+      ),
+    },
+  ], [formatNumber, handleDeleteGoodsSizeRow, handleSaveGoodsSizeRow, normalizeNumberInput]);
 
   // 그리드 기본 컬럼 속성을 정의합니다.
   const defaultColDef = useMemo<ColDef>(() => ({
@@ -879,13 +949,13 @@ const GoodsList = () => {
                 <div className="col-md-4">
                 <div className="form-group">
                   <label>공급가 <span className="text-danger">*</span></label>
-                  <input name="supplyAmt" type="text" className="form-control" value={formatNumber(editForm.supplyAmt ?? '')} onChange={handleEditNumberChange('supplyAmt')} required />
+                  <input name="supplyAmt" type="text" className="form-control" value={formatNumber(editForm.supplyAmt ?? '')} onChange={handleEditNumberChange('supplyAmt')} onBlur={handleEditNumberBlur('supplyAmt')} required />
                 </div>
               </div>
               <div className="col-md-4">
                 <div className="form-group">
                   <label>판매가 <span className="text-danger">*</span></label>
-                  <input name="saleAmt" type="text" className="form-control" value={formatNumber(editForm.saleAmt ?? '')} onChange={handleEditNumberChange('saleAmt')} required />
+                  <input name="saleAmt" type="text" className="form-control" value={formatNumber(editForm.saleAmt ?? '')} onChange={handleEditNumberChange('saleAmt')} onBlur={handleEditNumberBlur('saleAmt')} required />
                 </div>
               </div>
             </div>
@@ -920,14 +990,16 @@ const GoodsList = () => {
             <div className="mt-4">
               <div className="d-flex align-items-center justify-content-between mb-2">
                 <h5 className="mb-0">사이즈 및 재고</h5>
-                <button type="button" className="btn btn-sm btn-secondary" onClick={handleAddGoodsSizeRow}>
-                  사이즈 추가
-                </button>
+                <div className="d-flex gap-2">
+                  <button type="button" className="btn btn-sm btn-secondary" onClick={handleAddGoodsSizeRow}>
+                    사이즈 추가
+                  </button>
+                </div>
               </div>
               {goodsSizeLoading ? (
                 <div className="text-center">사이즈 로딩중...</div>
               ) : (
-                <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '300px' }}>
+                <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '170px' }}>
                   <AgGridReact<GoodsSizeRow>
                     columnDefs={sizeColumnDefs}
                     defaultColDef={defaultColDef}
@@ -935,6 +1007,13 @@ const GoodsList = () => {
                     domLayout="normal"
                     overlayNoRowsTemplate="데이터가 없습니다."
                     getRowId={(params) => String(params.data?.rowKey ?? '')}
+                    rowDragManaged
+                    animateRows
+                    stopEditingWhenCellsLoseFocus
+                    onRowDragEnd={handleSizeRowDragEnd}
+                    onCellValueChanged={handleSizeCellValueChanged}
+                    onCellEditingStopped={handleSizeCellEditingStopped}
+                    onCellFocused={handleSizeCellFocused}
                   />
                 </div>
               )}
