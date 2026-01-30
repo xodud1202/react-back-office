@@ -3,10 +3,14 @@ import React from 'react';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
+  title?: string;
+  footerActions?: React.ReactNode;
+  width?: string;
   children: React.ReactNode;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
+// 공통 레이어 팝업을 렌더링합니다.
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, footerActions, width, children }) => {
   if (!isOpen) return null;
 
   return (
@@ -24,10 +28,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
           zIndex: 1055,
         }}
       >
-        <div className="modal-dialog modal-lg" role="document" style={{ maxWidth: '70vw', margin: 0 }}>
+        <div className="modal-dialog modal-lg" role="document" style={{ width: width || '70vw', margin: 0 }}>
           <div className="modal-content d-flex flex-column" style={{ maxHeight: '80vh' }}>
             <div className="modal-header d-flex align-items-center">
-              <h5 className="modal-title">상세 정보</h5>
+              <h5 className="modal-title">{title || '상세 정보'}</h5>
               <button type="button" className="btn btn-link p-0 text-white ms-auto" aria-label="닫기" onClick={onClose}>
                 <i className="fa fa-window-close"></i>
               </button>
@@ -36,7 +40,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
               {children}
             </div>
             <div className="modal-footer">
-              <div className="modal-footer-actions"></div>
+              <div className="modal-footer-actions">{footerActions}</div>
               <button type="button" className="btn btn-dark" onClick={onClose}>
                 닫기
               </button>

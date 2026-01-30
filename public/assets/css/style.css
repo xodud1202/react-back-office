@@ -22417,7 +22417,7 @@ code {
 
 /* Forms */
 .form-group {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1rem;
 }
 
 .input-group-append,
@@ -22473,7 +22473,7 @@ code {
 }
 
 .form-select {
-  color: rgb(74.7857142857, 85.4693877551, 99.7142857143) !important;
+  color: white !important;
 }
 
 .form-select > option {
@@ -23207,7 +23207,7 @@ dl li {
 }
 .tooltip-static-demo .bs-tooltip-right-demo .arrow:before,
 .tooltip-static-demo .bs-tooltip-left-demo .arrow:before {
-  top: calc((100% - 0.8rem) / 2);
+  top: calc((100% -0.8rem) / 2);
 }
 
 .tooltip {
@@ -24268,6 +24268,8 @@ dl li {
 .sidebar .nav .nav-item.active > .nav-link {
   background: rgb(14.5491803279, 16.2950819672, 20.9508196721);
   position: relative;
+  color: #bbbbbb;
+  font-weight: 700;
 }
 .sidebar .nav .nav-item.active > .nav-link:before {
   content: "";
@@ -24280,10 +24282,10 @@ dl li {
   top: 0;
 }
 .sidebar .nav .nav-item.active > .nav-link .menu-title {
-  color: #ffffff;
+  color: #bbbbbb;
 }
 .sidebar .nav .nav-item.active > .nav-link i {
-  color: #ffffff;
+  color: #bbbbbb;
 }
 .sidebar .nav .nav-item.nav-profile .nav-link {
   height: auto;
@@ -24463,6 +24465,10 @@ dl li {
   margin-top: 0;
   padding: 0 0 0 3.25rem;
   list-style: none;
+  /* 3뎁스 서브메뉴 들여쓰기 조정 */
+}
+.sidebar .nav.sub-menu .nav.sub-menu {
+  padding-left: 1rem;
 }
 .sidebar .nav.sub-menu .nav-item {
   padding: 0;
@@ -24477,9 +24483,9 @@ dl li {
   border-top: 0;
 }
 .sidebar .nav.sub-menu .nav-item .nav-link.active {
-  color: #ffffff;
+  color: #bbbbbb;
   background: transparent;
-  font-weight: 900;
+  font-weight: 700;
 }
 .sidebar .nav.sub-menu .nav-item .nav-link:hover {
   color: #ffffff;

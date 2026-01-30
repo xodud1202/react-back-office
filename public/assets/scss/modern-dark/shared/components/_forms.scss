@@ -1,7 +1,7 @@
 /* Forms */
 
 .form-group {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.0rem;
 }
 .input-group-append,
 .input-group-prepend {
@@ -46,7 +46,7 @@
   }
 }
 .form-select {
-  color: $input-placeholder-color !important;
+  color: white !important;
 }
 .form-select > option{
   color: white;

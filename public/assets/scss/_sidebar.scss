@@ -136,6 +136,8 @@
         > .nav-link {
           background: $sidebar-dark-menu-active-bg;
           position: relative;
+          color: #bbbbbb;
+          font-weight: 700;
           &:before {
             content: "";
             width: 3px;
@@ -147,10 +149,10 @@
             top: 0;
           }
           .menu-title {
-            color: $sidebar-dark-menu-active-color;        
+            color: #bbbbbb;        
           }
           i {
-            color: #ffffff;
+            color: #bbbbbb;
           }
         }
       }
@@ -338,6 +340,11 @@
       padding: 0 0 0 3.25rem;
       list-style: none;
 
+      /* 3뎁스 서브메뉴 들여쓰기 조정 */
+      .nav.sub-menu {
+        padding-left: 1rem;
+      }
+
       .nav-item {
         padding: 0;
         .nav-link {
@@ -349,9 +356,9 @@
           height: auto;
           border-top: 0;
           &.active {
-            color: $sidebar-dark-menu-active-color;
+            color: #bbbbbb;
             background: transparent;
-            font-weight: 900;
+            font-weight: 700;
           }
           &:hover {
             color: $sidebar-dark-submenu-hover-color;
