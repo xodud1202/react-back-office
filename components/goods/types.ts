@@ -108,3 +108,9 @@ export interface GoodsImageData {
   imgPath: string;
   imgUrl?: string;
 }
+
+export interface GoodsDescData {
+  goodsId: string;
+  deviceGbCd: string;
+  goodsDesc: string;
+}

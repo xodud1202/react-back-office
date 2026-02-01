@@ -15,6 +15,7 @@ import { formatNumber, normalizeNumberInput, parseNumber } from '@/components/go
 import GoodsEditBasicSection from '@/components/goods/GoodsEditBasicSection';
 import GoodsCategorySection from '@/components/goods/GoodsCategorySection';
 import GoodsImageManager from '@/components/goods/GoodsImageManager';
+import GoodsDescEditor from '@/components/goods/GoodsDescEditor';
 import GoodsSizeGrid from '@/components/goods/GoodsSizeGrid';
 
 interface GoodsEditModalProps {
@@ -421,6 +422,11 @@ const GoodsEditModal = ({
         />
 
         <GoodsImageManager
+          goodsId={goodsId}
+          isOpen={isOpen}
+        />
+
+        <GoodsDescEditor
           goodsId={goodsId}
           isOpen={isOpen}
         />
