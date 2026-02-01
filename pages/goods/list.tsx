@@ -1,12 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { GetServerSideProps, GetServerSidePropsContext } from 'next';
 import api from '@/utils/axios/axios';
-import { dateFormatter } from '@/utils/common';
-import type { ColDef, GridApi, GridReadyEvent, IDatasource, IGetRowsParams, ICellRendererParams } from 'ag-grid-community';
 import GoodsSearchForm from '@/components/goods/GoodsSearchForm';
-import GoodsListGrid from '@/components/goods/GoodsListGrid';
+import GoodsListGrid, { type GoodsListGridHandle } from '@/components/goods/GoodsListGrid';
 import GoodsEditModal from '@/components/goods/GoodsEditModal';
-import type { CategoryOption, CommonCode, GoodsData, GoodsListResponse, GoodsMerch } from '@/components/goods/types';
+import type { CategoryOption, CommonCode, GoodsMerch } from '@/components/goods/types';
 import { fetchSSRList } from '@/utils/ssrFetch';
 
 interface GoodsListPageProps {
@@ -47,9 +45,8 @@ const GoodsList = ({
   const [loading, setLoading] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedGoodsId, setSelectedGoodsId] = useState<string | null>(null);
-  const formRef = useRef<HTMLFormElement>(null);
   const [searchParams, setSearchParams] = useState<Record<string, any>>({});
-  const gridApiRef = useRef<GridReadyEvent<GoodsData>['api'] | null>(null);
+  const gridRef = useRef<GoodsListGridHandle | null>(null);
 
   // 상품 상태 공통코드를 조회합니다.
   const fetchGoodsStatList = useCallback(async () => {
@@ -88,19 +85,10 @@ const GoodsList = ({
     }
   }, []);
 
-  // 검색 폼 제출 시 조회 파라미터를 갱신합니다.
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const nextParams = Object.fromEntries(formData.entries());
-    setSearchParams(nextParams);
-  };
-
-  // 검색 초기화 시 조회 파라미터를 초기화합니다.
-  const handleReset = () => {
-    setSearchParams({});
-  };
+  // 검색 조건을 갱신합니다.
+  const handleSearch = useCallback((params: Record<string, any>) => {
+    setSearchParams(params);
+  }, []);
 
   // 수정 팝업을 열고 대상 상품을 지정합니다.
   const openEditModal = useCallback((goodsId: string) => {
@@ -114,107 +102,12 @@ const GoodsList = ({
     setSelectedGoodsId(null);
   }, []);
 
-  // 상품 목록 그리드 컬럼을 정의합니다.
-  const columnDefs = useMemo<ColDef<GoodsData>[]>(() => [
-    { headerName: '상품코드', field: 'goodsId', width: 150 },
-    { headerName: '품번코드', field: 'erpStyleCd', width: 120 },
-    {
-      headerName: '상품명',
-      field: 'goodsNm',
-      width: 450,
-      cellRenderer: (params: ICellRendererParams<GoodsData>) => {
-        const goodsId = params.data?.goodsId;
-        if (!goodsId) {
-          return params.value ?? '';
-        }
-        return (
-          <button
-            type="button"
-            className="btn btn-link p-0 text-start"
-            onClick={() => openEditModal(goodsId)}
-          >
-            {params.value}
-          </button>
-        );
-      },
-    },
-    { headerName: '상품상태', field: 'goodsStatNm', width: 120 },
-    { headerName: '상품분류', field: 'goodsDivNm', width: 120 },
-    { headerName: '노출여부', field: 'showYn', width: 100 },
-    {
-      headerName: '등록일',
-      field: 'regDt',
-      width: 170,
-      valueFormatter: (params) => dateFormatter({ value: params.value } as any),
-    },
-    {
-      headerName: '수정일',
-      field: 'udtDt',
-      width: 170,
-      valueFormatter: (params) => dateFormatter({ value: params.value } as any),
-    },
-  ], [openEditModal]);
-
-  // 그리드 기본 컬럼 속성을 정의합니다.
-  const defaultColDef = useMemo<ColDef>(() => ({
-    resizable: true,
-    sortable: false,
-    cellClass: 'text-center',
-  }), []);
-
-  // 상품 목록 그리드 데이터소스를 생성합니다.
-  const createDataSource = useCallback((): IDatasource => ({
-    getRows: async (params: IGetRowsParams) => {
-      const pageSize = 20;
-      const startRow = params.startRow ?? 0;
-      const page = Math.floor(startRow / pageSize) + 1;
-
-      setLoading(true);
-      try {
-        const response = await api.get('/api/admin/goods/list', {
-          params: {
-            ...searchParams,
-            page,
-          },
-        });
-        const data = (response.data || {}) as GoodsListResponse;
-        params.successCallback(data.list || [], data.totalCount || 0);
-      } catch (e) {
-        console.error('상품 목록을 불러오는 데 실패했습니다.');
-        params.failCallback();
-      } finally {
-        setLoading(false);
-      }
-    },
-  }), [searchParams]);
-
-  // 그리드 데이터소스를 안전하게 설정합니다.
-  const applyDatasource = useCallback((apiInstance: GridApi<GoodsData>, datasource: IDatasource) => {
-    if (typeof (apiInstance as any).setGridOption === 'function') {
-      (apiInstance as any).setGridOption('datasource', datasource);
-      return;
-    }
-    if (typeof (apiInstance as any).setDatasource === 'function') {
-      (apiInstance as any).setDatasource(datasource);
-    }
-  }, []);
-
-  // 상품 목록 그리드를 초기화합니다.
-  const handleGridReady = useCallback((event: GridReadyEvent<GoodsData>) => {
-    gridApiRef.current = event.api;
-    applyDatasource(event.api, createDataSource());
-  }, [applyDatasource, createDataSource]);
-
   // 수정 완료 후 목록을 갱신합니다.
   const handleUpdated = useCallback(() => {
-    if (gridApiRef.current && typeof (gridApiRef.current as any).refreshInfiniteCache === 'function') {
-      (gridApiRef.current as any).refreshInfiniteCache();
-      return;
+    if (gridRef.current) {
+      gridRef.current.refresh();
     }
-    if (gridApiRef.current) {
-      applyDatasource(gridApiRef.current, createDataSource());
-    }
-  }, [applyDatasource, createDataSource]);
+  }, []);
 
   // 초기 로딩 시 공통코드를 조회합니다.
   useEffect(() => {
@@ -228,14 +121,6 @@ const GoodsList = ({
       fetchGoodsMerchList();
     }
   }, [fetchGoodsDivList, fetchGoodsMerchList, fetchGoodsStatList, goodsDivList.length, goodsMerchList.length, goodsStatList.length]);
-
-  // 검색 조건 변경 시 그리드 데이터를 다시 조회합니다.
-  useEffect(() => {
-    if (!gridApiRef.current) {
-      return;
-    }
-    applyDatasource(gridApiRef.current, createDataSource());
-  }, [applyDatasource, createDataSource]);
 
   return (
     <>
@@ -253,15 +138,14 @@ const GoodsList = ({
         goodsStatList={goodsStatList}
         goodsDivList={goodsDivList}
         loading={loading}
-        formRef={formRef}
         onSearch={handleSearch}
-        onReset={handleReset}
       />
 
       <GoodsListGrid
-        columnDefs={columnDefs}
-        defaultColDef={defaultColDef}
-        onGridReady={handleGridReady}
+        ref={gridRef}
+        searchParams={searchParams}
+        onEdit={openEditModal}
+        onLoadingChange={setLoading}
       />
 
       <GoodsEditModal

@@ -100,3 +100,11 @@ export interface GoodsListResponse {
   page: number;
   pageSize: number;
 }
+
+export interface GoodsImageData {
+  imgNo: number;
+  goodsId: string;
+  dispOrd: number;
+  imgPath: string;
+  imgUrl?: string;
+}
