@@ -40,6 +40,7 @@ const GoodsEditModal = ({
   onClose,
   onUpdated,
 }: GoodsEditModalProps) => {
+  const [activeTab, setActiveTab] = useState<'basic' | 'category' | 'option' | 'image' | 'desc'>('basic');
   const [editBasicState, setEditBasicState] = useState({
     editLoading: false,
     editSaving: false,
@@ -365,6 +366,7 @@ const GoodsEditModal = ({
     if (isOpen) {
       return;
     }
+    setActiveTab('basic');
     setGoodsSizeRows([]);
     setCategoryRows([]);
   }, [isOpen]);
@@ -375,18 +377,58 @@ const GoodsEditModal = ({
       onClose={onClose}
       title="상품정보 수정"
       width="80vw"
-      footerActions={(
-        <button
-          type="submit"
-          form="goods-edit-form"
-          className="btn btn-primary"
-          disabled={editBasicState.editSaving || editBasicState.editLoading || !editBasicState.hasForm}
-        >
-          {editBasicState.editSaving ? '저장중...' : '저장'}
-        </button>
-      )}
+      contentHeight="80vh"
     >
       <>
+        <ul className="nav nav-tabs mb-3">
+          <li className="nav-item">
+            <button
+              type="button"
+              className={`nav-link text-secondary ${activeTab === 'basic' ? 'active' : ''}`}
+              onClick={() => setActiveTab('basic')}
+            >
+              상품기본
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              type="button"
+              className={`nav-link text-secondary ${activeTab === 'category' ? 'active' : ''}`}
+              onClick={() => setActiveTab('category')}
+            >
+              카테고리
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              type="button"
+              className={`nav-link text-secondary ${activeTab === 'option' ? 'active' : ''}`}
+              onClick={() => setActiveTab('option')}
+            >
+              옵션및재고
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              type="button"
+              className={`nav-link text-secondary ${activeTab === 'image' ? 'active' : ''}`}
+              onClick={() => setActiveTab('image')}
+            >
+              상품이미지
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              type="button"
+              className={`nav-link text-secondary ${activeTab === 'desc' ? 'active' : ''}`}
+              onClick={() => setActiveTab('desc')}
+            >
+              상품상세
+            </button>
+          </li>
+        </ul>
+
+        <div style={{ display: activeTab === 'basic' ? 'block' : 'none' }}>
         <GoodsEditBasicSection
           isOpen={isOpen}
           goodsId={goodsId}
@@ -399,7 +441,9 @@ const GoodsEditModal = ({
           onClose={onClose}
           onStateChange={setEditBasicState}
         />
+        </div>
 
+        <div style={{ display: activeTab === 'category' ? 'block' : 'none' }}>
         <GoodsCategorySection
           goodsId={goodsId}
           isOpen={isOpen}
@@ -410,7 +454,9 @@ const GoodsEditModal = ({
           setCategoryLevel1Options={setCategoryLevel1Options}
           setCategoryLoading={setCategoryLoading}
         />
+        </div>
 
+        <div style={{ display: activeTab === 'option' ? 'block' : 'none' }}>
         <GoodsSizeGrid
           goodsSizeRows={goodsSizeRows}
           goodsSizeLoading={goodsSizeLoading}
@@ -420,16 +466,21 @@ const GoodsEditModal = ({
           onSaveOrder={handleSaveSizeOrder}
           setGoodsSizeRows={setGoodsSizeRows}
         />
+        </div>
 
+        <div style={{ display: activeTab === 'image' ? 'block' : 'none' }}>
         <GoodsImageManager
           goodsId={goodsId}
           isOpen={isOpen}
         />
+        </div>
 
+        <div style={{ display: activeTab === 'desc' ? 'block' : 'none' }}>
         <GoodsDescEditor
           goodsId={goodsId}
           isOpen={isOpen}
         />
+        </div>
       </>
     </Modal>
   );

@@ -6,11 +6,12 @@ interface ModalProps {
   title?: string;
   footerActions?: React.ReactNode;
   width?: string;
+  contentHeight?: string;
   children: React.ReactNode;
 }
 
 // 공통 레이어 팝업을 렌더링합니다.
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, footerActions, width, children }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, footerActions, width, contentHeight, children }) => {
   if (!isOpen) return null;
 
   return (
@@ -29,7 +30,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, footerActions, wi
         }}
       >
         <div className="modal-dialog modal-lg" role="document" style={{ width: width || '70vw', margin: 0 }}>
-          <div className="modal-content d-flex flex-column" style={{ maxHeight: '80vh' }}>
+          <div
+            className="modal-content d-flex flex-column"
+            style={{ height: contentHeight || undefined, maxHeight: contentHeight ? undefined : '80vh' }}
+          >
             <div className="modal-header d-flex align-items-center">
               <h5 className="modal-title">{title || '상세 정보'}</h5>
               <button type="button" className="btn btn-link p-0 text-white ms-auto" aria-label="닫기" onClick={onClose}>

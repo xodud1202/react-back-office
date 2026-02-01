@@ -136,7 +136,7 @@ const GoodsDescEditor = ({ goodsId, isOpen }: GoodsDescEditorProps) => {
 
   return (
     <div className="mt-4">
-      <div className="d-flex align-items-center justify-content-between mb-2">
+      <div className="d-flex align-items-center justify-content-between mb-4">
         <h5 className="mb-0">상품 상세 설명</h5>
         <button
           type="button"

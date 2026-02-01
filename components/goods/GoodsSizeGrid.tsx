@@ -85,7 +85,7 @@ const GoodsSizeGridContent = ({
 
   return (
     <div className="mt-4">
-      <div className="d-flex align-items-center justify-content-between mb-2">
+      <div className="d-flex align-items-center justify-content-between mb-4">
         <h5 className="mb-0">사이즈 및 재고</h5>
         <div className="d-flex gap-2">
           <button type="button" className="btn btn-sm btn-secondary" onClick={onAddRow}>
@@ -96,7 +96,7 @@ const GoodsSizeGridContent = ({
       {goodsSizeLoading ? (
         <div className="text-center">사이즈 로딩중...</div>
       ) : (
-        <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '150px' }}>
+        <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '400px' }}>
           <AgGridReact<GoodsSizeRow>
             columnDefs={sizeColumnDefs}
             defaultColDef={defaultColDef}

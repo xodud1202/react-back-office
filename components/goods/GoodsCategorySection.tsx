@@ -251,7 +251,7 @@ const GoodsCategorySection = ({
 
   return (
     <div className="mt-4">
-      <div className="d-flex align-items-center justify-content-between mb-2">
+      <div className="d-flex align-items-center justify-content-between mb-4">
         <h5 className="mb-0">카테고리</h5>
         <button type="button" className="btn btn-sm btn-secondary" onClick={handleAddCategoryRow}>
           추가

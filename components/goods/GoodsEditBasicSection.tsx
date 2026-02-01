@@ -185,7 +185,19 @@ const GoodsEditBasicSection = ({
   }
 
   return (
-    <form id="goods-edit-form" onSubmit={handleEditSubmit} className="forms-sample">
+    <>
+        <div className="d-flex align-items-center justify-content-between mb-4">
+            <h5 className="mb-0">기본정보</h5>
+            <button
+                type="submit"
+                form="goods-edit-form"
+                className="btn btn-sm btn-primary"
+                disabled={editSaving || editLoading || !editForm}
+            >
+                {editSaving ? '저장중...' : '저장'}
+            </button>
+        </div>
+      <form id="goods-edit-form" onSubmit={handleEditSubmit} className="forms-sample">
       <div className="row">
         <div className="col-md-4">
           <div className="form-group">
@@ -333,7 +345,8 @@ const GoodsEditBasicSection = ({
           </div>
         </div>
       </div>
-    </form>
+      </form>
+    </>
   );
 };
 

@@ -270,7 +270,7 @@ const GoodsImageManager = ({ goodsId, isOpen }: GoodsImageManagerProps) => {
 
   return (
     <div className="mt-4">
-      <div className="d-flex align-items-center justify-content-between mb-2">
+      <div className="d-flex align-items-center justify-content-between mb-4">
         <h5 className="mb-0">상품 이미지</h5>
         <div className="d-flex gap-2">
           <button
