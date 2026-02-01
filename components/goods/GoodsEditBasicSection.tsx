@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import api from '@/utils/axios/axios';
 import { getLoginUsrNo } from '@/utils/auth';
 import type {
-  CategoryRow,
   CommonCode,
   GoodsDetail,
   GoodsMerch,
@@ -15,8 +14,6 @@ interface GoodsEditBasicSectionProps {
   goodsStatList: CommonCode[];
   goodsDivList: CommonCode[];
   goodsMerchList: GoodsMerch[];
-  categoryRows: CategoryRow[];
-  categoryLoading: boolean;
   onUpdated: () => void;
   onClose: () => void;
   onStateChange: (state: {
@@ -33,8 +30,6 @@ const GoodsEditBasicSection = ({
   goodsStatList,
   goodsDivList,
   goodsMerchList,
-  categoryRows,
-  categoryLoading,
   onUpdated,
   onClose,
   onStateChange,
@@ -95,25 +90,6 @@ const GoodsEditBasicSection = ({
     });
   }, []);
 
-  // 카테고리 저장 데이터를 계산합니다.
-  const categoryList = useMemo(() => {
-    if (categoryLoading) {
-      return undefined;
-    }
-    return categoryRows
-      .map((row, index) => {
-        const categoryId = row.level3Id || row.level2Id || row.level1Id;
-        if (!categoryId) {
-          return null;
-        }
-        return {
-          categoryId,
-          dispOrd: index + 1,
-        };
-      })
-      .filter((item): item is { categoryId: string; dispOrd: number } => item !== null);
-  }, [categoryLoading, categoryRows]);
-
   // 상품 수정 요청을 처리합니다.
   const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -144,10 +120,6 @@ const GoodsEditBasicSection = ({
       erpMerchCd: editForm.erpMerchCd?.trim(),
       udtNo,
     };
-
-    if (categoryList !== undefined) {
-      requestBody.categoryList = categoryList;
-    }
 
     setEditSaving(true);
     try {

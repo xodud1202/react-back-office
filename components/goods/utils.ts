@@ -1,5 +1,10 @@
 // 숫자 입력값에서 숫자만 남깁니다.
-export const normalizeNumberInput = (value: string) => value.replace(/[^0-9]/g, '');
+export const normalizeNumberInput = (value: unknown) => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return String(value).replace(/[^0-9]/g, '');
+};
 
 // 숫자 값을 천 단위 콤마로 표시합니다.
 export const formatNumber = (value: number | string | null | undefined) => {

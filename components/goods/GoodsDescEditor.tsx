@@ -51,7 +51,6 @@ const GoodsDescEditor = ({ goodsId, isOpen }: GoodsDescEditorProps) => {
       'underline',
       'strike',
       'list',
-      'bullet',
       'link',
       'image',
     ]),
@@ -127,11 +126,13 @@ const GoodsDescEditor = ({ goodsId, isOpen }: GoodsDescEditorProps) => {
     toolbarOptions: quillToolbarOptions,
     formats: quillFormatsOptions,
     onChange: setPcDesc,
+    editorId: 'goods-desc-pc-editor',
   });
   const moQuill = useQuillImageUpload({
     toolbarOptions: quillToolbarOptions,
     formats: quillFormatsOptions,
     onChange: setMoDesc,
+    editorId: 'goods-desc-mo-editor',
   });
 
   return (
@@ -179,6 +180,7 @@ const GoodsDescEditor = ({ goodsId, isOpen }: GoodsDescEditorProps) => {
                     </div>
                     {viewMode.pc === 'editor' ? (
                       <ReactQuill
+                        id="goods-desc-pc-editor"
                         ref={pcQuill.quillRef}
                         theme="snow"
                         className="board-editor"
@@ -219,6 +221,7 @@ const GoodsDescEditor = ({ goodsId, isOpen }: GoodsDescEditorProps) => {
                     </div>
                     {viewMode.mo === 'editor' ? (
                       <ReactQuill
+                        id="goods-desc-mo-editor"
                         ref={moQuill.quillRef}
                         theme="snow"
                         className="board-editor"
