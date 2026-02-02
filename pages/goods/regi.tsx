@@ -16,18 +16,25 @@ interface GoodsMerch {
   goodsMerchNm: string;
 }
 
+interface BrandOption {
+  brandNo: number;
+  brandNm: string;
+}
+
 interface GoodsRegiProps {
   goodsStatList: CommonCode[];
   goodsDivList: CommonCode[];
   goodsMerchList: GoodsMerch[];
+  brandList: BrandOption[];
 }
 
 // SSR에서 상품 등록 화면의 기본 옵션 데이터를 조회합니다.
 export const getServerSideProps: GetServerSideProps<GoodsRegiProps> = async (ctx: GetServerSidePropsContext) => {
-  const [goodsStatList, goodsDivList, goodsMerchList] = await Promise.all([
+  const [goodsStatList, goodsDivList, goodsMerchList, brandList] = await Promise.all([
     fetchSSRList<CommonCode>(ctx, `/api/admin/common/code?grpCd=${encodeURIComponent('GOODS_STAT')}`),
     fetchSSRList<CommonCode>(ctx, `/api/admin/common/code?grpCd=${encodeURIComponent('GOODS_DIV')}`),
     fetchSSRList<GoodsMerch>(ctx, '/api/admin/goods/merch/list'),
+    fetchSSRList<BrandOption>(ctx, '/api/admin/brand/list'),
   ]);
 
   return {
@@ -35,16 +42,19 @@ export const getServerSideProps: GetServerSideProps<GoodsRegiProps> = async (ctx
       goodsStatList,
       goodsDivList,
       goodsMerchList,
+      brandList,
     },
   };
 };
 
-const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialGoodsDivList, goodsMerchList: initialGoodsMerchList }: GoodsRegiProps) => {
+// 상품 등록 화면을 렌더링합니다.
+const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialGoodsDivList, goodsMerchList: initialGoodsMerchList, brandList: initialBrandList }: GoodsRegiProps) => {
   const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
   const [goodsStatList, setGoodsStatList] = useState<CommonCode[]>(initialGoodsStatList || []);
   const [goodsDivList, setGoodsDivList] = useState<CommonCode[]>(initialGoodsDivList || []);
   const [goodsMerchList, setGoodsMerchList] = useState<GoodsMerch[]>(initialGoodsMerchList || []);
+  const [brandList, setBrandList] = useState<BrandOption[]>(initialBrandList || []);
 
   // 상품 상태 공통코드를 조회합니다.
   const fetchGoodsStatList = useCallback(async () => {
@@ -83,10 +93,22 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
     }
   }, []);
 
+  // 브랜드 목록을 조회합니다.
+  const fetchBrandList = useCallback(async () => {
+    try {
+      const response = await api.get('/api/admin/brand/list');
+      setBrandList(response.data || []);
+    } catch (e) {
+      console.error('브랜드 목록을 불러오는 데 실패했습니다.');
+      alert('브랜드 목록을 불러오는 데 실패했습니다.');
+    }
+  }, []);
+
   // 등록 폼 기본값을 계산합니다.
   const defaultGoodsDiv = useMemo(() => goodsDivList[0]?.cd ?? '', [goodsDivList]);
   const defaultGoodsStat = useMemo(() => goodsStatList[0]?.cd ?? '', [goodsStatList]);
   const defaultGoodsMerch = useMemo(() => goodsMerchList[0]?.goodsMerchId ?? '', [goodsMerchList]);
+  const defaultBrandNo = useMemo(() => brandList[0]?.brandNo ?? '', [brandList]);
 
   // SSR에서 누락된 데이터가 있을 경우 클라이언트에서 보충합니다.
   useEffect(() => {
@@ -99,7 +121,10 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
     if (goodsMerchList.length === 0) {
       fetchGoodsMerchList();
     }
-  }, [fetchGoodsStatList, fetchGoodsDivList, fetchGoodsMerchList, goodsDivList.length, goodsMerchList.length, goodsStatList.length]);
+    if (brandList.length === 0) {
+      fetchBrandList();
+    }
+  }, [brandList.length, fetchBrandList, fetchGoodsStatList, fetchGoodsDivList, fetchGoodsMerchList, goodsDivList.length, goodsMerchList.length, goodsStatList.length]);
 
   // 상품 등록 요청을 처리합니다.
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -119,6 +144,7 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
 
     const requestBody = {
       goodsId: payload.goodsId?.trim(),
+      brandNo: payload.brandNo ? Number(payload.brandNo) : null,
       goodsNm: payload.goodsNm?.trim(),
       goodsStatCd: payload.goodsStatCd,
       goodsDivCd: payload.goodsDivCd,
@@ -195,7 +221,7 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
                 </div>
 
                 <div className="row">
-                  <div className="col-md-4">
+                  <div className="col-md-3">
                     <div className="form-group">
                       <label>상품구분 <span className="text-danger">*</span></label>
                       <select name="goodsDivCd" defaultValue={defaultGoodsDiv} className="form-select" required>
@@ -205,7 +231,7 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
                       </select>
                     </div>
                   </div>
-                  <div className="col-md-4">
+                  <div className="col-md-3">
                     <div className="form-group">
                       <label>상품분류 <span className="text-danger">*</span></label>
                       <select name="goodsMerchId" defaultValue={defaultGoodsMerch} className="form-select" required>
@@ -215,7 +241,17 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
                       </select>
                     </div>
                   </div>
-                  <div className="col-md-4">
+                  <div className="col-md-3">
+                    <div className="form-group">
+                      <label>브랜드 <span className="text-danger">*</span></label>
+                      <select name="brandNo" defaultValue={defaultBrandNo} className="form-select" required>
+                        {brandList.map((item) => (
+                          <option key={item.brandNo} value={item.brandNo}>{item.brandNm}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="col-md-3">
                     <div className="form-group">
                       <label>상품그룹코드 <span className="text-danger">*</span></label>
                       <input name="goodsGroupId" type="text" className="form-control" required />

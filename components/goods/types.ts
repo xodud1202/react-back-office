@@ -1,5 +1,7 @@
 export interface GoodsData {
   goodsId: string;
+  brandNo: number;
+  brandNm: string;
   erpStyleCd: string;
   goodsNm: string;
   goodsStatCd: string;
@@ -21,6 +23,11 @@ export interface CommonCode {
 export interface GoodsMerch {
   goodsMerchId: string;
   goodsMerchNm: string;
+}
+
+export interface BrandOption {
+  brandNo: number;
+  brandNm: string;
 }
 
 export interface GoodsDetail {

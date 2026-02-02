@@ -1,15 +1,16 @@
 import React, { useCallback } from 'react';
-import type { CommonCode } from '@/components/goods/types';
+import type { BrandOption, CommonCode } from '@/components/goods/types';
 
 interface GoodsSearchFormProps {
   goodsStatList: CommonCode[];
   goodsDivList: CommonCode[];
+  brandList: BrandOption[];
   loading: boolean;
   onSearch: (params: Record<string, any>) => void;
 }
 
 // 상품 검색 폼을 렌더링합니다.
-const GoodsSearchForm = ({ goodsStatList, goodsDivList, loading, onSearch }: GoodsSearchFormProps) => {
+const GoodsSearchForm = ({ goodsStatList, goodsDivList, brandList, loading, onSearch }: GoodsSearchFormProps) => {
   // 검색 제출 시 입력값을 조회 파라미터로 변환합니다.
   const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -31,28 +32,18 @@ const GoodsSearchForm = ({ goodsStatList, goodsDivList, loading, onSearch }: Goo
           <div className="card-body">
             <form onSubmit={handleSubmit} onReset={handleReset} className="forms-sample">
               <div className="row">
-                <div className="col-md-2">
+                <div className="col-md-3">
                   <div className="form-group">
-                    <label>검색 구분</label>
-                    <select name="searchGb" defaultValue="goodsId" className="form-select">
-                      <option value="goodsId">상품코드</option>
-                      <option value="erpStyleCd">ERP품번코드</option>
-                      <option value="goodsNm">상품명</option>
+                    <label>브랜드</label>
+                    <select name="brandNo" defaultValue="" className="form-select">
+                      <option value="">전체</option>
+                      {brandList.map((item) => (
+                        <option key={item.brandNo} value={item.brandNo}>{item.brandNm}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label>검색어</label>
-                    <input
-                      type="text"
-                      name="searchValue"
-                      className="form-control"
-                      placeholder="검색어를 입력하세요"
-                    />
-                  </div>
-                </div>
-                <div className="col-md-2">
+                <div className="col-md-3">
                   <div className="form-group">
                     <label>상품상태</label>
                     <select name="goodsStatCd" defaultValue="" className="form-select">
@@ -63,7 +54,7 @@ const GoodsSearchForm = ({ goodsStatList, goodsDivList, loading, onSearch }: Goo
                     </select>
                   </div>
                 </div>
-                <div className="col-md-2">
+                <div className="col-md-3">
                   <div className="form-group">
                     <label>상품분류</label>
                     <select name="goodsDivCd" defaultValue="" className="form-select">
@@ -74,7 +65,7 @@ const GoodsSearchForm = ({ goodsStatList, goodsDivList, loading, onSearch }: Goo
                     </select>
                   </div>
                 </div>
-                <div className="col-md-2">
+                <div className="col-md-3">
                   <div className="form-group">
                     <label>노출여부</label>
                     <select name="showYn" defaultValue="" className="form-select">
@@ -82,6 +73,29 @@ const GoodsSearchForm = ({ goodsStatList, goodsDivList, loading, onSearch }: Goo
                       <option value="Y">Y</option>
                       <option value="N">N</option>
                     </select>
+                  </div>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-md-2">
+                  <div className="form-group">
+                    <label>검색 구분</label>
+                    <select name="searchGb" defaultValue="goodsId" className="form-select">
+                      <option value="goodsId">상품코드</option>
+                      <option value="erpStyleCd">ERP품번코드</option>
+                      <option value="goodsNm">상품명</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="col-md-10">
+                  <div className="form-group">
+                    <label>검색어</label>
+                    <input
+                      type="text"
+                      name="searchValue"
+                      className="form-control"
+                      placeholder="검색어를 입력하세요"
+                    />
                   </div>
                 </div>
               </div>

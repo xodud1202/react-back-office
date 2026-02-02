@@ -17,62 +17,61 @@ import type {
 } from 'ag-grid-community';
 import api from '@/utils/axios/axios';
 import { dateFormatter } from '@/utils/common';
-import type { GoodsData, GoodsListResponse } from '@/components/goods/types';
+import type { BrandListItem, BrandListResponse } from '@/components/brand/types';
 
-interface GoodsListGridProps {
+interface BrandListGridProps {
   searchParams: Record<string, any>;
-  onEdit: (goodsId: string) => void;
+  onEdit: (brandNo: number) => void;
   onLoadingChange?: (loading: boolean) => void;
 }
 
-export interface GoodsListGridHandle {
+export interface BrandListGridHandle {
   refresh: () => void;
 }
 
-// 상품 목록 그리드를 렌더링합니다.
-const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
+// 브랜드 목록 그리드를 렌더링합니다.
+const BrandListGrid = forwardRef<BrandListGridHandle, BrandListGridProps>(({
   searchParams,
   onEdit,
   onLoadingChange,
 }, ref) => {
-  const gridApiRef = useRef<GridApi<GoodsData> | null>(null);
+  const gridApiRef = useRef<GridApi<BrandListItem> | null>(null);
 
   // 로딩 상태를 상위로 전달합니다.
   const notifyLoading = useCallback((loading: boolean) => {
+    // 상위 로딩 핸들러가 있을 때만 호출합니다.
     if (onLoadingChange) {
       onLoadingChange(loading);
     }
   }, [onLoadingChange]);
 
-  // 상품 목록 그리드 컬럼을 정의합니다.
-  const columnDefs = useMemo<ColDef<GoodsData>[]>(() => [
-    { headerName: '상품코드', field: 'goodsId', width: 150 },
-    { headerName: '품번코드', field: 'erpStyleCd', width: 120 },
+  // 브랜드 목록 그리드 컬럼을 정의합니다.
+  const columnDefs = useMemo<ColDef<BrandListItem>[]>(() => [
+    { headerName: '브랜드번호', field: 'brandNo', width: 120 },
     {
-      headerName: '상품명',
+      headerName: '브랜드명',
+      field: 'brandNm',
+      width: 220,
       cellClass: 'text-start',
-      field: 'goodsNm',
-      width: 450,
-      cellRenderer: (params: ICellRendererParams<GoodsData>) => {
-        const goodsId = params.data?.goodsId;
-        if (!goodsId) {
+      cellRenderer: (params: ICellRendererParams<BrandListItem>) => {
+        // 데이터가 없으면 기본 텍스트를 반환합니다.
+        const brandNo = params.data?.brandNo;
+        if (!brandNo) {
           return params.value ?? '';
         }
         return (
           <button
             type="button"
             className="btn p-0 fw-bold"
-            onClick={() => onEdit(goodsId)}
+            onClick={() => onEdit(brandNo)}
           >
             {params.value}
           </button>
         );
       },
     },
-    { headerName: '브랜드', field: 'brandNm', width: 140 },
-    { headerName: '상품상태', field: 'goodsStatNm', width: 120 },
-    { headerName: '상품분류', field: 'goodsDivNm', width: 120 },
-    { headerName: '노출여부', field: 'showYn', width: 100 },
+    { headerName: '노출여부', field: 'useYn', width: 100 },
+    { headerName: '정렬순서', field: 'dispOrd', width: 110 },
     {
       headerName: '등록일',
       field: 'regDt',
@@ -94,25 +93,26 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
     cellClass: 'text-center',
   }), []);
 
-  // 상품 목록 그리드 데이터소스를 생성합니다.
+  // 브랜드 목록 그리드 데이터소스를 생성합니다.
   const createDataSource = useCallback((): IDatasource => ({
     getRows: async (params: IGetRowsParams) => {
+      // 페이지 기준을 계산합니다.
       const pageSize = 20;
       const startRow = params.startRow ?? 0;
       const page = Math.floor(startRow / pageSize) + 1;
 
       notifyLoading(true);
       try {
-        const response = await api.get('/api/admin/goods/list', {
+        const response = await api.get('/api/admin/brand/admin/list', {
           params: {
             ...searchParams,
             page,
           },
         });
-        const data = (response.data || {}) as GoodsListResponse;
+        const data = (response.data || {}) as BrandListResponse;
         params.successCallback(data.list || [], data.totalCount || 0);
       } catch (e) {
-        console.error('상품 목록을 불러오는 데 실패했습니다.');
+        console.error('브랜드 목록을 불러오는 데 실패했습니다.');
         params.failCallback();
       } finally {
         notifyLoading(false);
@@ -121,7 +121,8 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
   }), [notifyLoading, searchParams]);
 
   // 그리드 데이터소스를 안전하게 설정합니다.
-  const applyDatasource = useCallback((apiInstance: GridApi<GoodsData>, datasource: IDatasource) => {
+  const applyDatasource = useCallback((apiInstance: GridApi<BrandListItem>, datasource: IDatasource) => {
+    // ag-grid 버전에 따라 API가 다를 수 있어 분기 처리합니다.
     if (typeof (apiInstance as any).setGridOption === 'function') {
       (apiInstance as any).setGridOption('datasource', datasource);
       return;
@@ -131,14 +132,16 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
     }
   }, []);
 
-  // 상품 목록 그리드를 초기화합니다.
-  const handleGridReady = useCallback((event: GridReadyEvent<GoodsData>) => {
+  // 브랜드 목록 그리드를 초기화합니다.
+  const handleGridReady = useCallback((event: GridReadyEvent<BrandListItem>) => {
+    // 그리드 API를 저장하고 데이터소스를 연결합니다.
     gridApiRef.current = event.api;
     applyDatasource(event.api, createDataSource());
   }, [applyDatasource, createDataSource]);
 
   // 검색 조건 변경 시 그리드 데이터를 다시 조회합니다.
   useEffect(() => {
+    // 그리드가 준비되지 않았으면 종료합니다.
     if (!gridApiRef.current) {
       return;
     }
@@ -147,6 +150,7 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
 
   // 외부에서 호출 가능한 그리드 갱신 함수를 제공합니다.
   const refreshGrid = useCallback(() => {
+    // 그리드 API가 없으면 종료합니다.
     if (!gridApiRef.current) {
       return;
     }
@@ -167,7 +171,7 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
         <div className="card">
           <div className="card-body">
             <div className="ag-theme-alpine-dark header-center" style={{ width: '100%' }}>
-              <AgGridReact<GoodsData>
+              <AgGridReact<BrandListItem>
                 columnDefs={columnDefs}
                 defaultColDef={defaultColDef}
                 domLayout="autoHeight"
@@ -176,7 +180,7 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
                 cacheBlockSize={20}
                 pagination
                 paginationPageSize={20}
-                getRowId={(params) => String(params.data?.goodsId ?? '')}
+                getRowId={(params) => String(params.data?.brandNo ?? '')}
                 onGridReady={handleGridReady}
               />
             </div>
@@ -187,4 +191,4 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
   );
 });
 
-export default GoodsListGrid;
+export default BrandListGrid;

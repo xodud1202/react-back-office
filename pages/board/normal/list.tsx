@@ -311,7 +311,7 @@ const BoardList = () => {
       headerName: '타이틀',
       field: 'title',
       flex: 1,
-      minWidth: 240,
+      minWidth: 220,
       cellClass: 'text-start',
       cellRenderer: (params: ICellRendererParams<BoardData>) => (
         <button
@@ -326,13 +326,13 @@ const BoardList = () => {
     {
       headerName: '등록일',
       field: 'regDt',
-      width: 160,
+      width: 170,
       valueFormatter: (params) => dateFormatter({ value: params.value } as any),
     },
     {
       headerName: '수정일',
       field: 'udtDt',
-      width: 160,
+      width: 170,
       valueFormatter: (params) => dateFormatter({ value: params.value } as any),
     },
     {
