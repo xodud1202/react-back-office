@@ -105,6 +105,17 @@ export const refreshAccessToken = async (): Promise<string | null> => {
       setAccessToken(nextToken);
       return nextToken;
     })
+    .catch((error) => {
+      const status = error?.response?.status;
+      // refresh가 401/403으로 실패하면 로그인 화면으로 이동합니다.
+      if (status === 401 || status === 403) {
+        clearAuthData();
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+      throw error;
+    })
     .finally(() => {
       refreshPromise = null;
     });
@@ -162,7 +173,7 @@ api.interceptors.response.use(
         throw new Error('Access Token을 갱신할 수 없습니다.');
       } catch (refreshError) {
         clearAuthData();
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);

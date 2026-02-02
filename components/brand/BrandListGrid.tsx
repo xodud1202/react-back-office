@@ -88,9 +88,9 @@ const BrandListGrid = forwardRef<BrandListGridHandle, BrandListGridProps>(({
     },
     {
       headerName: '삭제',
-      field: 'deleteAction',
+      colId: 'deleteAction',
       width: 100,
-      cellRenderer: (params) => {
+      cellRenderer: (params: { data: { brandNo: any; }; }) => {
         const brandNo = params.data?.brandNo;
         if (!brandNo) {
           return null;

@@ -425,7 +425,7 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
                       id="brand-noti-editor"
                       ref={brandNotiQuill.quillRef}
                       theme="snow"
-                      className="board-editor"
+                      className="board-editor brand-noti-editor"
                       value={form.brandNoti}
                       onChange={brandNotiQuill.handleEditorChange}
                       modules={brandNotiQuill.quillModules}
@@ -453,6 +453,14 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
           </div>
         </div>
       </div>
+      <style jsx>{`
+        .brand-noti-editor {
+          height: 350px;
+        }
+        .brand-noti-editor {
+          min-height: 350px;
+        }
+      `}</style>
       <div
         className="modal-backdrop fade show"
         style={{position: 'fixed', inset: 0, zIndex: 1055}}
