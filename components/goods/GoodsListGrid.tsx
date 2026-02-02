@@ -50,6 +50,7 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
     { headerName: '품번코드', field: 'erpStyleCd', width: 120 },
     {
       headerName: '상품명',
+      cellClass: 'text-start',
       field: 'goodsNm',
       width: 450,
       cellRenderer: (params: ICellRendererParams<GoodsData>) => {
@@ -60,7 +61,7 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
         return (
           <button
             type="button"
-            className="btn btn-link p-0 text-start"
+            className="btn p-0 fw-bold"
             onClick={() => onEdit(goodsId)}
           >
             {params.value}

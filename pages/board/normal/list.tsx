@@ -573,14 +573,17 @@ const BoardList = () => {
                         </div>
                       </div>
                       <div className="mb-3">
-                        <div className="text-break">
-                          {selectedBoard.content ? (
-                            // 게시글 내용은 HTML로 렌더링합니다.
-                            <div dangerouslySetInnerHTML={{ __html: selectedBoard.content }} />
-                          ) : (
-                            '내용이 없습니다.'
-                          )}
-                        </div>
+                      <div className="text-break board-detail-content">
+                        {selectedBoard.content ? (
+                          // 게시글 내용은 HTML로 렌더링합니다.
+                          <div
+                            className="board-detail-body"
+                            dangerouslySetInnerHTML={{ __html: selectedBoard.content }}
+                          />
+                        ) : (
+                          '내용이 없습니다.'
+                        )}
+                      </div>
                       </div>
                     </div>
                   )}

@@ -11,12 +11,31 @@ button {
 }
 
 .board-editor .ql-editor {
-  min-height: 300px;
+  min-height: 400px;
+  max-height: 400px;
+  height: 400px;
 }
 
 .form-control:disabled,
 .form-control[disabled] {
   color: #000;
+}
+
+/* 게시글 상세보기 코드 블록 스타일을 에디터와 비슷하게 맞춥니다 */
+.board-detail-content pre.ql-syntax,
+.board-detail-content code.ql-syntax,
+.board-detail-content pre.ql-syntax div,
+.board-detail-content pre[data-language] {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  background-color: #23241f;
+  color: #f8f8f2;
+  border-radius: 3px;
+  margin: 5px 0;
+  padding: 8px 12px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  display: block;
 }
 
 @media screen and (max-width: 576px) {
