@@ -23,6 +23,7 @@ interface BrandListGridProps {
   searchParams: Record<string, any>;
   onEdit: (brandNo: number) => void;
   onLoadingChange?: (loading: boolean) => void;
+  onDelete: (brandNo: number) => void;
 }
 
 export interface BrandListGridHandle {
@@ -34,10 +35,11 @@ const BrandListGrid = forwardRef<BrandListGridHandle, BrandListGridProps>(({
   searchParams,
   onEdit,
   onLoadingChange,
+  onDelete,
 }, ref) => {
   const gridApiRef = useRef<GridApi<BrandListItem> | null>(null);
 
-  // 로딩 상태를 상위로 전달합니다.
+  // 로딩 상태를 상위로 알립니다.
   const notifyLoading = useCallback((loading: boolean) => {
     // 상위 로딩 핸들러가 있을 때만 호출합니다.
     if (onLoadingChange) {
@@ -84,9 +86,29 @@ const BrandListGrid = forwardRef<BrandListGridHandle, BrandListGridProps>(({
       width: 170,
       valueFormatter: (params) => dateFormatter({ value: params.value } as any),
     },
-  ], [onEdit]);
+    {
+      headerName: '삭제',
+      field: 'deleteAction',
+      width: 100,
+      cellRenderer: (params) => {
+        const brandNo = params.data?.brandNo;
+        if (!brandNo) {
+          return null;
+        }
+        return (
+          <button
+            type="button"
+            className="btn btn-outline-danger btn-sm"
+            onClick={() => onDelete(brandNo)}
+          >
+            삭제
+          </button>
+        );
+      },
+    },
+  ], [onDelete, onEdit]);
 
-  // 그리드 기본 컬럼 속성을 정의합니다.
+  // 그리드 기본 컬럼 옵션을 정의합니다.
   const defaultColDef = useMemo<ColDef>(() => ({
     resizable: true,
     sortable: false,
@@ -120,9 +142,9 @@ const BrandListGrid = forwardRef<BrandListGridHandle, BrandListGridProps>(({
     },
   }), [notifyLoading, searchParams]);
 
-  // 그리드 데이터소스를 안전하게 설정합니다.
+  // 그리드 데이터소스를 안정적으로 설정합니다.
   const applyDatasource = useCallback((apiInstance: GridApi<BrandListItem>, datasource: IDatasource) => {
-    // ag-grid 버전에 따라 API가 다를 수 있어 분기 처리합니다.
+    // ag-grid 버전에 따라 API가 달라 분기 처리합니다.
     if (typeof (apiInstance as any).setGridOption === 'function') {
       (apiInstance as any).setGridOption('datasource', datasource);
       return;

@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import BrandSearchForm from '@/components/brand/BrandSearchForm';
 import BrandListGrid, { type BrandListGridHandle } from '@/components/brand/BrandListGrid';
 import BrandEditModal from '@/components/brand/BrandEditModal';
+import api from '@/utils/axios/axios';
+import { getLoginUsrNo } from '@/utils/auth';
 
 // 브랜드 목록 화면을 렌더링합니다.
 const BrandList = () => {
@@ -26,7 +28,7 @@ const BrandList = () => {
     if (typeof nextParams.brandNm === 'string') {
       nextParams.brandNm = nextParams.brandNm.trim();
     }
-    // 검색 파라미터를 저장합니다.
+    // 검색 파라미터를 설정합니다.
     setSearchParams(nextParams);
   }, []);
 
@@ -53,15 +55,47 @@ const BrandList = () => {
 
   // 저장 완료 후 목록을 갱신합니다.
   const handleSaved = useCallback(() => {
-    // 그리드가 있을 때만 새로고침합니다.
+    // 그리드가 있으면 새로고침합니다.
     if (gridRef.current) {
       gridRef.current.refresh();
     }
   }, []);
 
+  // 브랜드 삭제를 처리합니다.
+  const handleDelete = useCallback(async (brandNo: number) => {
+    const ok = confirm('해당 브랜드를 삭제하시겠습니까?');
+    if (!ok) {
+      return;
+    }
+
+    const usrNo = getLoginUsrNo();
+    if (!usrNo) {
+      alert('로그인 사용자 정보를 확인할 수 없습니다.');
+      return;
+    }
+
+    try {
+      const response = await api.post('/api/admin/brand/admin/delete', {
+        brandNo,
+        udtNo: usrNo,
+      });
+      if (response.data > 0) {
+        alert('브랜드가 삭제되었습니다.');
+        if (gridRef.current) {
+          gridRef.current.refresh();
+        }
+        return;
+      }
+      alert('브랜드 삭제에 실패했습니다.');
+    } catch (error) {
+      console.error('브랜드 삭제에 실패했습니다.', error);
+      alert('브랜드 삭제에 실패했습니다.');
+    }
+  }, []);
+
   // 모달 상태에 따라 바디 스크롤을 제어합니다.
   useEffect(() => {
-    // 모달이 열렸을 때 스크롤을 막습니다.
+    // 모달이 열리면 스크롤을 막습니다.
     if (isEditModalOpen) {
       document.body.style.overflow = 'hidden';
       return () => {
@@ -74,7 +108,7 @@ const BrandList = () => {
   return (
     <>
       <div className="page-header">
-        <h3 className="page-title"> 브랜드 관리 </h3>
+        <h3 className="page-title">브랜드 관리</h3>
         <nav aria-label="breadcrumb">
           <ol className="breadcrumb">
             <li className="breadcrumb-item"><a href="#">브랜드</a></li>
@@ -93,6 +127,7 @@ const BrandList = () => {
         searchParams={searchParams}
         onEdit={openEditModal}
         onLoadingChange={setLoading}
+        onDelete={handleDelete}
       />
 
       <div className="row">

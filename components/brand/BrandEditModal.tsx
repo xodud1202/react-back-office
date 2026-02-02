@@ -33,6 +33,7 @@ const ReactQuill = dynamic(
   {ssr: false}
 );
 
+// 브랜드 등록/수정 모달을 렌더링합니다.
 const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps) => {
   // 신규 등록 모드 여부를 계산합니다.
   const isCreateMode = useMemo(() => !brandNo, [brandNo]);
@@ -46,9 +47,11 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   // 상품 상단 안내 에디터 툴바/포맷 옵션을 구성합니다.
   const quillToolbarOptions = useMemo(
     () => ([
@@ -72,6 +75,7 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
     []
   );
 
+  // 상세 조회 결과를 폼 상태로 변환합니다.
   const buildFormFromDetail = useCallback((detail: BrandDetail | null): BrandFormState => ({
     brandNo: detail?.brandNo ?? null,
     brandNm: detail?.brandNm ?? '',
@@ -111,9 +115,9 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
     }
   }, [buildFormFromDetail]);
 
-  // 모달 오픈 시 모드에 맞게 데이터를 준비합니다.
+  // 모달 진입 시 모드에 맞게 데이터를 준비합니다.
   useEffect(() => {
-    // 모달이 닫혀있으면 상태를 초기화하지 않습니다.
+    // 모달이 열려있지 않으면 종료합니다.
     if (!isOpen) {
       return;
     }
@@ -184,7 +188,6 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
     }
   }, [brandNo]);
 
-
   // 상품 상단 안내 에디터 값을 반영합니다.
   const handleBrandNotiChange = useCallback((value: string) => {
     setForm((prev) => ({
@@ -201,6 +204,7 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
     editorId: 'brand-noti-editor',
   });
 
+  // 저장을 처리합니다.
   const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -252,6 +256,45 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
     }
   }, [form, isCreateMode, onClose, onSaved]);
 
+  // 브랜드 삭제를 처리합니다.
+  const handleDeleteBrand = useCallback(async () => {
+    if (!brandNo) {
+      return;
+    }
+
+    const ok = confirm('해당 브랜드를 삭제하시겠습니까?');
+    if (!ok) {
+      return;
+    }
+
+    const usrNo = getLoginUsrNo();
+    if (!usrNo) {
+      setError('로그인 사용자 정보를 확인할 수 없습니다.');
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
+    try {
+      const response = await api.post('/api/admin/brand/admin/delete', {
+        brandNo,
+        udtNo: usrNo,
+      });
+      if (response.data > 0) {
+        alert('브랜드가 삭제되었습니다.');
+        onSaved();
+        onClose();
+        return;
+      }
+      setError('브랜드 삭제에 실패했습니다.');
+    } catch (deleteError) {
+      console.error('브랜드 삭제에 실패했습니다.', deleteError);
+      setError('브랜드 삭제에 실패했습니다.');
+    } finally {
+      setDeleting(false);
+    }
+  }, [brandNo, onClose, onSaved]);
+
   if (!isOpen) {
     return null;
   }
@@ -271,8 +314,7 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
         role="dialog"
         aria-modal="true"
       >
-        <div className="modal-dialog modal-lg"
-             style={{margin: 0, maxWidth: '90vw', width: '100%', maxHeight: '90vh'}}>
+        <div className="modal-dialog modal-lg" style={{margin: 0, maxWidth: '90vw', width: '100%', maxHeight: '90vh'}}>
           <div className="modal-content" style={{
             height: '90vh',
             maxHeight: '90vh',
@@ -282,8 +324,7 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
           }}>
             <div className="modal-header position-relative">
               <h2 className="modal-title w-100 text-center">{isCreateMode ? '브랜드 등록' : '브랜드 수정'}</h2>
-              <button type="button" className="btn p-0 position-absolute end-0 me-3" aria-label="닫기"
-                      onClick={onClose}>
+              <button type="button" className="btn p-0 position-absolute end-0 me-3" aria-label="닫기" onClick={onClose}>
                 <i className="fa fa-window-close" aria-hidden="true"></i>
               </button>
             </div>
@@ -292,20 +333,47 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
               {!loading && error && <div className="text-danger mb-3">{error}</div>}
               {!loading && (
                 <>
-                  <div className="col-md-6">
-                    <div className="form-group mb-3">
-                      <label>노출여부</label>
-                      <select
-                        name="useYn"
-                        className="form-select"
-                        value={form.useYn}
-                        onChange={handleChange}
-                      >
-                        <option value="Y">Y</option>
-                        <option value="N">N</option>
-                      </select>
+                  <div className={"row"}>
+                    <div className="col-md-3">
+                      <div className="form-group mb-3">
+                        <label>브랜드명</label>
+                        <input
+                          type="text"
+                          name="brandNm"
+                          className="form-control"
+                          value={form.brandNm}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="form-group mb-3">
+                        <label>정렬순서</label>
+                        <input
+                          type="number"
+                          name="dispOrd"
+                          className="form-control"
+                          value={form.dispOrd}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="form-group mb-3">
+                        <label>노출여부</label>
+                        <select
+                          name="useYn"
+                          className="form-select"
+                          value={form.useYn}
+                          onChange={handleChange}
+                        >
+                          <option value="Y">Y</option>
+                          <option value="N">N</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
+
                   <div className="form-group mb-3">
                     <label>브랜드 로고</label>
                     <div className="d-flex align-items-center">
@@ -364,25 +432,18 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
                       formats={brandNotiQuill.quillFormats}
                     />
                   </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="form-group mb-3">
-                        <label>정렬순서</label>
-                        <input
-                          type="number"
-                          name="dispOrd"
-                          className="form-control"
-                          value={form.dispOrd}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-                  </div>
+
                 </>
               )}
               <div className="modal-footer">
-                <button type="submit" className="btn btn-primary" disabled={saving || loading}>
-                  {saving ? '저장중...' : '저장'}
+                {!isCreateMode && (
+                  <button type="button" className="btn btn-danger" onClick={handleDeleteBrand}
+                          disabled={deleting || saving || loading}>
+                    {deleting ? '삭제 중...' : '삭제'}
+                  </button>
+                )}
+                <button type="submit" className="btn btn-primary" disabled={saving || loading || deleting}>
+                  {saving ? '저장 중...' : '저장'}
                 </button>
                 <button type="button" className="btn btn-secondary" onClick={onClose}>
                   닫기
