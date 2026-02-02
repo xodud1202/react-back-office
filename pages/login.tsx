@@ -1,14 +1,11 @@
 import React, {useEffect, useState} from 'react'
 import {useRouter} from 'next/router'
-import api from '@/utils/axios/axios';
-import {deleteCookie, setCookie} from 'cookies-next';
+import api, { ensureAccessToken, setAccessToken } from '@/utils/axios/axios';
+import {setCookie} from 'cookies-next';
 import {useAppDispatch} from '@/utils/hooks/redux';
 import {loginSuccess} from '@/store/loginUser/loginUser';
-import {CheckAccessTokenPageProps, getCheckAccessTokenServerSideProps} from "@/utils/serverSideProps";
 
-export const getServerSideProps = getCheckAccessTokenServerSideProps;
-
-export default function Login({ data }: CheckAccessTokenPageProps) {
+export default function Login() {
   const dispatch = useAppDispatch();
   // const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const [id, setId] = useState('')
@@ -17,18 +14,17 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  // 토큰 체크 및 리다이렉트 로직
   useEffect(() => {
-    if (data && data.result === 'OK') {
-      router.replace('/main');
-    } else {
-      // 로그인이 안되어있다는 말은, REFRESH_TOKEN을 삭제해야한다는 말과 동일함.
-      deleteCookie('loginId', { path: '/' });
-      deleteCookie('usrNm', { path: '/' });
-      deleteCookie('refreshToken', { path: '/' });
-      deleteCookie('accessToken', { path: '/' });
-    }
-  }, [data, router]);
+    ensureAccessToken()
+      .then((token) => {
+        if (token) {
+          router.replace('/main');
+        }
+      })
+      .catch(() => {
+        // 아무 처리를 하지 않음
+      });
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -40,28 +36,27 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
       rememberMe: rememberMe
     };
 
-    await api.post('/api/backoffice/login', requestParam).then(response => {
+    try {
+      const response = await api.post('/api/backoffice/login', requestParam);
       const body = response.data;
 
-      // 쿠키 옵션 설정
+      setAccessToken(body.accessToken);
+
       const cookieOptions = {
         path: '/',
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax' as const,
-        maxAge: 30 * 60, // 30분 (초 단위)
+        maxAge: 30 * 60,
       };
 
-      setCookie('accessToken', body.accessToken, cookieOptions);
       setCookie('loginId', body.userInfo.loginId, cookieOptions);
       setCookie('userNm', body.userInfo.userNm, cookieOptions);
       setCookie('usrNo', body.userInfo.usrNo, cookieOptions);
-      console.log('accessToken:', body.accessToken);
 
-      // 로그인 정보 및 refreshToken은 30일 처리 > accessToken 만료시 삭제함.
       const userData = {
         usrNo: body.userInfo.usrNo,
-        userNm: body.userInfo.usrNm,
+        userNm: body.userInfo.userNm,
         loginId: body.userInfo.loginId,
         hPhoneNo: body.userInfo.hPhoneNo,
         email: body.userInfo.email,
@@ -70,21 +65,11 @@ export default function Login({ data }: CheckAccessTokenPageProps) {
       };
 
       dispatch(loginSuccess(userData));
-
-      // 로그인 유지를 선택한 경우 Refresh Token 저장
-      if (rememberMe && body.refreshToken) {
-        cookieOptions.maxAge = 60 * 60 * 24 * 30;   // 30일
-        setCookie('refreshToken', body.refreshToken, cookieOptions);
-      }
-
-      console.log('loginSuccess:', body.userInfo);
-
       router.replace('/');
-    }).catch(e => {
-      alert('로그인 실패: ' + e.message);
-    })
+    } catch (e: any) {
+      alert('로그인 실패: ' + (e.message ?? '알 수 없는 오류'));
+    }
   }
-
   return (
     <div className="container-scroller">
       <div className="container-fluid page-body-wrapper full-page-wrapper">

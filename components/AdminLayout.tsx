@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { deleteCookie, getCookie } from 'cookies-next';
+import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/router';
-import api from '@/utils/axios/axios';
+import api, { ensureAccessToken, clearAuthData } from '@/utils/axios/axios';
 import { MenuItem } from '@/types/menu';
 
 type AdminLayoutProps = {
@@ -25,17 +25,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    // AdminLayout 진입 시 최신 메뉴를 조회합니다.
     let isMounted = true;
 
-    // 메뉴 목록을 API로 조회합니다.
     const fetchMenuItems = async () => {
-      const accessToken = getCookie('accessToken', { path: '/' });
-      if (!accessToken) {
-        router.replace('/login');
-        return;
-      }
       try {
+        await ensureAccessToken();
         const response = await api.get('/api/admin/menu/list');
         if (isMounted) {
           setResolvedMenuItems(response.data || []);
@@ -57,15 +51,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   }, [router.asPath]);
 
   // 로그아웃 처리 후 로그인 화면으로 이동합니다.
-  const handleLogout = () => {
-    localStorage.removeItem('refreshToken');
-
-    // 로그인이 안되어있다는 말은, REFRESH_TOKEN을 삭제해야한다는 말과 동일함.
-    deleteCookie('loginId', { path: '/' });
-    deleteCookie('usrNm', { path: '/' });
-    deleteCookie('refreshToken', { path: '/' });
-    deleteCookie('accessToken', { path: '/' });
-    router.replace('/login');
+  const handleLogout = async () => {
+    try {
+      await api.post('/api/backoffice/logout');
+    } catch (error) {
+      console.error('로그아웃 요청 실패:', error);
+    } finally {
+      clearAuthData();
+      router.replace('/login');
+    }
   };
 
   // 메뉴 접힘 상태를 토글합니다.
