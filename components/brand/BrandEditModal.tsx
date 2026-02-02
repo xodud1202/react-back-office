@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import dynamic from 'next/dynamic';
 import api from '@/utils/axios/axios';
-import { getLoginUsrNo } from '@/utils/auth';
-import type { BrandDetail, BrandSavePayload } from '@/components/brand/types';
+import {getLoginUsrNo} from '@/utils/auth';
+import useQuillImageUpload from '@/hooks/useQuillImageUpload';
+import type {BrandDetail, BrandSavePayload} from '@/components/brand/types';
 
 interface BrandEditModalProps {
   isOpen: boolean;
@@ -19,8 +21,19 @@ interface BrandFormState {
   useYn: string;
 }
 
-// 브랜드 등록/수정 모달을 렌더링합니다.
-const BrandEditModal = ({ isOpen, brandNo, onClose, onSaved }: BrandEditModalProps) => {
+// 리액트 퀼 에디터를 SSR 없이 로딩합니다.
+const ReactQuill = dynamic(
+  async () => {
+    const mod = await import('react-quill-new');
+    const Component = mod.default;
+    return React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
+      <Component ref={ref} {...props} />
+    ));
+  },
+  {ssr: false}
+);
+
+const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps) => {
   // 신규 등록 모드 여부를 계산합니다.
   const isCreateMode = useMemo(() => !brandNo, [brandNo]);
   const [form, setForm] = useState<BrandFormState>({
@@ -34,8 +47,31 @@ const BrandEditModal = ({ isOpen, brandNo, onClose, onSaved }: BrandEditModalPro
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  // 상품 상단 안내 에디터 툴바/포맷 옵션을 구성합니다.
+  const quillToolbarOptions = useMemo(
+    () => ([
+      ['bold', 'italic', 'underline', 'strike'],
+      [{list: 'ordered'}, {list: 'bullet'}],
+      ['link', 'image'],
+      ['clean'],
+    ]),
+    []
+  );
+  const quillFormatsOptions = useMemo(
+    () => ([
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'list',
+      'link',
+      'image',
+    ]),
+    []
+  );
 
-  // 상세 조회 결과를 폼 상태로 변환합니다.
   const buildFormFromDetail = useCallback((detail: BrandDetail | null): BrandFormState => ({
     brandNo: detail?.brandNo ?? null,
     brandNm: detail?.brandNm ?? '',
@@ -64,7 +100,7 @@ const BrandEditModal = ({ isOpen, brandNo, onClose, onSaved }: BrandEditModalPro
     setError(null);
     try {
       const response = await api.get('/api/admin/brand/admin/detail', {
-        params: { brandNo: targetBrandNo },
+        params: {brandNo: targetBrandNo},
       });
       setForm(buildFormFromDetail(response.data || null));
     } catch (e) {
@@ -92,14 +128,79 @@ const BrandEditModal = ({ isOpen, brandNo, onClose, onSaved }: BrandEditModalPro
   // 입력값 변경을 처리합니다.
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     // 이벤트에서 name과 값을 추출합니다.
-    const { name, value } = e.target;
+    const {name, value} = e.target;
     setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
   }, []);
 
-  // 저장을 처리합니다.
+  // 브랜드 로고 업로드 버튼 클릭을 처리합니다.
+  const handleLogoUploadClick = useCallback(() => {
+    if (!brandNo) {
+      alert('브랜드를 먼저 저장한 뒤 로고를 업로드해주세요.');
+      return;
+    }
+    fileInputRef.current?.click();
+  }, [brandNo]);
+
+  // 브랜드 로고 파일 선택을 처리합니다.
+  const handleLogoFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (!brandNo) {
+      alert('브랜드를 먼저 저장한 뒤 로고를 업로드해주세요.');
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('brandNo', String(brandNo));
+
+      const response = await api.post('/api/upload/brand-logo', formData);
+      const data = response.data || {};
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        brandLogoPath: data.brandLogoPath || '',
+      }));
+      alert(data.message || '로고가 업로드되었습니다.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      alert('로고 업로드 중 오류가 발생했습니다: ' + message);
+    } finally {
+      setUploadingLogo(false);
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  }, [brandNo]);
+
+
+  // 상품 상단 안내 에디터 값을 반영합니다.
+  const handleBrandNotiChange = useCallback((value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      brandNoti: value,
+    }));
+  }, []);
+
+  // 상품 상단 안내 에디터 이미지 업로드를 연동합니다.
+  const brandNotiQuill = useQuillImageUpload({
+    toolbarOptions: quillToolbarOptions,
+    formats: quillFormatsOptions,
+    onChange: handleBrandNotiChange,
+    editorId: 'brand-noti-editor',
+  });
+
   const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -170,47 +271,97 @@ const BrandEditModal = ({ isOpen, brandNo, onClose, onSaved }: BrandEditModalPro
         role="dialog"
         aria-modal="true"
       >
-        <div className="modal-dialog modal-lg" style={{ margin: 0, maxWidth: '90vw', width: '100%', maxHeight: '90vh' }}>
-          <div className="modal-content" style={{ height: '90vh', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div className="modal-dialog modal-lg"
+             style={{margin: 0, maxWidth: '90vw', width: '100%', maxHeight: '90vh'}}>
+          <div className="modal-content" style={{
+            height: '90vh',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
             <div className="modal-header position-relative">
               <h2 className="modal-title w-100 text-center">{isCreateMode ? '브랜드 등록' : '브랜드 수정'}</h2>
-              <button type="button" className="btn p-0 position-absolute end-0 me-3" aria-label="닫기" onClick={onClose}>
+              <button type="button" className="btn p-0 position-absolute end-0 me-3" aria-label="닫기"
+                      onClick={onClose}>
                 <i className="fa fa-window-close" aria-hidden="true"></i>
               </button>
             </div>
-            <form className="modal-body" style={{ overflowY: 'auto', flex: 1 }} onSubmit={handleSubmit}>
+            <form className="modal-body" style={{overflowY: 'auto', flex: 1}} onSubmit={handleSubmit}>
               {loading && <div>브랜드 정보를 불러오는 중입니다.</div>}
               {!loading && error && <div className="text-danger mb-3">{error}</div>}
               {!loading && (
                 <>
-                  <div className="form-group mb-3">
-                    <label>브랜드명</label>
-                    <input
-                      type="text"
-                      name="brandNm"
-                      className="form-control"
-                      value={form.brandNm}
-                      onChange={handleChange}
-                    />
+                  <div className="col-md-6">
+                    <div className="form-group mb-3">
+                      <label>노출여부</label>
+                      <select
+                        name="useYn"
+                        className="form-select"
+                        value={form.useYn}
+                        onChange={handleChange}
+                      >
+                        <option value="Y">Y</option>
+                        <option value="N">N</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="form-group mb-3">
-                    <label>브랜드 로고 경로</label>
-                    <input
-                      type="text"
-                      name="brandLogoPath"
-                      className="form-control"
-                      value={form.brandLogoPath}
-                      onChange={handleChange}
-                    />
+                    <label>브랜드 로고</label>
+                    <div className="d-flex align-items-center">
+                      {form.brandLogoPath ? (
+                        <img
+                          src={form.brandLogoPath}
+                          alt="브랜드 로고"
+                          className="img-fluid border"
+                          style={{width: '48px', height: '48px', objectFit: 'contain'}}
+                        />
+                      ) : (
+                        <div
+                          className="border text-muted d-flex align-items-center justify-content-center"
+                          style={{width: '48px', height: '48px', fontSize: '12px'}}
+                        >
+                          없음
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleLogoFileChange}
+                        className="d-none"
+                        accept="image/*"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleLogoUploadClick}
+                        className="btn btn-secondary btn-sm ml-3"
+                        disabled={uploadingLogo}
+                      >
+                        {uploadingLogo ? '업로드 중...' : '로고 업로드'}
+                      </button>
+                      <input
+                        type="text"
+                        name="brandLogoPath"
+                        value={form.brandLogoPath}
+                        readOnly
+                        className="form-control ml-3"
+                      />
+                    </div>
+                    {!brandNo && (
+                      <small className="text-muted d-block mt-2">브랜드 등록 후 로고를 업로드할 수 있습니다.</small>
+                    )}
                   </div>
                   <div className="form-group mb-3">
-                    <label>브랜드 알림</label>
-                    <textarea
-                      name="brandNoti"
-                      className="form-control"
+                    <label>상품 상단 안내</label>
+                    <ReactQuill
+                      id="brand-noti-editor"
+                      ref={brandNotiQuill.quillRef}
+                      theme="snow"
+                      className="board-editor"
                       value={form.brandNoti}
-                      onChange={handleChange}
-                      rows={4}
+                      onChange={brandNotiQuill.handleEditorChange}
+                      modules={brandNotiQuill.quillModules}
+                      formats={brandNotiQuill.quillFormats}
                     />
                   </div>
                   <div className="row">
@@ -224,20 +375,6 @@ const BrandEditModal = ({ isOpen, brandNo, onClose, onSaved }: BrandEditModalPro
                           value={form.dispOrd}
                           onChange={handleChange}
                         />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="form-group mb-3">
-                        <label>노출여부</label>
-                        <select
-                          name="useYn"
-                          className="form-select"
-                          value={form.useYn}
-                          onChange={handleChange}
-                        >
-                          <option value="Y">Y</option>
-                          <option value="N">N</option>
-                        </select>
                       </div>
                     </div>
                   </div>
@@ -257,7 +394,7 @@ const BrandEditModal = ({ isOpen, brandNo, onClose, onSaved }: BrandEditModalPro
       </div>
       <div
         className="modal-backdrop fade show"
-        style={{ position: 'fixed', inset: 0, zIndex: 1055 }}
+        style={{position: 'fixed', inset: 0, zIndex: 1055}}
         onClick={onClose}
       ></div>
     </>
