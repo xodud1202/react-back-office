@@ -79,7 +79,7 @@ const CategoryTree = ({
               {item.categoryNm}
             </span>
             {item.showYn === 'N' && (
-              <span className="badge bg-secondary ms-2">비노출</span>
+              <span className="badge bg-dark ms-2">비노출</span>
             )}
           </div>
           {hasChildren && isExpanded && item.children.length > 0 && (
