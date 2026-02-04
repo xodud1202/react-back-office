@@ -348,22 +348,24 @@ const CategoryManage = () => {
     }
     const target = contextMenu.target;
     // 컨텍스트 메뉴 항목을 구성합니다.
-    return [
-      {
+    const items = [];
+    if (!target.categoryLevel || target.categoryLevel < 3) {
+      items.push({
         label: '하위 카테고리 추가',
         onClick: () => {
           // 하위 카테고리 추가 모드로 전환합니다.
           handleAddChildCategory(target);
         },
+      });
+    }
+    items.push({
+      label: '카테고리 삭제',
+      onClick: () => {
+        // 카테고리 삭제를 요청합니다.
+        handleDeleteCategory(target.categoryId);
       },
-      {
-        label: '카테고리 삭제',
-        onClick: () => {
-          // 카테고리 삭제를 요청합니다.
-          handleDeleteCategory(target.categoryId);
-        },
-      },
-    ];
+    });
+    return items;
   }, [contextMenu, handleAddChildCategory, handleDeleteCategory]);
 
   return (
