@@ -47,6 +47,25 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
   // 상품 목록 그리드 컬럼을 정의합니다.
   const columnDefs = useMemo<ColDef<GoodsData>[]>(() => [
     { headerName: '상품코드', field: 'goodsId', width: 150 },
+    {
+      headerName: '이미지',
+      field: 'imgUrl',
+      width: 90,
+      cellRenderer: (params: ICellRendererParams<GoodsData>) => {
+        // 상품 이미지가 있으면 노출합니다.
+        const imgUrl = params.data?.imgUrl;
+        if (!imgUrl) {
+          return null;
+        }
+        return (
+          <img
+            src={imgUrl}
+            alt="상품 이미지"
+            style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+          />
+        );
+      },
+    },
     { headerName: '품번코드', field: 'erpStyleCd', width: 120 },
     {
       headerName: '상품명',
@@ -177,6 +196,7 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
                 pagination
                 paginationPageSize={20}
                 getRowId={(params) => String(params.data?.goodsId ?? '')}
+                rowHeight={50}
                 onGridReady={handleGridReady}
               />
             </div>

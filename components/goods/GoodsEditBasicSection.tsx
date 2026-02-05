@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import api from '@/utils/axios/axios';
-import { getLoginUsrNo } from '@/utils/auth';
+import { requireLoginUsrNo } from '@/utils/auth';
 import type {
   CommonCode,
   GoodsDetail,
@@ -97,9 +97,8 @@ const GoodsEditBasicSection = ({
       return;
     }
 
-    const udtNo = getLoginUsrNo();
+    const udtNo = requireLoginUsrNo();
     if (!udtNo) {
-      alert('로그인 정보를 확인할 수 없습니다.');
       return;
     }
 

@@ -9,3 +9,21 @@ export const getLoginUsrNo = (): number | null => {
   }
   return null;
 };
+
+// 로그인 사용자 번호를 확인하고 없으면 로그인 페이지로 이동합니다.
+export const requireLoginUsrNo = (onFail?: (message: string) => void): number | null => {
+  const usrNo = getLoginUsrNo();
+  if (usrNo != null) {
+    return usrNo;
+  }
+  const message = '로그인 사용자 정보를 확인할 수 없습니다.';
+  if (onFail) {
+    onFail(message);
+  } else if (typeof window !== 'undefined') {
+    alert(message);
+  }
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login';
+  }
+  return null;
+};

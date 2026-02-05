@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import api from '@/utils/axios/axios';
 import useQuillImageUpload from '@/hooks/useQuillImageUpload';
-import { getLoginUsrNo } from '@/utils/auth';
+import { requireLoginUsrNo } from '@/utils/auth';
 import type { GoodsDescData } from '@/components/goods/types';
 
 interface GoodsDescEditorProps {
@@ -96,9 +96,8 @@ const GoodsDescEditor = ({ goodsId, isOpen }: GoodsDescEditorProps) => {
       alert('상품코드를 확인해주세요.');
       return;
     }
-    const loginUsrNo = getLoginUsrNo();
+    const loginUsrNo = requireLoginUsrNo();
     if (!loginUsrNo) {
-      alert('로그인 정보를 확인할 수 없습니다.');
       return;
     }
     setSaving(true);

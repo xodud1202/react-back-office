@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import api from '@/utils/axios/axios';
 import Modal from '@/components/common/Modal';
-import { getLoginUsrNo } from '@/utils/auth';
+import { requireLoginUsrNo } from '@/utils/auth';
 import type {
   CategoryOption,
   CategoryRow,
@@ -120,9 +120,8 @@ const GoodsEditModal = ({
       setGoodsSizeRows((prev) => prev.filter((item) => item.rowKey !== rowKey));
       return;
     }
-    const loginUsrNo = getLoginUsrNo();
+    const loginUsrNo = requireLoginUsrNo();
     if (!loginUsrNo) {
-      alert('로그인 정보를 확인할 수 없습니다.');
       return;
     }
     try {
@@ -154,11 +153,8 @@ const GoodsEditModal = ({
       }
       return;
     }
-    const loginUsrNo = getLoginUsrNo();
+    const loginUsrNo = requireLoginUsrNo(showAlert ? undefined : () => {});
     if (!loginUsrNo) {
-      if (showAlert) {
-        alert('로그인 정보를 확인할 수 없습니다.');
-      }
       return;
     }
     const orders = buildGoodsSizeOrders(rows);
@@ -217,9 +213,8 @@ const GoodsEditModal = ({
       alert('ERP 사이즈코드를 입력해주세요.');
       return;
     }
-    const loginUsrNo = getLoginUsrNo();
+    const loginUsrNo = requireLoginUsrNo();
     if (!loginUsrNo) {
-      alert('로그인 정보를 확인할 수 없습니다.');
       return;
     }
 

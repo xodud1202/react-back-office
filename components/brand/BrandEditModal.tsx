@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import dynamic from 'next/dynamic';
 import api from '@/utils/axios/axios';
-import {getLoginUsrNo} from '@/utils/auth';
+import {requireLoginUsrNo} from '@/utils/auth';
 import useQuillImageUpload from '@/hooks/useQuillImageUpload';
 import type {BrandDetail, BrandSavePayload} from '@/components/brand/types';
 
@@ -215,9 +215,8 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
     }
 
     // 로그인 사용자 정보를 확인합니다.
-    const usrNo = getLoginUsrNo();
+    const usrNo = requireLoginUsrNo((message) => setError(message));
     if (!usrNo) {
-      setError('로그인 사용자 정보를 확인할 수 없습니다.');
       return;
     }
 
@@ -267,9 +266,8 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
       return;
     }
 
-    const usrNo = getLoginUsrNo();
+    const usrNo = requireLoginUsrNo((message) => setError(message));
     if (!usrNo) {
-      setError('로그인 사용자 정보를 확인할 수 없습니다.');
       return;
     }
 

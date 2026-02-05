@@ -9,6 +9,7 @@ export interface GoodsData {
   goodsDivCd: string;
   goodsDivNm: string;
   showYn: string;
+  imgUrl?: string;
   regDt: string;
   udtDt: string;
 }

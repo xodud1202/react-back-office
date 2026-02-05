@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '@/utils/axios/axios';
-import { getLoginUsrNo } from '@/utils/auth';
+import { requireLoginUsrNo } from '@/utils/auth';
 import CategoryTree from '@/components/category/CategoryTree';
 import CategoryDetailForm from '@/components/category/CategoryDetailForm';
 import {
@@ -208,9 +208,8 @@ const CategoryManage = () => {
       return;
     }
 
-    const usrNo = getLoginUsrNo();
+    const usrNo = requireLoginUsrNo();
     if (!usrNo) {
-      alert('로그인 사용자 정보를 확인할 수 없습니다.');
       return;
     }
 
@@ -291,9 +290,8 @@ const CategoryManage = () => {
       return;
     }
 
-    const usrNo = getLoginUsrNo();
+    const usrNo = requireLoginUsrNo();
     if (!usrNo) {
-      alert('로그인 사용자 정보를 확인할 수 없습니다.');
       return;
     }
 

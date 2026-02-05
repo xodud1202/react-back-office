@@ -3,7 +3,7 @@ import BrandSearchForm from '@/components/brand/BrandSearchForm';
 import BrandListGrid, { type BrandListGridHandle } from '@/components/brand/BrandListGrid';
 import BrandEditModal from '@/components/brand/BrandEditModal';
 import api from '@/utils/axios/axios';
-import { getLoginUsrNo } from '@/utils/auth';
+import { requireLoginUsrNo } from '@/utils/auth';
 
 // 브랜드 목록 화면을 렌더링합니다.
 const BrandList = () => {
@@ -68,9 +68,8 @@ const BrandList = () => {
       return;
     }
 
-    const usrNo = getLoginUsrNo();
+    const usrNo = requireLoginUsrNo();
     if (!usrNo) {
-      alert('로그인 사용자 정보를 확인할 수 없습니다.');
       return;
     }
 

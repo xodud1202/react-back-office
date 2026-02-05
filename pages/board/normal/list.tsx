@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic';
 import api from '@/utils/axios/axios';
 import { dateFormatter } from '@/utils/common';
-import { getLoginUsrNo } from '@/utils/auth';
+import { requireLoginUsrNo } from '@/utils/auth';
 import useQuillImageUpload from '@/hooks/useQuillImageUpload';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams, IDatasource, IGetRowsParams } from 'ag-grid-community';
@@ -233,9 +233,8 @@ const BoardList = () => {
     if (!isCreateMode && !editForm.boardNo) {
       return;
     }
-    const usrNo = getLoginUsrNo();
+    const usrNo = requireLoginUsrNo((message) => setEditError(message));
     if (!usrNo) {
-      setEditError('로그인 사용자 정보를 확인할 수 없습니다.');
       return;
     }
     setEditSaving(true);
@@ -274,9 +273,8 @@ const BoardList = () => {
     if (!boardNo) {
       return;
     }
-    const usrNo = getLoginUsrNo();
+    const usrNo = requireLoginUsrNo();
     if (!usrNo) {
-      alert('로그인 사용자 정보를 확인할 수 없습니다.');
       return;
     }
     if (!confirm('게시글을 삭제하시겠습니까?')) {

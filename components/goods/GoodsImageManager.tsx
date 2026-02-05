@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '@/utils/axios/axios';
-import { getLoginUsrNo } from '@/utils/auth';
+import { requireLoginUsrNo } from '@/utils/auth';
 import type { GoodsImageData } from '@/components/goods/types';
 
 interface GoodsImageManagerProps {
@@ -110,9 +110,8 @@ const GoodsImageManager = ({ goodsId, isOpen }: GoodsImageManagerProps) => {
       alert(validationMessage);
       return;
     }
-    const loginUsrNo = getLoginUsrNo();
+    const loginUsrNo = requireLoginUsrNo();
     if (!loginUsrNo) {
-      alert('로그인 정보를 확인할 수 없습니다.');
       return;
     }
     const formData = new FormData();
@@ -140,9 +139,8 @@ const GoodsImageManager = ({ goodsId, isOpen }: GoodsImageManagerProps) => {
     if (!goodsId) {
       return;
     }
-    const loginUsrNo = getLoginUsrNo();
+    const loginUsrNo = requireLoginUsrNo();
     if (!loginUsrNo) {
-      alert('로그인 정보를 확인할 수 없습니다.');
       return;
     }
     const shouldDelete = window.confirm('이미지를 삭제하시겠습니까?');
@@ -174,7 +172,7 @@ const GoodsImageManager = ({ goodsId, isOpen }: GoodsImageManagerProps) => {
     if (!goodsId) {
       return;
     }
-    const loginUsrNo = getLoginUsrNo();
+    const loginUsrNo = requireLoginUsrNo(() => {});
     if (!loginUsrNo) {
       return;
     }

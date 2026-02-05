@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GetServerSideProps, GetServerSidePropsContext } from 'next';
 import api from '@/utils/axios/axios';
-import { getLoginUsrNo } from '@/utils/auth';
+import { requireLoginUsrNo } from '@/utils/auth';
 import { fetchSSRList } from '@/utils/ssrFetch';
 
 interface CommonCode {
@@ -133,9 +133,8 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
       return;
     }
 
-    const regNo = getLoginUsrNo();
+    const regNo = requireLoginUsrNo();
     if (!regNo) {
-      alert('로그인 정보를 확인할 수 없습니다.');
       return;
     }
 
