@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react'
 import {useRouter} from 'next/router'
-import api, { ensureAccessToken, setAccessToken } from '@/utils/axios/axios';
+import api, { clearAuthData, ensureAccessToken, setAccessToken } from '@/utils/axios/axios';
 import {setCookie} from 'cookies-next';
 import {useAppDispatch} from '@/utils/hooks/redux';
 import {loginSuccess} from '@/store/loginUser/loginUser';
@@ -19,10 +19,13 @@ export default function Login() {
       .then((token) => {
         if (token) {
           router.replace('/main');
+          return;
         }
+        // 로그인 화면 접근 시 인증 정보를 정리합니다.
+        clearAuthData();
       })
       .catch(() => {
-        // 아무 처리를 하지 않음
+        clearAuthData();
       });
   }, [router]);
 
@@ -42,12 +45,14 @@ export default function Login() {
 
       setAccessToken(body.accessToken);
 
+      // 로그인 정보 쿠키 60일 저장. accessToken이 만료되면 login화면으로 이동됨.
+      // login 화면 접근시 cookie 삭제되도록 처리
       const cookieOptions = {
         path: '/',
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax' as const,
-        maxAge: 30 * 60,
+        maxAge: 60 * 60 * 24 * 60,
       };
 
       setCookie('loginId', body.userInfo.loginId, cookieOptions);
