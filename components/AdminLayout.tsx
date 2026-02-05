@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/router';
 import api, { ensureAccessToken, clearAuthData } from '@/utils/axios/axios';
 import { MenuItem } from '@/types/menu';
+import { useAppSelector } from '@/utils/hooks/redux';
 
 type AdminLayoutProps = {
   children: React.ReactNode;
@@ -11,18 +11,10 @@ type AdminLayoutProps = {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const router = useRouter();
-  const [userNm, setUserNm] = useState('');
+  const userNm = useAppSelector((state) => state.auth.user?.userNm ?? '');
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [resolvedMenuItems, setResolvedMenuItems] = useState<MenuItem[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    // 사용자명을 쿠키에서 조회합니다.
-    const cookieUserNm = getCookie('userNm', { path: '/' });
-    if (typeof cookieUserNm === 'string') {
-      setUserNm(cookieUserNm);
-    }
-  }, []);
 
   useEffect(() => {
     let isMounted = true;

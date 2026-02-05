@@ -62,15 +62,7 @@ export const clearAuthData = () => {
   deleteCookie('loginId', { path: '/' });
   deleteCookie('userNm', { path: '/' });
   deleteCookie('usrNo', { path: '/' });
-};
-
-// 리프레시 시에 사용할 loginId를 쿠키에서 찾습니다.
-const getLoginIdForRefresh = (): string | null => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  const loginId = getCookie('loginId', { path: '/' });
-  return typeof loginId === 'string' ? loginId : null;
+  deleteCookie('usrGradeCd', { path: '/' });
 };
 
 // 요청에 Authorization 헤더를 붙이는 헬퍼
@@ -92,8 +84,8 @@ export const refreshAccessToken = async (): Promise<string | null> => {
     return refreshPromise;
   }
 
-  const loginId = getLoginIdForRefresh();
-  const config = loginId ? { params: { loginId } } : undefined;
+  const usrNo = getCookie('usrNo', { path: '/' });
+  const config = typeof usrNo === 'string' ? { params: { usrNo } } : undefined;
 
   refreshPromise = refreshClient
     .get('/token/backoffice/access-token', config)

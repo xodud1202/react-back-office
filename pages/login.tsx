@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import {useRouter} from 'next/router'
 import api, { clearAuthData, ensureAccessToken, setAccessToken } from '@/utils/axios/axios';
-import {setCookie} from 'cookies-next';
+import {deleteCookie, setCookie} from 'cookies-next';
 import {useAppDispatch} from '@/utils/hooks/redux';
 import {loginSuccess} from '@/store/loginUser/loginUser';
 
@@ -55,18 +55,13 @@ export default function Login() {
         maxAge: 60 * 60 * 24 * 60,
       };
 
-      setCookie('loginId', body.userInfo.loginId, cookieOptions);
-      setCookie('userNm', body.userInfo.userNm, cookieOptions);
       setCookie('usrNo', body.userInfo.usrNo, cookieOptions);
 
       const userData = {
         usrNo: body.userInfo.usrNo,
         userNm: body.userInfo.userNm,
         loginId: body.userInfo.loginId,
-        hPhoneNo: body.userInfo.hPhoneNo,
-        email: body.userInfo.email,
         usrGradeCd: body.userInfo.usrGradeCd,
-        usrStatCd: body.userInfo.usrStatCd
       };
 
       dispatch(loginSuccess(userData));

@@ -1,4 +1,5 @@
 import { getCookie } from 'cookies-next';
+import { store } from '@/store/setting/store';
 
 // 로그인 사용자 번호를 쿠키에서 조회합니다.
 export const getLoginUsrNo = (): number | null => {
@@ -12,7 +13,8 @@ export const getLoginUsrNo = (): number | null => {
 
 // 로그인 사용자 번호를 확인하고 없으면 로그인 페이지로 이동합니다.
 export const requireLoginUsrNo = (onFail?: (message: string) => void): number | null => {
-  const usrNo = getLoginUsrNo();
+  const stateUsrNo = store.getState().auth?.user?.usrNo;
+  const usrNo = typeof stateUsrNo === 'number' && !Number.isNaN(stateUsrNo) ? stateUsrNo : getLoginUsrNo();
   if (usrNo != null) {
     return usrNo;
   }
