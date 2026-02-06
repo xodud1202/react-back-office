@@ -27,8 +27,8 @@ interface EditFormState {
 
 // 공통코드 관리 화면을 렌더링합니다.
 const CommonCodeManagePage = () => {
-  const [grpCdSearch, setGrpCdSearch] = useState('');
-  const [grpCdNmSearch, setGrpCdNmSearch] = useState('');
+  const [searchGb, setSearchGb] = useState<'grpCd' | 'grpCdNm'>('grpCd');
+  const [searchValue, setSearchValue] = useState('');
   const [groupRows, setGroupRows] = useState<CommonCodeRow[]>([]);
   const [childRows, setChildRows] = useState<CommonCodeRow[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<CommonCodeRow | null>(null);
@@ -50,12 +50,13 @@ const CommonCodeManagePage = () => {
 
   // 검색 조건 기준으로 상위 그룹코드 목록을 조회합니다.
   const fetchGroupList = useCallback(async () => {
+    const trimmedSearchValue = searchValue.trim();
     setGroupLoading(true);
     try {
       const response = await api.get('/api/admin/common/code/manage/group/list', {
         params: {
-          grpCd: grpCdSearch.trim() || undefined,
-          grpCdNm: grpCdNmSearch.trim() || undefined,
+          grpCd: searchGb === 'grpCd' ? (trimmedSearchValue || undefined) : undefined,
+          grpCdNm: searchGb === 'grpCdNm' ? (trimmedSearchValue || undefined) : undefined,
         },
       });
       const list = (response.data || []) as CommonCodeRow[];
@@ -79,7 +80,7 @@ const CommonCodeManagePage = () => {
     } finally {
       setGroupLoading(false);
     }
-  }, [grpCdNmSearch, grpCdSearch]);
+  }, [searchGb, searchValue]);
 
   // 선택한 그룹코드 기준으로 하위 코드 목록을 조회합니다.
   const fetchChildList = useCallback(async (grpCd: string) => {
@@ -295,12 +296,10 @@ const CommonCodeManagePage = () => {
 
   // 상위 그룹코드 그리드 컬럼을 정의합니다.
   const groupColumnDefs = useMemo<ColDef<CommonCodeRow>[]>(() => [
-    { headerName: '그룹코드', field: 'cd', width: 160 },
     {
-      headerName: '그룹코드명',
-      field: 'cdNm',
-      flex: 1,
-      cellClass: 'text-start',
+      headerName: '그룹코드',
+      field: 'cd',
+      width: 160,
       cellRenderer: (params: ICellRendererParams<CommonCodeRow>) => {
         const row = params.data;
         if (!row) {
@@ -309,13 +308,19 @@ const CommonCodeManagePage = () => {
         return (
           <button
             type="button"
-            className="btn p-0 fw-bold text-start"
+            className="btn p-0 fw-bold text-start text-primary"
             onClick={() => openEditGroupModal(row)}
           >
             {params.value}
           </button>
         );
       },
+    },
+    {
+      headerName: '그룹코드명',
+      field: 'cdNm',
+      flex: 1,
+      cellClass: 'text-start',
     },
     { headerName: '사용여부', field: 'useYn', width: 100 },
     { headerName: '정렬순서', field: 'dispOrd', width: 110 },
@@ -324,12 +329,10 @@ const CommonCodeManagePage = () => {
   // 하위 코드 그리드 컬럼을 정의합니다.
   const childColumnDefs = useMemo<ColDef<CommonCodeRow>[]>(() => [
     { headerName: '그룹코드', field: 'grpCd', width: 160 },
-    { headerName: '코드', field: 'cd', width: 160 },
     {
-      headerName: '코드명',
-      field: 'cdNm',
-      flex: 1,
-      cellClass: 'text-start',
+      headerName: '코드',
+      field: 'cd',
+      width: 160,
       cellRenderer: (params: ICellRendererParams<CommonCodeRow>) => {
         const row = params.data;
         if (!row) {
@@ -338,13 +341,19 @@ const CommonCodeManagePage = () => {
         return (
           <button
             type="button"
-            className="btn p-0 fw-bold text-start"
+            className="btn p-0 fw-bold text-start text-primary"
             onClick={() => openEditChildModal(row)}
           >
             {params.value}
           </button>
         );
       },
+    },
+    {
+      headerName: '코드명',
+      field: 'cdNm',
+      flex: 1,
+      cellClass: 'text-start',
     },
     { headerName: '사용여부', field: 'useYn', width: 100 },
     { headerName: '정렬순서', field: 'dispOrd', width: 110 },
@@ -376,6 +385,20 @@ const CommonCodeManagePage = () => {
     return editMode === 'edit-group' || editMode === 'edit-child';
   }, [editMode]);
 
+  // 검색 폼 제출 시 상위 그룹코드 목록을 조회합니다.
+  const handleSearchSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    fetchGroupList();
+  }, [fetchGroupList]);
+
+  // 검색조건을 초기화하고 목록을 재조회합니다.
+  const handleSearchReset = useCallback(() => {
+    setSearchGb('grpCd');
+    setSearchValue('');
+    setSelectedGroup(null);
+    setChildRows([]);
+  }, []);
+
   return (
     <>
       <div className="page-header">
@@ -392,46 +415,44 @@ const CommonCodeManagePage = () => {
         <div className="col-lg-12 grid-margin stretch-card">
           <div className="card">
             <div className="card-body">
-              <div className="row g-2">
-                <div className="col-md-4">
-                  <label className="form-label mb-1">그룹코드</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={grpCdSearch}
-                    onChange={(event) => setGrpCdSearch(event.target.value)}
-                    maxLength={20}
-                  />
+              <form onSubmit={handleSearchSubmit} className="forms-sample">
+                <div className="row">
+                  <div className="col-md-3">
+                    <div className="form-group">
+                      <label>검색 구분</label>
+                      <select
+                        className="form-select"
+                        value={searchGb}
+                        onChange={(event) => setSearchGb(event.target.value as 'grpCd' | 'grpCdNm')}
+                      >
+                        <option value="grpCd">그룹코드</option>
+                        <option value="grpCdNm">그룹코드명</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="col-md-9">
+                    <div className="form-group">
+                      <label>검색어</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={searchValue}
+                        onChange={(event) => setSearchValue(event.target.value)}
+                        maxLength={searchGb === 'grpCd' ? 20 : 50}
+                        placeholder="검색어를 입력하세요"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="col-md-4">
-                  <label className="form-label mb-1">그룹코드명</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={grpCdNmSearch}
-                    onChange={(event) => setGrpCdNmSearch(event.target.value)}
-                    maxLength={50}
-                  />
-                </div>
-                <div className="col-md-4 d-flex align-items-end justify-content-end gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary"
-                    onClick={() => {
-                      // 검색조건을 초기화한 뒤 목록을 조회합니다.
-                      setGrpCdSearch('');
-                      setGrpCdNmSearch('');
-                      setSelectedGroup(null);
-                      setChildRows([]);
-                    }}
-                  >
+                <div className="d-flex justify-content-center gap-2">
+                  <button type="submit" className="btn btn-primary" disabled={groupLoading}>
+                    {groupLoading ? '검색중...' : '검색'}
+                  </button>
+                  <button type="button" className="btn btn-dark" onClick={handleSearchReset}>
                     초기화
                   </button>
-                  <button type="button" className="btn btn-primary" onClick={fetchGroupList}>
-                    검색
-                  </button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         </div>
