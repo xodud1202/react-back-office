@@ -39,9 +39,11 @@ const ReactQuill = dynamic(
   async () => {
     const mod = await import('react-quill-new');
     const Component = mod.default;
-    return React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
+    const ForwardedQuill = React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
       <Component ref={ref} {...props} />
     ));
+    ForwardedQuill.displayName = 'BoardListQuill';
+    return ForwardedQuill;
   },
   { ssr: false }
 );
@@ -121,7 +123,7 @@ const BoardList = () => {
         params: { grpCd: 'BOARD_DETAIL_DIV' },
       });
       setDetailDivList(response.data || []);
-    } catch (e) {
+    } catch {
       console.error('게시판 상세 구분 코드를 불러오는 데 실패했습니다.');
       alert('게시판 상세 구분 코드를 불러오는 데 실패했습니다.');
     }
@@ -159,7 +161,7 @@ const BoardList = () => {
     try {
       const response = await api.get('/api/admin/board/detail', { params: { boardNo } });
       setSelectedBoard(response.data || null);
-    } catch (e) {
+    } catch {
       console.error('게시글 상세를 불러오는 데 실패했습니다.');
       setDetailError('게시글 상세를 불러오는 데 실패했습니다.');
     } finally {
@@ -259,7 +261,7 @@ const BoardList = () => {
         setIsEditModalOpen(false);
         alert('게시글이 수정되었습니다.');
       }
-    } catch (e) {
+    } catch {
       const message = isCreateMode ? '게시글 등록을 실패했습니다.' : '게시글 수정을 실패했습니다.';
       console.error(message);
       setEditError(message);
@@ -290,7 +292,7 @@ const BoardList = () => {
       }
       refreshGridPreserveState();
       alert('게시글이 삭제되었습니다.');
-    } catch (e) {
+    } catch {
       console.error('게시글 삭제를 실패했습니다.');
       alert('게시글 삭제를 실패했습니다.');
     }
@@ -372,7 +374,7 @@ const BoardList = () => {
         });
         const data = (response.data || {}) as BoardListResponse;
         params.successCallback(data.list || [], data.totalCount || 0);
-      } catch (e) {
+      } catch {
         console.error('게시판 목록을 불러오는 데 실패했습니다.');
         params.failCallback();
       } finally {

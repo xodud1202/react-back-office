@@ -38,7 +38,7 @@ export const fetchSSRList = async <T,>(ctx: GetServerSidePropsContext, url: stri
     }
     const data = await response.json();
     return Array.isArray(data) ? data : [];
-  } catch (e) {
+  } catch {
     return [];
   }
 };

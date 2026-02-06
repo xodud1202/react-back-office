@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import {useRouter} from 'next/router'
 import api, { clearAuthData, ensureAccessToken, setAccessToken } from '@/utils/axios/axios';
-import {deleteCookie, setCookie} from 'cookies-next';
+import {setCookie} from 'cookies-next';
 import {useAppDispatch} from '@/utils/hooks/redux';
 import {loginSuccess} from '@/store/loginUser/loginUser';
 

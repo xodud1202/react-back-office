@@ -26,9 +26,11 @@ const ReactQuill = dynamic(
   async () => {
     const mod = await import('react-quill-new');
     const Component = mod.default;
-    return React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
+    const ForwardedQuill = React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
       <Component ref={ref} {...props} />
     ));
+    ForwardedQuill.displayName = 'BrandEditModalQuill';
+    return ForwardedQuill;
   },
   {ssr: false}
 );
@@ -107,7 +109,7 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
         params: {brandNo: targetBrandNo},
       });
       setForm(buildFormFromDetail(response.data || null));
-    } catch (e) {
+    } catch {
       console.error('브랜드 상세를 불러오는 데 실패했습니다.');
       setError('브랜드 상세를 불러오는 데 실패했습니다.');
     } finally {

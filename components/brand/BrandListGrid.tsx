@@ -133,7 +133,7 @@ const BrandListGrid = forwardRef<BrandListGridHandle, BrandListGridProps>(({
         });
         const data = (response.data || {}) as BrandListResponse;
         params.successCallback(data.list || [], data.totalCount || 0);
-      } catch (e) {
+      } catch {
         console.error('브랜드 목록을 불러오는 데 실패했습니다.');
         params.failCallback();
       } finally {
@@ -212,5 +212,7 @@ const BrandListGrid = forwardRef<BrandListGridHandle, BrandListGridProps>(({
     </div>
   );
 });
+
+BrandListGrid.displayName = 'BrandListGrid';
 
 export default BrandListGrid;

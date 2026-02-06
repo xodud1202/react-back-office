@@ -15,9 +15,11 @@ const ReactQuill = dynamic(
   async () => {
     const mod = await import('react-quill-new');
     const Component = mod.default;
-    return React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
+    const ForwardedQuill = React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
       <Component ref={ref} {...props} />
     ));
+    ForwardedQuill.displayName = 'GoodsDescEditorQuill';
+    return ForwardedQuill;
   },
   { ssr: false }
 );
@@ -74,7 +76,7 @@ const GoodsDescEditor = ({ goodsId, isOpen }: GoodsDescEditorProps) => {
       const moItem = list.find((item) => item.deviceGbCd === 'MO' || item.deviceGbCd === 'MOBILE');
       setPcDesc(pcItem?.goodsDesc || '');
       setMoDesc(moItem?.goodsDesc || '');
-    } catch (e) {
+    } catch {
       console.error('상품 상세 정보를 불러오는 데 실패했습니다.');
       alert('상품 상세 정보를 불러오는 데 실패했습니다.');
     } finally {

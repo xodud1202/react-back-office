@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "check:lint": "next lint .",
+    "lint": "eslint pages components hooks utils store types --ext .js,.jsx,.ts,.tsx",
     "dev": "cross-env PORT=3011 next dev",
     "start": "cross-env PORT=3011 next start",
     "sass:build": "sass --source-map public/assets/scss/style.scss public/assets/css/style.css",
@@ -55,6 +55,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "mini-css-extract-plugin": "^2.9.2",
+    "playwright": "^1.58.1",
     "typescript": "^5"
   }
 }

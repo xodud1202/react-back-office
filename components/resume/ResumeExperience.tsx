@@ -43,7 +43,7 @@ const createEmptyForm = (): ResumeExperienceBase => ({
   resumeExperienceDetailList: [],
 });
 
-const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo, onClose }) => {
+const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo }) => {
   const [experienceList, setExperienceList] = useState<ResumeExperienceBase[]>([]);
   const [footerEl, setFooterEl] = useState<Element | null>(null);
   const [formData, setFormData] = useState<ResumeExperienceBase>(createEmptyForm());

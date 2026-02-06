@@ -19,9 +19,11 @@ const ReactQuill = dynamic(
   async () => {
     const mod = await import('react-quill-new');
     const Component = mod.default;
-    return React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
+    const ForwardedQuill = React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
       <Component ref={ref} {...props} />
     ));
+    ForwardedQuill.displayName = 'ResumeIntroduceQuill';
+    return ForwardedQuill;
   },
   { ssr: false }
 );

@@ -130,7 +130,7 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
         });
         const data = (response.data || {}) as GoodsListResponse;
         params.successCallback(data.list || [], data.totalCount || 0);
-      } catch (e) {
+      } catch {
         console.error('상품 목록을 불러오는 데 실패했습니다.');
         params.failCallback();
       } finally {
@@ -206,5 +206,7 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
     </div>
   );
 });
+
+GoodsListGrid.displayName = 'GoodsListGrid';
 
 export default GoodsListGrid;

@@ -55,7 +55,7 @@ const GoodsEditBasicSection = ({
         params: { goodsId: targetGoodsId },
       });
       setEditForm(response.data || null);
-    } catch (e) {
+    } catch {
       console.error('상품 상세 정보를 불러오는 데 실패했습니다.');
       alert('상품 상세 정보를 불러오는 데 실패했습니다.');
       onClose();

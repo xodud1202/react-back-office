@@ -69,7 +69,7 @@ const GoodsCategorySection = ({
         } as CategoryRow;
       }));
       setCategoryRows(rows);
-    } catch (e) {
+    } catch {
       console.error('카테고리 목록을 불러오는 데 실패했습니다.');
       alert('카테고리 목록을 불러오는 데 실패했습니다.');
     } finally {
@@ -115,7 +115,7 @@ const GoodsCategorySection = ({
           level3Disabled: true,
         };
       }));
-    } catch (e) {
+    } catch {
       console.error('하위 카테고리 조회에 실패했습니다.');
       alert('하위 카테고리 조회에 실패했습니다.');
     }
@@ -138,7 +138,7 @@ const GoodsCategorySection = ({
           level3Disabled,
         };
       }));
-    } catch (e) {
+    } catch {
       console.error('하위 카테고리 조회에 실패했습니다.');
       alert('하위 카테고리 조회에 실패했습니다.');
     }

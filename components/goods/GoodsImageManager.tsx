@@ -31,7 +31,7 @@ const GoodsImageManager = ({ goodsId, isOpen }: GoodsImageManagerProps) => {
         params: { goodsId },
       });
       setImageList(response.data || []);
-    } catch (e) {
+    } catch {
       console.error('상품 이미지를 불러오는 데 실패했습니다.');
       alert('상품 이미지를 불러오는 데 실패했습니다.');
     } finally {
@@ -90,7 +90,7 @@ const GoodsImageManager = ({ goodsId, isOpen }: GoodsImageManagerProps) => {
         img.src = url;
       });
       return result;
-    } catch (e) {
+    } catch {
       return '이미지 파일을 확인해주세요.';
     }
   }, []);

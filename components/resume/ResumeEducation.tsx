@@ -35,7 +35,7 @@ const createEmptyForm = (): ResumeEducationItem => ({
   logoPath: '',
 });
 
-const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo, onClose }) => {
+const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo }) => {
   const [educationList, setEducationList] = useState<ResumeEducationItem[]>([]);
   const [footerEl, setFooterEl] = useState<Element | null>(null);
   const [formData, setFormData] = useState<ResumeEducationItem>(createEmptyForm());

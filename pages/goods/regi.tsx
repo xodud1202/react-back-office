@@ -63,7 +63,7 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
         params: { grpCd: 'GOODS_STAT' },
       });
       setGoodsStatList(response.data || []);
-    } catch (e) {
+    } catch {
       console.error('상품 상태 코드를 불러오는 데 실패했습니다.');
       alert('상품 상태 코드를 불러오는 데 실패했습니다.');
     }
@@ -76,7 +76,7 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
         params: { grpCd: 'GOODS_DIV' },
       });
       setGoodsDivList(response.data || []);
-    } catch (e) {
+    } catch {
       console.error('상품 구분 코드를 불러오는 데 실패했습니다.');
       alert('상품 구분 코드를 불러오는 데 실패했습니다.');
     }
@@ -87,7 +87,7 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
     try {
       const response = await api.get('/api/admin/goods/merch/list');
       setGoodsMerchList(response.data || []);
-    } catch (e) {
+    } catch {
       console.error('상품 분류 목록을 불러오는 데 실패했습니다.');
       alert('상품 분류 목록을 불러오는 데 실패했습니다.');
     }
@@ -98,7 +98,7 @@ const GoodsRegi = ({ goodsStatList: initialGoodsStatList, goodsDivList: initialG
     try {
       const response = await api.get('/api/admin/brand/list');
       setBrandList(response.data || []);
-    } catch (e) {
+    } catch {
       console.error('브랜드 목록을 불러오는 데 실패했습니다.');
       alert('브랜드 목록을 불러오는 데 실패했습니다.');
     }

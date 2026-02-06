@@ -30,7 +30,7 @@ const createEmptyForm = (sortSeq?: number): ResumeOtherExperienceItem => ({
   experienceEndDt: '',
 });
 
-const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo, onClose }) => {
+const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo }) => {
   const [otherExperienceList, setOtherExperienceList] = useState<ResumeOtherExperienceItem[]>([]);
   const [footerEl, setFooterEl] = useState<Element | null>(null);
   const [formData, setFormData] = useState<ResumeOtherExperienceItem>(createEmptyForm());

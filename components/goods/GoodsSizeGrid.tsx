@@ -34,8 +34,6 @@ const GoodsSizeGrid = ({
   />
 );
 
-interface GoodsSizeGridContentProps extends GoodsSizeGridProps {}
-
 // 사이즈 그리드 이벤트를 내부에서 처리합니다.
 const GoodsSizeGridContent = ({
   goodsSizeRows,
@@ -45,7 +43,7 @@ const GoodsSizeGridContent = ({
   onAddRow,
   onSaveOrder,
   setGoodsSizeRows,
-}: GoodsSizeGridContentProps) => {
+}: GoodsSizeGridProps) => {
   const handleSizeRowDragEnd = useCallback((event: RowDragEndEvent<GoodsSizeRow>) => {
     const api = event.api;
     const rowCount = api.getDisplayedRowCount();

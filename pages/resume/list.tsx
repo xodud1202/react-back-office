@@ -100,28 +100,6 @@ const ResumeList = () => {
     setSelectedOtherExperienceUsrNo(null);
   };
 
-  // 저장이 성공했을 때 호출될 함수 >> 리스트 변경때 필요하나, 없음.
-  const handleSaveSuccess = () => {
-    handleCloseModal(); // 1. 모달 닫기
-    if (gridApiRef.current) {
-      applyDatasource(gridApiRef.current, createDataSource());
-    }
-  };
-
-  // 데이터 조회 함수
-  const fetchResumes = useCallback(async (params: Record<string, any> = {}) => {
-    setLoading(true);
-    try {
-      const response = await api.get('/api/admin/resume/list', { params });
-      return response.data as ResumeListResponse;
-    } catch (e) {
-      console.error('Failed to fetch resume list');
-      alert('이력서 목록을 불러오는 데 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   // 검색 폼 제출 핸들러
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -224,7 +202,7 @@ const ResumeList = () => {
         });
         const data = (response.data || {}) as ResumeListResponse;
         params.successCallback(data.list || [], data.totalCount || 0);
-      } catch (e) {
+      } catch {
         console.error('Failed to fetch resume list');
         params.failCallback();
       } finally {

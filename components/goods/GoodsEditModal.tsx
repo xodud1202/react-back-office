@@ -41,17 +41,13 @@ const GoodsEditModal = ({
   onUpdated,
 }: GoodsEditModalProps) => {
   const [activeTab, setActiveTab] = useState<'basic' | 'category' | 'option' | 'image' | 'desc'>('basic');
-  const [editBasicState, setEditBasicState] = useState({
-    editLoading: false,
-    editSaving: false,
-    hasForm: false,
-  });
   const [goodsSizeLoading, setGoodsSizeLoading] = useState(false);
   const [goodsSizeRows, setGoodsSizeRows] = useState<GoodsSizeRow[]>([]);
   const [categoryLevel1Options, setCategoryLevel1Options] = useState<CategoryOption[]>(initialCategoryLevel1Options || []);
   const [categoryRows, setCategoryRows] = useState<CategoryRow[]>([]);
   const [categoryLoading, setCategoryLoading] = useState(false);
   const sizeRowSeqRef = useRef(0);
+  const handleEditBasicStateChange = useCallback(() => {}, []);
 
   // 상품 사이즈 목록을 조회합니다.
   const fetchGoodsSizeList = useCallback(async (targetGoodsId: string) => {
@@ -72,7 +68,7 @@ const GoodsEditModal = ({
         isNew: false,
       }));
       setGoodsSizeRows(rows);
-    } catch (e) {
+    } catch {
       console.error('상품 사이즈 목록을 불러오는 데 실패했습니다.');
       alert('상품 사이즈 목록을 불러오는 데 실패했습니다.');
     } finally {
@@ -432,7 +428,7 @@ const GoodsEditModal = ({
           goodsMerchList={goodsMerchList}
           onUpdated={onUpdated}
           onClose={onClose}
-          onStateChange={setEditBasicState}
+          onStateChange={handleEditBasicStateChange}
         />
         </div>
 
