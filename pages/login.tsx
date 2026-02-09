@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import {useRouter} from 'next/router'
 import api, { clearAuthData, ensureAccessToken, setAccessToken } from '@/utils/axios/axios';
-import {setCookie} from 'cookies-next';
+import {getCookie, setCookie} from 'cookies-next';
 import {useAppDispatch} from '@/utils/hooks/redux';
 import {loginSuccess} from '@/store/loginUser/loginUser';
 
@@ -15,6 +15,14 @@ export default function Login() {
   const router = useRouter()
 
   useEffect(() => {
+    // accessToken과 사용자 식별 쿠키가 모두 없으면 자동 로그인 검증 호출을 생략합니다.
+    const accessToken = getCookie('accessToken', { path: '/' });
+    const usrNo = getCookie('usrNo', { path: '/' });
+    if (!accessToken && !usrNo) {
+      clearAuthData();
+      return;
+    }
+
     // 로그인 페이지 진입 시 토큰 유효성을 서버에 확인하고 자동 로그인 여부를 결정합니다.
     ensureAccessToken()
       .then((token) => {
