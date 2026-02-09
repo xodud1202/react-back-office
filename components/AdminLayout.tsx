@@ -132,7 +132,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <img src="https://image.xodud1202.kro.kr/publist/HDD1/Media/nas/upload/common/xodud1202_logo.png" alt="logo" />
           </Link>
           <Link className="sidebar-brand brand-logo-mini" href="/main">
-            <img src="http://image.xodud1202.kro.kr/publist/HDD1/Media/nas/image/common/xodud1202_icon_102x102.png" alt="logo" />
+            <img src="https://image.xodud1202.kro.kr/publist/HDD1/Media/nas/image/common/xodud1202_icon_102x102.png" alt="logo" />
           </Link>
         </div>
         <ul className="nav">
@@ -161,7 +161,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <nav className="navbar p-0 fixed-top d-flex flex-row">
           <div className="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
             <Link className="navbar-brand brand-logo-mini" href="/main">
-              <img src="http://image.xodud1202.kro.kr/publist/HDD1/Media/nas/image/common/xodud1202_icon_102x102.png" alt="logo" />
+              <img src="https://image.xodud1202.kro.kr/publist/HDD1/Media/nas/image/common/xodud1202_icon_102x102.png" alt="logo" />
             </Link>
           </div>
           <div className="navbar-menu-wrapper flex-grow d-flex align-items-stretch">
