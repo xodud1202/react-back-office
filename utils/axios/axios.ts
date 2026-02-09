@@ -16,6 +16,15 @@ const COOKIE_OPTIONS = {
   maxAge: 30 * 60, // 30 minutes
 };
 
+// 브라우저에 저장할 사용자 식별 쿠키 설정
+const USER_COOKIE_OPTIONS = {
+  path: '/',
+  httpOnly: false,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 60 * 60 * 24 * 60, // 60 days
+};
+
 const api = axios.create({
   baseURL: '/api',
   timeout: 10000,
@@ -84,8 +93,15 @@ export const refreshAccessToken = async (): Promise<string | null> => {
     return refreshPromise;
   }
 
-  const usrNo = getCookie('usrNo', { path: '/' });
-  const config = typeof usrNo === 'string' ? { params: { usrNo } } : undefined;
+  // 저장된 accessToken이 있으면 서버에서 만료/정합성 검증에 활용합니다.
+  const storedAccessToken = cachedAccessToken ?? getCookieAccessToken();
+  const config = storedAccessToken
+    ? {
+        headers: {
+          Authorization: `Bearer ${storedAccessToken}`,
+        },
+      }
+    : undefined;
 
   refreshPromise = refreshClient
     .get('/token/backoffice/access-token', config)
@@ -95,6 +111,11 @@ export const refreshAccessToken = async (): Promise<string | null> => {
         throw new Error('새로운 Access Token을 받아올 수 없습니다.');
       }
       setAccessToken(nextToken);
+      // 서버가 내려준 사용자 번호를 쿠키에 동기화합니다.
+      const usrNo = response.data?.usrNo;
+      if (usrNo !== undefined && usrNo !== null && `${usrNo}`.trim() !== '') {
+        setCookie('usrNo', `${usrNo}`, USER_COOKIE_OPTIONS);
+      }
       return nextToken;
     })
     .catch((error) => {
@@ -117,14 +138,17 @@ export const refreshAccessToken = async (): Promise<string | null> => {
 
 // 저장된 토큰 없으면 refresh 를 시도해 토큰을 확보합니다.
 export const ensureAccessToken = async (): Promise<string | null> => {
+  // 메모리 캐시 토큰이 있으면 우선 사용합니다.
   if (cachedAccessToken) {
     return cachedAccessToken;
   }
+  // 브라우저 쿠키에 저장된 accessToken이 있으면 우선 사용합니다.
   const storedToken = getCookieAccessToken();
   if (storedToken) {
     cachedAccessToken = storedToken;
     return cachedAccessToken;
   }
+  // accessToken이 없을 때만 refresh 토큰으로 재발급을 시도합니다.
   try {
     return await refreshAccessToken();
   } catch {
