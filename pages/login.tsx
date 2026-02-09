@@ -15,6 +15,7 @@ export default function Login() {
   const router = useRouter()
 
   useEffect(() => {
+    // 로그인 페이지 진입 시 토큰 유효성을 서버에 확인하고 자동 로그인 여부를 결정합니다.
     ensureAccessToken()
       .then((token) => {
         if (token) {

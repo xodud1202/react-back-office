@@ -93,18 +93,8 @@ export const refreshAccessToken = async (): Promise<string | null> => {
     return refreshPromise;
   }
 
-  // 저장된 accessToken이 있으면 서버에서 만료/정합성 검증에 활용합니다.
-  const storedAccessToken = cachedAccessToken ?? getCookieAccessToken();
-  const config = storedAccessToken
-    ? {
-        headers: {
-          Authorization: `Bearer ${storedAccessToken}`,
-        },
-      }
-    : undefined;
-
   refreshPromise = refreshClient
-    .get('/token/backoffice/access-token', config)
+    .get('/api/token/backoffice/access-token')
     .then((response) => {
       const nextToken = response.data?.accessToken;
       if (!nextToken) {
