@@ -2,13 +2,21 @@ import React, { useCallback, useEffect, useState } from 'react';
 import UserSearchForm from '@/components/user/UserSearchForm';
 import UserListGrid from '@/components/user/UserListGrid';
 import UserEditModal from '@/components/user/UserEditModal';
-import type { CommonCodeRow, EditFormState, SearchGb, UserRow } from '@/components/user/types';
+import type { CommonCodeRow, EditFormState, UserRow, UserSearchCriteria } from '@/components/user/types';
+import {
+  createDefaultSearchCriteria,
+  createEditFormFromRow,
+  createEmptyEditForm,
+  createUserSavePayload,
+  formatPhoneNumber,
+  validateUserEditForm,
+} from '@/components/user/userManageUtils';
 import api from '@/utils/axios/axios';
 import { requireLoginUsrNo } from '@/utils/auth';
 
 // 사용자 관리 화면을 렌더링합니다.
 const UserManagePage = () => {
-  const [searchGb, setSearchGb] = useState<SearchGb>('loginId');
+  const [searchGb, setSearchGb] = useState<UserSearchCriteria['searchGb']>('loginId');
   const [searchValue, setSearchValue] = useState('');
   const [usrStatCd, setUsrStatCd] = useState('');
   const [usrGradeCd, setUsrGradeCd] = useState('');
@@ -19,16 +27,7 @@ const UserManagePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
-  const [editForm, setEditForm] = useState<EditFormState>({
-    usrNo: '',
-    loginId: '',
-    pwd: '',
-    userNm: '',
-    usrGradeCd: '',
-    usrStatCd: '',
-    hPhoneNo: '',
-    email: '',
-  });
+  const [editForm, setEditForm] = useState<EditFormState>(createEmptyEditForm());
 
   // 공통코드 옵션을 조회합니다.
   const fetchCommonCodeOptions = useCallback(async () => {
@@ -46,12 +45,7 @@ const UserManagePage = () => {
   }, []);
 
   // 사용자 목록을 조회합니다.
-  const fetchUserList = useCallback(async (criteria?: {
-    searchGb: SearchGb;
-    searchValue: string;
-    usrStatCd: string;
-    usrGradeCd: string;
-  }) => {
+  const fetchUserList = useCallback(async (criteria?: UserSearchCriteria) => {
     const resolved = criteria || { searchGb, searchValue, usrStatCd, usrGradeCd };
     const trimmedSearchValue = resolved.searchValue.trim();
 
@@ -92,32 +86,14 @@ const UserManagePage = () => {
   // 사용자 등록 팝업을 엽니다.
   const openCreateModal = useCallback(() => {
     setEditMode('create');
-    setEditForm({
-      usrNo: '',
-      loginId: '',
-      pwd: '',
-      userNm: '',
-      usrGradeCd: '',
-      usrStatCd: '',
-      hPhoneNo: '',
-      email: '',
-    });
+    setEditForm(createEmptyEditForm());
     setIsModalOpen(true);
   }, []);
 
   // 사용자 수정 팝업을 엽니다.
   const openEditModal = useCallback((row: UserRow) => {
     setEditMode('edit');
-    setEditForm({
-      usrNo: String(row.usrNo),
-      loginId: row.loginId || '',
-      pwd: '',
-      userNm: row.userNm || '',
-      usrGradeCd: row.usrGradeCd || '',
-      usrStatCd: row.usrStatCd || '',
-      hPhoneNo: row.hPhoneNo || '',
-      email: row.email || '',
-    });
+    setEditForm(createEditFormFromRow(row));
     setIsModalOpen(true);
   }, []);
 
@@ -128,56 +104,8 @@ const UserManagePage = () => {
 
   // 사용자 저장 입력값을 검증합니다.
   const validateEditForm = useCallback(() => {
-    const trimmedLoginId = editForm.loginId.trim();
-    const trimmedPwd = editForm.pwd.trim();
-    const trimmedUserNm = editForm.userNm.trim();
-    const trimmedUsrGradeCd = editForm.usrGradeCd.trim();
-    const trimmedUsrStatCd = editForm.usrStatCd.trim();
-    const trimmedHPhoneNo = editForm.hPhoneNo.trim();
-    const trimmedEmail = editForm.email.trim();
-    const phonePattern = /^01\d-\d{3,4}-\d{4}$/;
-    const emailPattern = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$/;
-
-    // 필수 입력값을 검증합니다.
-    if (trimmedLoginId === '') {
-      return 'ID를 입력해주세요.';
-    }
-    if (trimmedPwd === '') {
-      return '비밀번호를 입력해주세요.';
-    }
-    if (trimmedUserNm === '') {
-      return '이름을 입력해주세요.';
-    }
-    if (trimmedUsrGradeCd === '') {
-      return '등급을 선택해주세요.';
-    }
-    if (trimmedUsrStatCd === '') {
-      return '상태를 선택해주세요.';
-    }
-    if (trimmedHPhoneNo === '') {
-      return '휴대폰번호를 입력해주세요.';
-    }
-    if (trimmedEmail === '') {
-      return '이메일을 입력해주세요.';
-    }
-    // 입력 형식을 검증합니다.
-    if (trimmedLoginId.length < 5) {
-      return 'ID는 최소 5자 이상 입력해주세요.';
-    }
-    if (trimmedPwd.length < 6) {
-      return '비밀번호는 최소 6자 이상 입력해주세요.';
-    }
-    if (trimmedUserNm.length < 2) {
-      return '이름은 최소 2자 이상 입력해주세요.';
-    }
-    if (!phonePattern.test(trimmedHPhoneNo)) {
-      return '휴대폰번호 형식을 확인해주세요.';
-    }
-    if (!emailPattern.test(trimmedEmail)) {
-      return '이메일 형식을 확인해주세요.';
-    }
-    return null;
-  }, [editForm]);
+    return validateUserEditForm(editForm, editMode);
+  }, [editForm, editMode]);
 
   // 사용자 등록/수정을 저장합니다.
   const saveUser = useCallback(async () => {
@@ -197,22 +125,7 @@ const UserManagePage = () => {
       ? '/api/admin/user/manage/create'
       : '/api/admin/user/manage/update';
 
-    const payload: Record<string, any> = {
-      loginId: editForm.loginId.trim(),
-      pwd: editForm.pwd.trim(),
-      userNm: editForm.userNm.trim(),
-      usrGradeCd: editForm.usrGradeCd.trim(),
-      usrStatCd: editForm.usrStatCd.trim(),
-      hPhoneNo: editForm.hPhoneNo.trim(),
-      email: editForm.email.trim(),
-      udtNo: usrNo,
-    };
-    // 등록 모드와 수정 모드 요청 파라미터를 분기합니다.
-    if (isCreateMode) {
-      payload.regNo = usrNo;
-    } else {
-      payload.usrNo = Number(editForm.usrNo);
-    }
+    const payload = createUserSavePayload(editForm, editMode, usrNo);
 
     setIsSaving(true);
     try {
@@ -240,7 +153,7 @@ const UserManagePage = () => {
 
   // 검색조건을 초기화하고 사용자 목록을 재조회합니다.
   const handleResetSearch = useCallback(() => {
-    const resetCriteria = { searchGb: 'loginId' as SearchGb, searchValue: '', usrStatCd: '', usrGradeCd: '' };
+    const resetCriteria = createDefaultSearchCriteria();
     setSearchGb(resetCriteria.searchGb);
     setSearchValue(resetCriteria.searchValue);
     setUsrStatCd(resetCriteria.usrStatCd);
@@ -278,6 +191,8 @@ const UserManagePage = () => {
 
       <UserListGrid
         rowData={userRows}
+        usrGradeOptions={usrGradeOptions}
+        usrStatOptions={usrStatOptions}
         onEdit={openEditModal}
         onCreate={openCreateModal}
       />
@@ -297,20 +212,4 @@ const UserManagePage = () => {
   );
 };
 
-// 휴대폰번호 입력값을 하이픈 포함 형식으로 변환합니다.
-const formatPhoneNumber = (value: string) => {
-  const digits = value.replace(/\D/g, '').slice(0, 11);
-  if (digits.length < 4) {
-    return digits;
-  }
-  if (digits.length < 8) {
-    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  }
-  if (digits.length < 11) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
-};
-
 export default UserManagePage;
-

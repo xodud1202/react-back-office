@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Modal from '@/components/common/Modal';
 import type { CommonCodeRow, EditFormState, EditMode } from '@/components/user/types';
 
@@ -26,6 +26,9 @@ const UserEditModal = ({
   onSave,
   onChangeField,
 }: UserEditModalProps) => {
+  const [isPwdVisible, setIsPwdVisible] = useState(false);
+  const [isPwdConfirmVisible, setIsPwdConfirmVisible] = useState(false);
+
   // 현재 모달 제목을 반환합니다.
   const modalTitle = useMemo(() => (
     editMode === 'create' ? '사용자 등록' : '사용자 수정'
@@ -33,6 +36,24 @@ const UserEditModal = ({
 
   // 수정 모드에서 ID 입력 비활성화 여부를 반환합니다.
   const isLoginIdDisabled = useMemo(() => editMode === 'edit', [editMode]);
+
+  // 비밀번호 입력값 표시 상태를 전환합니다.
+  const togglePwdVisible = useCallback(() => {
+    setIsPwdVisible((prev) => !prev);
+  }, []);
+
+  // 비밀번호 확인 입력값 표시 상태를 전환합니다.
+  const togglePwdConfirmVisible = useCallback(() => {
+    setIsPwdConfirmVisible((prev) => !prev);
+  }, []);
+
+  // 모달이 열릴 때 비밀번호 표시 상태를 기본값으로 초기화합니다.
+  useEffect(() => {
+    if (isOpen) {
+      setIsPwdVisible(false);
+      setIsPwdConfirmVisible(false);
+    }
+  }, [isOpen]);
 
   return (
     <Modal
@@ -59,16 +80,6 @@ const UserEditModal = ({
           />
         </div>
         <div className="col-md-6">
-          <label className="form-label mb-1">비밀번호</label>
-          <input
-            type="password"
-            className="form-control"
-            value={editForm.pwd}
-            maxLength={100}
-            onChange={(event) => onChangeField('pwd', event.target.value)}
-          />
-        </div>
-        <div className="col-md-6">
           <label className="form-label mb-1">이름</label>
           <input
             type="text"
@@ -79,6 +90,46 @@ const UserEditModal = ({
           />
         </div>
         <div className="col-md-6">
+          <label className="form-label mb-1">비밀번호</label>
+          <div className="input-group">
+            <input
+              type={isPwdVisible ? 'text' : 'password'}
+              className="form-control"
+              value={editForm.pwd}
+              maxLength={100}
+              onChange={(event) => onChangeField('pwd', event.target.value)}
+            />
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={togglePwdVisible}
+              aria-label="비밀번호 표시 전환"
+            >
+              <i className={`fa ${isPwdVisible ? 'fa-eye-slash' : 'fa-eye'}`} />
+            </button>
+          </div>
+        </div>
+        <div className="col-md-6">
+          <label className="form-label mb-1">비밀번호확인</label>
+          <div className="input-group">
+            <input
+              type={isPwdConfirmVisible ? 'text' : 'password'}
+              className="form-control"
+              value={editForm.pwdConfirm}
+              maxLength={100}
+              onChange={(event) => onChangeField('pwdConfirm', event.target.value)}
+            />
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={togglePwdConfirmVisible}
+              aria-label="비밀번호 확인 표시 전환"
+            >
+              <i className={`fa ${isPwdConfirmVisible ? 'fa-eye-slash' : 'fa-eye'}`} />
+            </button>
+          </div>
+        </div>
+        <div className="col-md-6">
           <label className="form-label mb-1">휴대폰번호</label>
           <input
             type="text"
@@ -86,6 +137,16 @@ const UserEditModal = ({
             value={editForm.hPhoneNo}
             maxLength={13}
             onChange={(event) => onChangeField('hPhoneNo', event.target.value)}
+          />
+        </div>
+        <div className="col-md-6">
+          <label className="form-label mb-1">이메일</label>
+          <input
+            type="text"
+            className="form-control"
+            value={editForm.email}
+            maxLength={100}
+            onChange={(event) => onChangeField('email', event.target.value)}
           />
         </div>
         <div className="col-md-6">
@@ -114,20 +175,9 @@ const UserEditModal = ({
             ))}
           </select>
         </div>
-        <div className="col-md-12">
-          <label className="form-label mb-1">이메일</label>
-          <input
-            type="text"
-            className="form-control"
-            value={editForm.email}
-            maxLength={100}
-            onChange={(event) => onChangeField('email', event.target.value)}
-          />
-        </div>
       </div>
     </Modal>
   );
 };
 
 export default UserEditModal;
-

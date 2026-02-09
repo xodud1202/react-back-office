@@ -21,6 +21,14 @@ export interface UserRow {
 // 사용자 검색 구분 타입입니다.
 export type SearchGb = 'loginId' | 'userNm';
 
+// 사용자 검색 조건 타입입니다.
+export interface UserSearchCriteria {
+  searchGb: SearchGb;
+  searchValue: string;
+  usrStatCd: string;
+  usrGradeCd: string;
+}
+
 // 사용자 등록/수정 모드 타입입니다.
 export type EditMode = 'create' | 'edit';
 
@@ -29,10 +37,10 @@ export interface EditFormState {
   usrNo: string;
   loginId: string;
   pwd: string;
+  pwdConfirm: string;
   userNm: string;
   usrGradeCd: string;
   usrStatCd: string;
   hPhoneNo: string;
   email: string;
 }
-
