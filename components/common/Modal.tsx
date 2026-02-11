@@ -4,6 +4,7 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
+  footerLeftActions?: React.ReactNode;
   footerActions?: React.ReactNode;
   width?: string;
   contentHeight?: string;
@@ -11,7 +12,7 @@ interface ModalProps {
 }
 
 // 공통 레이어 팝업을 렌더링합니다.
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, footerActions, width, contentHeight, children }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, footerLeftActions, footerActions, width, contentHeight, children }) => {
   if (!isOpen) return null;
 
   return (
@@ -43,11 +44,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, footerActions, wi
             <div className="modal-body p-3" style={{ overflowY: 'auto' }}>
               {children}
             </div>
-            <div className="modal-footer">
-              <div className="modal-footer-actions">{footerActions}</div>
-              <button type="button" className="btn btn-dark" onClick={onClose}>
-                닫기
-              </button>
+            <div className="modal-footer d-flex justify-content-between align-items-center">
+              <div className="modal-footer-left-actions">
+                {footerLeftActions}
+              </div>
+              <div className="d-flex align-items-center gap-2">
+                <div className="modal-footer-actions">{footerActions}</div>
+                <button type="button" className="btn btn-dark" onClick={onClose}>
+                  닫기
+                </button>
+              </div>
             </div>
           </div>
         </div>

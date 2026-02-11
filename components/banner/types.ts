@@ -26,8 +26,14 @@ export interface BannerItem {
 
 // 이미지 배너 정보를 정의합니다.
 export interface BannerImageInfo {
+  // 클라이언트 임시 행 키입니다.
+  rowKey?: string;
+  // 이미지 배너 번호입니다.
+  imageBannerNo?: number;
   // 배너 번호입니다.
   bannerNo?: number;
+  // 배너 이미지명입니다.
+  bannerNm?: string;
   // 이미지 경로입니다.
   imgPath?: string;
   // 이동 URL입니다.
@@ -36,6 +42,14 @@ export interface BannerImageInfo {
   bannerOpenCd?: string;
   // 노출 순서입니다.
   dispOrd?: number;
+  // 노출 시작일시입니다.
+  dispStartDt?: string;
+  // 노출 종료일시입니다.
+  dispEndDt?: string;
+  // 노출 여부입니다.
+  showYn?: string;
+  // 삭제 여부입니다.
+  delYn?: string;
 }
 
 // 배너 탭 정보를 정의합니다.
@@ -98,6 +112,8 @@ export interface BannerDetail {
   showYn: string;
   // 이미지 배너 정보입니다.
   imageInfo?: BannerImageInfo;
+  // 이미지 배너 목록입니다.
+  imageInfoList?: BannerImageInfo[];
   // 탭 목록입니다.
   tabList?: BannerTabItem[];
   // 상품 목록입니다.
@@ -152,8 +168,18 @@ export interface BannerSavePayload {
   udtNo?: number;
   // 이미지 배너 정보입니다.
   imageInfo?: BannerImageInfo;
+  // 이미지 배너 목록입니다.
+  imageInfoList?: BannerImageInfo[];
   // 탭 목록입니다.
   tabList?: BannerTabItem[];
   // 상품 목록입니다.
   goodsList?: BannerGoodsItem[];
+}
+
+// 배너 이미지 정렬 항목을 정의합니다.
+export interface BannerImageOrderItem {
+  // 이미지 배너 번호입니다.
+  imageBannerNo: number;
+  // 노출 순서입니다.
+  dispOrd: number;
 }

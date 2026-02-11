@@ -6,7 +6,7 @@ import type { BannerItem } from '@/components/banner/types';
 interface BannerListGridProps {
   // 배너 목록 데이터입니다.
   rows: BannerItem[];
-  // 수정 버튼 클릭 처리 함수입니다.
+  // 수정 모달 오픈 처리 함수입니다.
   onEdit: (bannerNo: number) => void;
 }
 
@@ -16,7 +16,27 @@ const BannerListGrid = ({ rows, onEdit }: BannerListGridProps) => {
   const columnDefs = useMemo<ColDef<BannerItem>[]>(() => ([
     { headerName: '배너번호', field: 'bannerNo', width: 110 },
     { headerName: '배너구분', field: 'bannerDivNm', width: 160 },
-    { headerName: '배너명', field: 'bannerNm', width: 240, cellClass: 'text-start' },
+    {
+      headerName: '배너명',
+      field: 'bannerNm',
+      width: 240,
+      cellClass: 'text-start',
+      cellRenderer: (params: { data?: BannerItem; value?: string }) => {
+        // 배너명 클릭 시 수정 팝업을 엽니다.
+        if (!params.data?.bannerNo) {
+          return params.value || '';
+        }
+        return (
+          <button
+            type="button"
+            className="btn btn-link p-0 text-start"
+            onClick={() => onEdit(params.data!.bannerNo)}
+          >
+            {params.value || ''}
+          </button>
+        );
+      },
+    },
     { headerName: '노출시작', field: 'dispStartDt', width: 170 },
     { headerName: '노출종료', field: 'dispEndDt', width: 170 },
     { headerName: '노출순서', field: 'dispOrd', width: 120 },
