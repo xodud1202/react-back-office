@@ -37,6 +37,49 @@ interface NewsListResponse {
   pageSize: number;
 }
 
+/**
+ * HTML 엔티티를 일반 문자열로 디코딩한다.
+ * @param {string} value 원본 문자열
+ * @returns {string} 디코딩된 문자열
+ */
+function decodeHtmlEntities(value: string): string {
+  // 문자열이 비어 있으면 빈 문자열을 반환한다.
+  if (!value) {
+    return '';
+  }
+
+  // 주요 HTML 엔티티 및 숫자 엔티티를 문자열로 변환한다.
+  return value.replace(/&(#\d+|#x[0-9a-fA-F]+|quot|amp|apos|lt|gt);/g, (match, entity: string) => {
+    // 자주 사용되는 엔티티를 우선 매핑한다.
+    const namedEntityMap: Record<string, string> = {
+      quot: '"',
+      amp: '&',
+      apos: '\'',
+      lt: '<',
+      gt: '>',
+    };
+
+    if (entity in namedEntityMap) {
+      return namedEntityMap[entity];
+    }
+
+    // 10진수 숫자 엔티티를 문자로 변환한다.
+    if (entity.startsWith('#') && !entity.startsWith('#x')) {
+      const parsedCodePoint = Number(entity.slice(1));
+      return Number.isNaN(parsedCodePoint) ? match : String.fromCodePoint(parsedCodePoint);
+    }
+
+    // 16진수 숫자 엔티티를 문자로 변환한다.
+    if (entity.startsWith('#x')) {
+      const parsedCodePoint = Number.parseInt(entity.slice(2), 16);
+      return Number.isNaN(parsedCodePoint) ? match : String.fromCodePoint(parsedCodePoint);
+    }
+
+    // 변환할 수 없는 값은 원본 문자열을 유지한다.
+    return match;
+  });
+}
+
 // 뉴스 목록 화면 컴포넌트
 const NewsListPage = () => {
   const [loading, setLoading] = useState(false);
@@ -142,7 +185,7 @@ const NewsListPage = () => {
   // 뉴스 타이틀 렌더링
   const renderTitleCell = useCallback((params: ICellRendererParams<NewsListRow>) => {
     // 타이틀 및 링크 정보 확인
-    const title = params.data?.articleTitle || '';
+    const title = decodeHtmlEntities(params.data?.articleTitle || '');
     const url = params.data?.articleUrl || '';
 
     // 링크가 없으면 텍스트만 표시
