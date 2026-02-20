@@ -84,18 +84,22 @@ const NewsRssManagePage = () => {
       const normalizedRows = normalizePressRows(rows);
       setPressRows(normalizedRows);
       // 선택 언론사가 없거나 삭제된 경우 첫 행을 기본 선택합니다.
-      if (normalizedRows.length === 0) {
-        setSelectedPressNo(null);
-      } else if (!normalizedRows.some((row) => row.pressNo === selectedPressNo)) {
-        setSelectedPressNo(normalizedRows[0].pressNo);
-      }
+      setSelectedPressNo((prevSelectedPressNo) => {
+        if (normalizedRows.length === 0) {
+          return null;
+        }
+        if (normalizedRows.some((row) => row.pressNo === prevSelectedPressNo)) {
+          return prevSelectedPressNo;
+        }
+        return normalizedRows[0].pressNo;
+      });
     } catch (error) {
       console.error('언론사 목록 조회에 실패했습니다.', error);
       alert('언론사 목록 조회에 실패했습니다.');
     } finally {
       setPressLoading(false);
     }
-  }, [normalizePressRows, selectedPressNo]);
+  }, [normalizePressRows]);
 
   // 선택 언론사의 카테고리 목록을 조회합니다.
   const fetchCategoryList = useCallback(async (pressNo: number | null) => {
@@ -498,11 +502,12 @@ const NewsRssManagePage = () => {
       flex: 1,
       editable: true,
       cellClass: 'text-start',
+      width: 100,
     },
     {
       headerName: '사용여부',
       field: 'useYn',
-      width: 100,
+      width: 85,
       editable: true,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: {
@@ -512,7 +517,7 @@ const NewsRssManagePage = () => {
     {
       headerName: '순서',
       field: 'sortSeq',
-      width: 90,
+      width: 70,
     },
   ]), []);
 
@@ -562,7 +567,7 @@ const NewsRssManagePage = () => {
     {
       headerName: 'RSS URL',
       field: 'rssUrl',
-      flex: 1,
+      width: 500,
       editable: true,
       cellClass: 'text-start',
     },
