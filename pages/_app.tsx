@@ -21,7 +21,7 @@ import type {User} from '@/store/common';
 
 // 공통 앱 레이아웃을 구성합니다.
 function MyApp({Component, pageProps}: AppProps & { cookies?: string }) {
-  // SSR로부터 받는 쿠키 문자열 초기화
+  // SSR로부터 받는 쿠키 문자열 초기화 
   const cookies = pageProps.cookies ? new Cookies(pageProps.cookies) : undefined
 
   const router = useRouter()
