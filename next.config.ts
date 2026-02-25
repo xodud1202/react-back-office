@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // pages 라우터 의존성을 서버 번들에 포함하여 Workers 런타임 외부 모듈 로딩 실패를 방지한다.
+  bundlePagesRouterDependencies: true,
   images: {
     // 1) 도메인 허용할 때
     remotePatterns: [
