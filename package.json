@@ -8,10 +8,15 @@
     "dev": "cross-env PORT=3011 next dev",
     "start": "cross-env PORT=3011 next start",
     "sass:build": "sass --source-map public/assets/scss/style.scss public/assets/css/style.css",
-    "sass:watch": "sass --watch public/assets/scss/style.scss public/assets/css/style.css"
+    "sass:watch": "sass --watch public/assets/scss/style.scss public/assets/css/style.css",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@mdi/font": "^7.3.67",
+    "@opennextjs/cloudflare": "^1.17.1",
     "@reduxjs/toolkit": "^2.9.2",
     "ace-builds": "^1.31.2",
     "ag-grid-community": "^32.3.5",
@@ -55,6 +60,7 @@
     "eslint-config-next": "15.3.3",
     "mini-css-extract-plugin": "^2.9.2",
     "playwright": "^1.58.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.68.1"
   }
 }
