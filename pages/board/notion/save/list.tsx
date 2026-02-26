@@ -161,13 +161,13 @@ const NotionSaveListPage = () => {
     {
       headerName: '카테고리',
       field: 'categoryNm',
-      width: 180,
+      width: 120,
       valueGetter: (params) => params.data?.categoryNm || '-',
     },
     {
       headerName: '타이틀',
       field: 'title',
-      minWidth: 240,
+      minWidth: 400,
       flex: 1,
       cellClass: 'text-start',
       valueGetter: (params) => params.data?.title || '',
@@ -175,7 +175,7 @@ const NotionSaveListPage = () => {
     {
       headerName: '본문',
       field: 'notes',
-      minWidth: 260,
+      minWidth: 100,
       flex: 2,
       cellClass: 'text-start',
       valueGetter: (params) => params.data?.notes || '',
@@ -183,7 +183,9 @@ const NotionSaveListPage = () => {
     {
       headerName: 'URL',
       field: 'url',
-      width: 320,
+      width: 250,
+      cellClass: 'text-start',
+      cellStyle: { display: 'flex', alignItems: 'center' },
       cellRenderer: (params: ICellRendererParams<NotionListRow>) => {
         const url = params.data?.url || '';
         if (!url) {
@@ -205,7 +207,9 @@ const NotionSaveListPage = () => {
     {
       headerName: 'NOTION URL',
       field: 'notionUrl',
-      width: 320,
+      width: 250,
+      cellClass: 'text-start',
+      cellStyle: { display: 'flex', alignItems: 'center' },
       cellRenderer: (params: ICellRendererParams<NotionListRow>) => {
         const url = params.data?.notionUrl || '';
         if (!url) {
@@ -240,22 +244,11 @@ const NotionSaveListPage = () => {
       rowDrag: true,
     },
     {
-      headerName: '순서',
-      field: 'sortSeq',
-      width: 80,
-    },
-    {
       headerName: '카테고리명',
       field: 'categoryNm',
       flex: 1,
       minWidth: 220,
       cellClass: 'text-start',
-    },
-    {
-      headerName: '색상',
-      field: 'color',
-      width: 140,
-      valueGetter: (params) => params.data?.color || '-',
     },
   ]), []);
 
@@ -570,24 +563,10 @@ const NotionSaveListPage = () => {
             role="dialog"
             aria-modal="true"
           >
-            <div className="modal-dialog modal-lg" style={{ margin: 0, maxWidth: '70vw', width: '100%' }}>
+            <div className="modal-dialog" style={{ margin: 0, width: '370px', maxWidth: '92vw' }}>
               <div className="modal-content" style={{ maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <div className="modal-header position-relative">
-                  <h2 className="modal-title w-100 text-center">카테고리 순서 변경</h2>
-                  <button type="button" className="btn p-0 position-absolute end-0 me-3" aria-label="닫기" onClick={handleCloseSortModal}>
-                    <i className="fa fa-window-close" aria-hidden="true"></i>
-                  </button>
-                </div>
                 <div className="modal-body" style={{ overflowY: 'auto', flex: 1 }}>
-                  <div className="d-flex justify-content-end gap-2 mb-2">
-                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => moveSelectedSortRow('up')}>
-                      위로
-                    </button>
-                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => moveSelectedSortRow('down')}>
-                      아래로
-                    </button>
-                  </div>
-                  <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '460px' }}>
+                  <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '360px' }}>
                     <AgGridReact<NotionCategorySortRow>
                       rowData={sortRows}
                       columnDefs={sortColumnDefs}
@@ -601,6 +580,16 @@ const NotionSaveListPage = () => {
                       onSelectionChanged={handleSortSelectionChanged}
                       onRowDragEnd={handleSortRowDragEnd}
                     />
+                  </div>
+                  <div>
+                    <button type="button" className="btn btn-light" onClick={() => moveSelectedSortRow('up')}>
+                      <i className="mdi mdi-arrow-up-bold me-1" aria-hidden="true"></i>
+                      위로
+                    </button>
+                    <button type="button" className="btn btn-light m-2" onClick={() => moveSelectedSortRow('down')}>
+                      <i className="mdi mdi-arrow-down-bold me-1" aria-hidden="true"></i>
+                      아래로
+                    </button>
                   </div>
                 </div>
                 <div className="modal-footer">
