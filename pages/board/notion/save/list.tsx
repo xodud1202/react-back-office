@@ -183,7 +183,7 @@ const NotionSaveListPage = () => {
     {
       headerName: 'URL',
       field: 'url',
-      width: 210,
+      width: 320,
       cellRenderer: (params: ICellRendererParams<NotionListRow>) => {
         const url = params.data?.url || '';
         if (!url) {
@@ -192,10 +192,12 @@ const NotionSaveListPage = () => {
         return (
           <button
             type="button"
-            className="btn p-0 text-decoration-underline"
+            className="btn p-0 text-decoration-underline text-start"
+            style={{ display: 'block', width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            title={url}
             onClick={() => openUrlInNewTab(url)}
           >
-            열기
+            {url}
           </button>
         );
       },
@@ -203,7 +205,7 @@ const NotionSaveListPage = () => {
     {
       headerName: 'NOTION URL',
       field: 'notionUrl',
-      width: 210,
+      width: 320,
       cellRenderer: (params: ICellRendererParams<NotionListRow>) => {
         const url = params.data?.notionUrl || '';
         if (!url) {
@@ -212,10 +214,12 @@ const NotionSaveListPage = () => {
         return (
           <button
             type="button"
-            className="btn p-0 text-decoration-underline"
+            className="btn p-0 text-decoration-underline text-start"
+            style={{ display: 'block', width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            title={url}
             onClick={() => openUrlInNewTab(url)}
           >
-            열기
+            {url}
           </button>
         );
       },
