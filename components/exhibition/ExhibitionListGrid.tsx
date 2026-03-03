@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef } from 'ag-grid-community';
 import type { ExhibitionItem } from '@/components/exhibition/types';
+import NewsImagePreviewModal from '@/components/common/NewsImagePreviewModal';
 
 interface ExhibitionListGridProps {
   // 기획전 목록 데이터입니다.
@@ -12,6 +13,8 @@ interface ExhibitionListGridProps {
 
 // 기획전 목록 그리드를 렌더링합니다.
 const ExhibitionListGrid = ({ rows, onEdit }: ExhibitionListGridProps) => {
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
   // 컬럼을 정의합니다.
   const columnDefs = useMemo<ColDef<ExhibitionItem>[]>(() => ([
     { headerName: '기획전번호', field: 'exhibitionNo', width: 120 },
@@ -38,6 +41,28 @@ const ExhibitionListGrid = ({ rows, onEdit }: ExhibitionListGridProps) => {
     },
     { headerName: '노출시작일시', field: 'dispStartDt', width: 170 },
     { headerName: '노출종료일시', field: 'dispEndDt', width: 170 },
+    {
+      headerName: '썸네일',
+      field: 'thumbnailUrl',
+      width: 130,
+      cellRenderer: (params: { value?: string }) => {
+        const imageUrl = params.value || '';
+        if (!imageUrl) {
+          return <span className="text-muted">-</span>;
+        }
+        return (
+          <img
+            src={imageUrl}
+            alt="썸네일"
+            style={{ width: '60px', height: '80px', objectFit: 'cover', cursor: 'pointer' }}
+            onClick={(event) => {
+              event.preventDefault();
+              setPreviewImageUrl(imageUrl);
+            }}
+          />
+        );
+      },
+    },
     { headerName: '리스트노출여부', field: 'listShowYn', width: 120 },
     { headerName: '노출여부', field: 'showYn', width: 100 },
     { headerName: '등록일시', field: 'regDt', width: 170 },
@@ -80,6 +105,11 @@ const ExhibitionListGrid = ({ rows, onEdit }: ExhibitionListGridProps) => {
         pagination
         paginationPageSize={20}
         overlayNoRowsTemplate="데이터가 없습니다."
+      />
+      <NewsImagePreviewModal
+        isOpen={Boolean(previewImageUrl)}
+        imageUrl={previewImageUrl}
+        onClose={() => setPreviewImageUrl(null)}
       />
     </div>
   );

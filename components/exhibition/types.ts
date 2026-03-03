@@ -12,6 +12,8 @@ export interface ExhibitionItem {
   listShowYn: string;
   // 노출 여부입니다.
   showYn: string;
+  // 썸네일 URL입니다.
+  thumbnailUrl?: string;
   // 등록일시입니다.
   regDt?: string;
   // 수정일시입니다.
@@ -98,6 +100,8 @@ export interface ExhibitionDetail {
   listShowYn: string;
   // 노출 여부입니다.
   showYn: string;
+  // 썸네일 URL입니다.
+  thumbnailUrl?: string;
   // PC 상세 HTML입니다.
   exhibitionPcDesc?: string;
   // MO 상세 HTML입니다.

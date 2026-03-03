@@ -4,6 +4,7 @@ import api from '@/utils/axios/axios';
 import { requireLoginUsrNo } from '@/utils/auth';
 import useQuillImageUpload from '@/hooks/useQuillImageUpload';
 import Modal from '@/components/common/Modal';
+import NewsImagePreviewModal from '@/components/common/NewsImagePreviewModal';
 import type { BrandOption, CategoryOption, CommonCode, GoodsMerch } from '@/components/goods/types';
 import type { ExhibitionDetail, ExhibitionGoodsItem, ExhibitionSavePayload, ExhibitionTabItem } from '@/components/exhibition/types';
 import ExhibitionTabGoodsSection from '@/components/exhibition/ExhibitionTabGoodsSection';
@@ -12,7 +13,12 @@ import ExhibitionTabGoodsSection from '@/components/exhibition/ExhibitionTabGood
 const ReactQuill = dynamic(
   async () => {
     const mod = await import('react-quill-new');
-    return mod.default;
+    const Component = mod.default;
+    const ForwardedQuill = React.forwardRef<any, React.ComponentProps<typeof Component>>((props, ref) => (
+      <Component ref={ref} {...props} />
+    ));
+    ForwardedQuill.displayName = 'ExhibitionEditModalQuill';
+    return ForwardedQuill;
   },
   { ssr: false }
 );
@@ -59,6 +65,9 @@ const ExhibitionEditModal = ({
   const [showYn, setShowYn] = useState('Y');
   const [exhibitionPcDesc, setExhibitionPcDesc] = useState('');
   const [exhibitionMoDesc, setExhibitionMoDesc] = useState('');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [isThumbnailPreviewOpen, setIsThumbnailPreviewOpen] = useState(false);
   const [tabs, setTabs] = useState<ExhibitionTabItem[]>([]);
   const [goodsRows, setGoodsRows] = useState<ExhibitionGoodsItem[]>([]);
   const [selectedTabRowKey, setSelectedTabRowKey] = useState('');
@@ -122,6 +131,82 @@ const ExhibitionEditModal = ({
     return value.replace(' ', 'T').slice(0, 16);
   }, []);
 
+  // 썸네일 이미지를 프론트에서 검증합니다.
+  const validateThumbnailImage = useCallback(async (file: File): Promise<string | null> => {
+    if (!file.type.startsWith('image/')) {
+      return '이미지 파일만 업로드할 수 있습니다.';
+    }
+    const previewUrl = URL.createObjectURL(file);
+    try {
+      const nextMessage = await new Promise<string | null>((resolve) => {
+        const image = new Image();
+        image.onload = () => {
+          const isWidthMatch = image.width === 750;
+          const isHeightMatch = image.height === 1024;
+          URL.revokeObjectURL(previewUrl);
+          if (!isWidthMatch || !isHeightMatch) {
+            resolve('썸네일은 750x1024px만 가능합니다.');
+            return;
+          }
+          resolve(null);
+        };
+        image.onerror = () => {
+          URL.revokeObjectURL(previewUrl);
+          resolve('이미지 파일을 확인해주세요.');
+        };
+        image.src = previewUrl;
+      });
+      return nextMessage;
+    } catch {
+      URL.revokeObjectURL(previewUrl);
+      return '이미지 파일을 확인해주세요.';
+    }
+  }, []);
+
+  // 썸네일 이미지 업로드를 처리합니다.
+  const handleThumbnailUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!isEditMode || !exhibitionNo) {
+      alert('기획전 등록 후 썸네일 업로드가 가능합니다.');
+      return;
+    }
+    if (!file) {
+      return;
+    }
+    const validationMessage = await validateThumbnailImage(file);
+    if (validationMessage) {
+      alert(validationMessage);
+      return;
+    }
+    const usrNo = requireLoginUsrNo();
+    if (!usrNo) {
+      return;
+    }
+    const formData = new FormData();
+    formData.append('exhibitionNo', String(exhibitionNo));
+    formData.append('regNo', String(usrNo));
+    formData.append('image', file);
+
+    setThumbnailUploading(true);
+    try {
+      const response = await api.post('/api/admin/exhibition/thumbnail/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const nextThumbnailUrl = String(response.data?.thumbnailUrl || '');
+      if (!nextThumbnailUrl) {
+        alert('썸네일 URL을 확인할 수 없습니다.');
+        return;
+      }
+      setThumbnailUrl(nextThumbnailUrl);
+      alert('썸네일이 업로드되었습니다.');
+    } catch (error: any) {
+      const message = error?.response?.data?.message || '썸네일 업로드에 실패했습니다.';
+      alert(message);
+    } finally {
+      setThumbnailUploading(false);
+    }
+  }, [exhibitionNo, isEditMode, validateThumbnailImage]);
+
   // 행 키를 생성합니다.
   const buildNewTabRowKey = useCallback(() => {
     const next = tabSequenceRef.current;
@@ -157,6 +242,9 @@ const ExhibitionEditModal = ({
     setShowYn('Y');
     setExhibitionPcDesc('');
     setExhibitionMoDesc('');
+    setThumbnailUrl('');
+    setThumbnailUploading(false);
+    setIsThumbnailPreviewOpen(false);
     setTabs([]);
     setGoodsRows([]);
     setSelectedTabRowKey('');
@@ -177,6 +265,7 @@ const ExhibitionEditModal = ({
       setDispEndDt(toInputDateTime(detail.dispEndDt));
       setListShowYn(detail.listShowYn || 'Y');
       setShowYn(detail.showYn || 'Y');
+      setThumbnailUrl(detail.thumbnailUrl || '');
       setExhibitionPcDesc(detail.exhibitionPcDesc || '');
       setExhibitionMoDesc(detail.exhibitionMoDesc || '');
 
@@ -360,7 +449,12 @@ const ExhibitionEditModal = ({
         </>
       )}
       footerActions={(
-        <button type="button" className="btn btn-primary" onClick={handleSave} disabled={loading}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={handleSave}
+          disabled={loading || thumbnailUploading}
+        >
           {loading ? '저장중...' : '저장'}
         </button>
       )}
@@ -445,6 +539,39 @@ const ExhibitionEditModal = ({
             </div>
           </div>
         </div>
+        <div className="row">
+          <div className="col-md-3">
+            <div className="form-group">
+              <label>기획전 썸네일(750x1024)</label>
+              <input
+                type="file"
+                className="form-control"
+                accept="image/*"
+                onChange={handleThumbnailUpload}
+                disabled={loading || thumbnailUploading || !isEditMode}
+              />
+              <small className="text-muted d-block mt-1">
+                {isEditMode ? '썸네일 업로드를 통해 노출 이미지를 등록해주세요.' : '기획전 등록 후 썸네일 업로드가 가능합니다.'}
+              </small>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="form-group">
+              <label>썸네일 미리보기</label>
+              {thumbnailUrl ? (
+                <img
+                  src={thumbnailUrl}
+                  alt="기획전 썸네일"
+                  className="border rounded"
+                  style={{ width: '100%', maxHeight: '140px', objectFit: 'contain', cursor: 'pointer' }}
+                  onClick={() => setIsThumbnailPreviewOpen(true)}
+                />
+              ) : (
+                <div className="text-muted">등록된 썸네일이 없습니다.</div>
+              )}
+            </div>
+          </div>
+        </div>
 
         <div className="mt-3">
           <label className="d-block mb-2">PC 상세</label>
@@ -508,6 +635,11 @@ const ExhibitionEditModal = ({
           border-radius: 0;
         }
       `}</style>
+      <NewsImagePreviewModal
+        isOpen={isThumbnailPreviewOpen}
+        imageUrl={thumbnailUrl}
+        onClose={() => setIsThumbnailPreviewOpen(false)}
+      />
     </Modal>
   );
 };
