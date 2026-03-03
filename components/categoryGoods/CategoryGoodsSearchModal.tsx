@@ -13,7 +13,7 @@ interface CategoryGoodsSearchModalProps {
   goodsStatList: CommonCode[];
   goodsDivList: CommonCode[];
   goodsMerchList: GoodsMerch[];
-  onApply: (goodsIds: string[]) => void;
+  onApply: (selectedGoods: GoodsData[]) => void;
 }
 
 // 카테고리 상품 등록용 검색 팝업을 렌더링합니다.
@@ -28,7 +28,7 @@ const CategoryGoodsSearchModal = ({
   onApply,
 }: CategoryGoodsSearchModalProps) => {
   const [searchParams, setSearchParams] = useState<Record<string, any>>({});
-  const [selectedGoodsIds, setSelectedGoodsIds] = useState<string[]>([]);
+  const [selectedGoodsRows, setSelectedGoodsRows] = useState<GoodsData[]>([]);
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<GoodsData[]>([]);
 
@@ -114,25 +114,24 @@ const CategoryGoodsSearchModal = ({
   // 선택된 상품을 갱신합니다.
   const handleSelectionChanged = useCallback((event: SelectionChangedEvent<GoodsData>) => {
     const selected = event.api.getSelectedRows() || [];
-    const goodsIds = selected.map((item) => item.goodsId).filter((value) => value);
-    setSelectedGoodsIds(goodsIds);
+    setSelectedGoodsRows(selected);
   }, []);
 
   // 선택한 상품을 등록 대상으로 전달합니다.
   const handleApply = useCallback(() => {
-    if (selectedGoodsIds.length === 0) {
+    if (selectedGoodsRows.length === 0) {
       alert('등록할 상품을 선택해주세요.');
       return;
     }
-    onApply(selectedGoodsIds);
-  }, [onApply, selectedGoodsIds]);
+    onApply(selectedGoodsRows);
+  }, [onApply, selectedGoodsRows]);
 
   // 팝업 닫힘 시 선택 상태를 초기화합니다.
   useEffect(() => {
     if (isOpen) {
       return;
     }
-    setSelectedGoodsIds([]);
+    setSelectedGoodsRows([]);
     setSearchParams({});
     setRows([]);
   }, [isOpen]);

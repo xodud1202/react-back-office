@@ -3,7 +3,7 @@ import api from '@/utils/axios/axios';
 import BannerGoodsGrid from '@/components/banner/BannerGoodsGrid';
 import CategoryGoodsSearchModal from '@/components/categoryGoods/CategoryGoodsSearchModal';
 import type { BannerGoodsItem, BannerTabItem } from '@/components/banner/types';
-import type { BrandOption, CategoryOption, CommonCode, GoodsMerch } from '@/components/goods/types';
+import type { BrandOption, CategoryOption, CommonCode, GoodsData, GoodsMerch } from '@/components/goods/types';
 
 interface BannerGoodsDetailSectionProps {
   // 수정 모드 여부입니다.
@@ -65,6 +65,17 @@ const BannerGoodsDetailSection = ({
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const excelInputRef = useRef<HTMLInputElement | null>(null);
+  const tabSequenceRef = useRef(1);
+
+  /**
+   * 신규 탭용 안정 행 키를 생성합니다.
+   * @returns 신규 탭 행 키
+   */
+  const buildNewTabRowKey = useCallback(() => {
+    const nextSequence = tabSequenceRef.current;
+    tabSequenceRef.current += 1;
+    return `tab-new-${Date.now()}-${nextSequence}`;
+  }, []);
 
   // 현재 노출할 상품 목록을 계산합니다.
   const currentRows = useMemo(() => {
@@ -85,40 +96,53 @@ const BannerGoodsDetailSection = ({
     const nextTabNm = `TAB${nextIndex}`;
     // 신규 탭 기본값을 생성합니다.
     const nextTab: BannerTabItem = {
+      rowKey: buildNewTabRowKey(),
       tabNm: nextTabNm,
       dispOrd: nextIndex,
       showYn: 'Y',
     };
     setTabList((prev) => [...prev, nextTab]);
     setActiveTabNm(nextTabNm);
-  }, [setActiveTabNm, setTabList, tabList.length]);
+  }, [buildNewTabRowKey, setActiveTabNm, setTabList, tabList.length]);
 
   // 탭을 삭제합니다.
-  const handleDeleteTab = useCallback((tabNm: string) => {
+  const handleDeleteTab = useCallback((targetRowKey: string) => {
+    const targetTab = tabList.find((item) => item.rowKey === targetRowKey);
+    if (!targetTab) {
+      return;
+    }
+    const targetTabNm = targetTab.tabNm;
+
     // 탭 정보와 연결된 상품 목록을 함께 정리합니다.
-    setTabList((prev) => prev.filter((item) => item.tabNm !== tabNm));
-    setTabGoodsRows((prev) => prev.filter((item) => item.tabNm !== tabNm));
+    setTabList((prev) => prev.filter((item) => item.rowKey !== targetRowKey));
+    setTabGoodsRows((prev) => prev.filter((item) => item.tabNm !== targetTabNm));
     setSelectedRowKeys([]);
-    setActiveTabNm((prev) => (prev === tabNm ? '' : prev));
-  }, [setActiveTabNm, setTabGoodsRows, setTabList]);
+    setActiveTabNm((prev) => (prev === targetTabNm ? '' : prev));
+  }, [setActiveTabNm, setTabGoodsRows, setTabList, tabList]);
 
   // 탭명을 변경합니다.
-  const handleChangeTabName = useCallback((targetTabNm: string, nextTabNm: string) => {
+  const handleChangeTabName = useCallback((targetRowKey: string, nextTabNm: string) => {
+    const targetTab = tabList.find((item) => item.rowKey === targetRowKey);
+    if (!targetTab) {
+      return;
+    }
+    const targetTabNm = targetTab.tabNm;
+
     // 탭 목록의 이름을 변경합니다.
     setTabList((prev) => prev.map((item) => (
-      item.tabNm === targetTabNm ? { ...item, tabNm: nextTabNm } : item
+      item.rowKey === targetRowKey ? { ...item, tabNm: nextTabNm } : item
     )));
     // 탭 상품 목록의 매핑명도 함께 변경합니다.
     setTabGoodsRows((prev) => prev.map((item) => (
       item.tabNm === targetTabNm ? { ...item, tabNm: nextTabNm } : item
     )));
     setActiveTabNm((prev) => (prev === targetTabNm ? nextTabNm : prev));
-  }, [setActiveTabNm, setTabGoodsRows, setTabList]);
+  }, [setActiveTabNm, setTabGoodsRows, setTabList, tabList]);
 
   // 탭 노출여부를 변경합니다.
-  const handleChangeTabShowYn = useCallback((targetTabNm: string, nextShowYn: string) => {
+  const handleChangeTabShowYn = useCallback((targetRowKey: string, nextShowYn: string) => {
     setTabList((prev) => prev.map((item) => (
-      item.tabNm === targetTabNm ? { ...item, showYn: nextShowYn } : item
+      item.rowKey === targetRowKey ? { ...item, showYn: nextShowYn } : item
     )));
   }, [setTabList]);
 
@@ -163,8 +187,8 @@ const BannerGoodsDetailSection = ({
   }, [activeTabNm, isTabBanner]);
 
   // 선택 상품을 현재 배너 타입에 맞게 추가합니다.
-  const handleApplyGoods = useCallback((goodsIds: string[]) => {
-    if (goodsIds.length === 0) {
+  const handleApplyGoods = useCallback((selectedGoods: GoodsData[]) => {
+    if (selectedGoods.length === 0) {
       return;
     }
     if (isTabBanner) {
@@ -174,14 +198,18 @@ const BannerGoodsDetailSection = ({
         const existingSet = new Set(current.map((item) => item.goodsId));
         const nextRows = [...prev];
         let nextOrd = current.length + 1;
-        goodsIds.forEach((goodsId) => {
-          if (existingSet.has(goodsId)) {
+        selectedGoods.forEach((item) => {
+          if (!item.goodsId || existingSet.has(item.goodsId)) {
             return;
           }
           nextRows.push({
-            rowKey: `${activeTabNm}_${goodsId}_${Date.now()}_${nextOrd}`,
+            rowKey: `${activeTabNm}_${item.goodsId}_${Date.now()}_${nextOrd}`,
             tabNm: activeTabNm,
-            goodsId,
+            goodsId: item.goodsId,
+            erpStyleCd: item.erpStyleCd,
+            goodsNm: item.goodsNm,
+            goodsStatNm: item.goodsStatNm,
+            goodsDivNm: item.goodsDivNm,
             dispOrd: nextOrd,
             showYn: 'Y',
           });
@@ -198,13 +226,17 @@ const BannerGoodsDetailSection = ({
         const existingSet = new Set(prev.map((item) => item.goodsId));
         const nextRows = [...prev];
         let nextOrd = prev.length + 1;
-        goodsIds.forEach((goodsId) => {
-          if (existingSet.has(goodsId)) {
+        selectedGoods.forEach((item) => {
+          if (!item.goodsId || existingSet.has(item.goodsId)) {
             return;
           }
           nextRows.push({
-            rowKey: `list_${goodsId}_${Date.now()}_${nextOrd}`,
-            goodsId,
+            rowKey: `list_${item.goodsId}_${Date.now()}_${nextOrd}`,
+            goodsId: item.goodsId,
+            erpStyleCd: item.erpStyleCd,
+            goodsNm: item.goodsNm,
+            goodsStatNm: item.goodsStatNm,
+            goodsDivNm: item.goodsDivNm,
             dispOrd: nextOrd,
             showYn: 'Y',
           });
@@ -321,11 +353,11 @@ const BannerGoodsDetailSection = ({
 
       {isTabBanner && (
         <div className="mb-3"><div className="table-responsive"><table className="table table-sm table-bordered"><thead><tr><th style={{ width: '80px' }}>순서</th><th>탭명</th><th style={{ width: '120px' }}>노출여부</th><th style={{ width: '220px' }}>관리</th></tr></thead><tbody>{tabList.map((tab, index) => (
-          <tr key={`${tab.tabNm}_${index}`} className={activeTabNm === tab.tabNm ? 'table-primary' : ''}>
+          <tr key={tab.rowKey || `tab-fallback-${index}`} className={activeTabNm === tab.tabNm ? 'table-primary' : ''}>
             <td>{tab.dispOrd}</td>
-            <td><input className="form-control form-control-sm" value={tab.tabNm} onChange={(e) => handleChangeTabName(tab.tabNm, e.target.value)} /></td>
-            <td><select className="form-select form-select-sm" value={tab.showYn} onChange={(e) => handleChangeTabShowYn(tab.tabNm, e.target.value)}><option value="Y">Y</option><option value="N">N</option></select></td>
-            <td><div className="d-flex gap-2"><button type="button" className="btn btn-outline-primary btn-sm" onClick={() => setActiveTabNm(tab.tabNm)}>선택</button><button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleDeleteTab(tab.tabNm)}>삭제</button></div></td>
+            <td><input className="form-control form-control-sm" value={tab.tabNm} onChange={(e) => handleChangeTabName(tab.rowKey || '', e.target.value)} /></td>
+            <td><select className="form-select form-select-sm" value={tab.showYn} onChange={(e) => handleChangeTabShowYn(tab.rowKey || '', e.target.value)}><option value="Y">Y</option><option value="N">N</option></select></td>
+            <td><div className="d-flex gap-2"><button type="button" className="btn btn-outline-primary btn-sm" onClick={() => setActiveTabNm(tab.tabNm)}>선택</button><button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleDeleteTab(tab.rowKey || '')}>삭제</button></div></td>
           </tr>
         ))}</tbody></table></div></div>
       )}

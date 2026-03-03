@@ -8,7 +8,7 @@ import type { CategoryItem, CategoryTreeNode } from '@/components/category/types
 import CategoryGoodsGrid from '@/components/categoryGoods/CategoryGoodsGrid';
 import CategoryGoodsSearchModal from '@/components/categoryGoods/CategoryGoodsSearchModal';
 import type { CategoryGoodsItem } from '@/components/categoryGoods/types';
-import type { BrandOption, CategoryOption, CommonCode, GoodsMerch } from '@/components/goods/types';
+import type { BrandOption, CategoryOption, CommonCode, GoodsData, GoodsMerch } from '@/components/goods/types';
 
 interface CategoryGoodsPageProps {
   goodsStatList: CommonCode[];
@@ -314,9 +314,17 @@ const CategoryGoodsPage = ({
   }, []);
 
   // 선택 상품을 등록합니다.
-  const handleRegisterGoods = useCallback(async (goodsIds: string[]) => {
+  const handleRegisterGoods = useCallback(async (selectedGoods: GoodsData[]) => {
     if (!selectedCategoryId) {
       alert('카테고리를 선택해주세요.');
+      return;
+    }
+    // 선택된 상품 목록을 등록 API 형식에 맞게 상품코드 배열로 변환합니다.
+    const goodsIds = selectedGoods
+      .map((item) => item.goodsId)
+      .filter((value) => Boolean(value));
+    if (goodsIds.length === 0) {
+      alert('등록할 상품을 선택해주세요.');
       return;
     }
     const usrNo = requireLoginUsrNo();

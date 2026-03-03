@@ -106,10 +106,21 @@ const BannerListPage = ({
   }, []);
 
   // 저장 완료 후 목록을 갱신합니다.
-  const handleSaved = useCallback(async () => {
+  const handleSaved = useCallback(async (nextBannerNo?: number | null) => {
+    await fetchBannerList();
+    if (!nextBannerNo) {
+      setIsModalOpen(false);
+      setSelectedBannerNo(null);
+      return;
+    }
+
+    // 닫기 동작 후 동일 배너를 다시 열어 연속 편집을 가능하게 합니다.
     setIsModalOpen(false);
     setSelectedBannerNo(null);
-    await fetchBannerList();
+    setTimeout(() => {
+      setSelectedBannerNo(nextBannerNo);
+      setIsModalOpen(true);
+    }, 0);
   }, [fetchBannerList]);
 
   // 모달을 닫습니다.

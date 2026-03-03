@@ -28,7 +28,7 @@ interface BannerEditModalProps {
   // 닫기 처리 함수입니다.
   onClose: () => void;
   // 저장 완료 처리 함수입니다.
-  onSaved: () => void;
+  onSaved: (bannerNo?: number | null) => void;
 }
 
 // 배너 등록/수정 팝업을 렌더링합니다.
@@ -89,6 +89,28 @@ const BannerEditModal = ({
     setGoodsRows([]);
   }, []);
 
+  // 백엔드 저장 응답에서 배너 번호를 추출합니다.
+  const getSavedBannerNo = useCallback((responseData: unknown): number | null => {
+    if (typeof responseData === 'number' && Number.isInteger(responseData) && responseData > 0) {
+      return responseData;
+    }
+    if (typeof responseData === 'string') {
+      const parsed = Number(responseData);
+      return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+    }
+    if (responseData && typeof responseData === 'object') {
+      const candidate = (responseData as { bannerNo?: unknown }).bannerNo;
+      if (typeof candidate === 'number' && Number.isInteger(candidate) && candidate > 0) {
+        return candidate;
+      }
+      if (typeof candidate === 'string') {
+        const parsed = Number(candidate);
+        return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+      }
+    }
+    return null;
+  }, []);
+
   // 서버 날짜 문자열을 datetime-local 입력값으로 변환합니다.
   const toInputDateTime = useCallback((value?: string) => {
     if (!value) {
@@ -144,6 +166,7 @@ const BannerEditModal = ({
       setImagePreviewMap({});
 
       const loadedTabs = (detail.tabList || []).map((tab, index) => ({
+        rowKey: String(tab.bannerTabNo || `${targetBannerNo}_tab_${index}`),
         bannerTabNo: tab.bannerTabNo,
         tabNm: tab.tabNm,
         dispOrd: tab.dispOrd || index + 1,
@@ -282,24 +305,29 @@ const BannerEditModal = ({
 
     setLoading(true);
     try {
+      let savedBannerNo = bannerNo || null;
       if (bannerNo) {
         await api.post('/api/admin/banner/update', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
-        await api.post('/api/admin/banner/create', formData, {
+        const response = await api.post('/api/admin/banner/create', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+        const nextBannerNo = getSavedBannerNo(response.data);
+        if (nextBannerNo) {
+          savedBannerNo = nextBannerNo;
+        }
       }
       alert('저장되었습니다.');
-      onSaved();
+      onSaved(savedBannerNo);
     } catch (error: any) {
       const message = error?.response?.data?.message || '저장에 실패했습니다.';
       alert(message);
     } finally {
       setLoading(false);
     }
-  }, [bannerNo, buildPayload, imageFileMap, onSaved]);
+  }, [bannerNo, buildPayload, getSavedBannerNo, imageFileMap, onSaved]);
 
   // 배너를 삭제합니다.
   const handleDelete = useCallback(async () => {

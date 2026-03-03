@@ -54,6 +54,8 @@ export interface BannerImageInfo {
 
 // 배너 탭 정보를 정의합니다.
 export interface BannerTabItem {
+  // 클라이언트 탭 행 키입니다.
+  rowKey?: string;
   // 배너 탭 번호입니다.
   bannerTabNo?: number;
   // 탭명입니다.
