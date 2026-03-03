@@ -56,6 +56,10 @@ export interface ExhibitionTabItem {
   tabNm: string;
   // 노출 순서입니다.
   dispOrd: number;
+  // 노출 시작일시입니다.
+  dispStartDt?: string;
+  // 노출 종료일시입니다.
+  dispEndDt?: string;
   // 노출 여부입니다.
   showYn: string;
   // 삭제 여부입니다.

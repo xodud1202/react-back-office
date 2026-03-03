@@ -59,8 +59,10 @@ const ExhibitionEditModal = ({
   const [loading, setLoading] = useState(false);
   const [activePanel, setActivePanel] = useState<'master' | 'detail'>('master');
   const [exhibitionNm, setExhibitionNm] = useState('');
-  const [dispStartDt, setDispStartDt] = useState('');
-  const [dispEndDt, setDispEndDt] = useState('');
+  const [dispStartDate, setDispStartDate] = useState('');
+  const [dispEndDate, setDispEndDate] = useState('');
+  const [dispStartHour, setDispStartHour] = useState('00');
+  const [dispEndHour, setDispEndHour] = useState('24');
   const [listShowYn, setListShowYn] = useState('Y');
   const [showYn, setShowYn] = useState('Y');
   const [exhibitionPcDesc, setExhibitionPcDesc] = useState('');
@@ -72,6 +74,7 @@ const ExhibitionEditModal = ({
   const [goodsRows, setGoodsRows] = useState<ExhibitionGoodsItem[]>([]);
   const [selectedTabRowKey, setSelectedTabRowKey] = useState('');
   const tabSequenceRef = useRef(1);
+  const hourOptions = useMemo(() => Array.from({ length: 25 }, (_, index) => String(index).padStart(2, '0')), []);
 
   const isEditMode = useMemo(() => Boolean(exhibitionNo), [exhibitionNo]);
 
@@ -112,23 +115,51 @@ const ExhibitionEditModal = ({
     editorId: 'exhibition-mo-desc',
   });
 
-  // datetime-local 형식을 API 형식으로 변환합니다.
-  const toApiDateTime = useCallback((value?: string) => {
-    if (!value) {
+  // 날짜와 시간 값을 저장용 문자열로 변환합니다.
+  const toApiDateTime = useCallback((date?: string, hour?: string, isEnd = false): string | undefined => {
+    if (!date) {
       return undefined;
     }
-    return `${value.replace('T', ' ')}:00`;
+    const normalizedHour = hour || (isEnd ? '24' : '00');
+    if (!/^\d{2}$/.test(normalizedHour)) {
+      return undefined;
+    }
+    const hourNumber = Number(normalizedHour);
+    if (hourNumber === 24) {
+      return `${date} 23:59:59`;
+    }
+    if (hourNumber < 0 || hourNumber > 23) {
+      return undefined;
+    }
+    return `${date} ${normalizedHour}:00:00`;
   }, []);
 
-  // API 응답 datetime을 datetime-local로 변환합니다.
-  const toInputDateTime = useCallback((value?: string) => {
+  // API 응답 datetime에서 날짜 값을 추출합니다.
+  const getInputDate = useCallback((value?: string) => {
     if (!value) {
       return '';
     }
-    if (value.includes('T')) {
-      return value.slice(0, 16);
+    const normalized = value.includes('T') ? value.replace('T', ' ') : value;
+    if (normalized.length < 10) {
+      return '';
     }
-    return value.replace(' ', 'T').slice(0, 16);
+    return normalized.slice(0, 10);
+  }, []);
+
+  // API 응답 datetime에서 시간(selectBox) 값을 추출합니다.
+  const getInputHour = useCallback((value?: string, defaultValue = '00') => {
+    if (!value) {
+      return defaultValue;
+    }
+    const normalized = value.includes('T') ? value.replace('T', ' ') : value;
+    const timePart = normalized.slice(11, 16);
+    if (!timePart) {
+      return defaultValue;
+    }
+    if (timePart === '23:59') {
+      return '24';
+    }
+    return timePart.slice(0, 2);
   }, []);
 
   // 썸네일 이미지를 프론트에서 검증합니다.
@@ -236,8 +267,10 @@ const ExhibitionEditModal = ({
   // 팝업 상태를 리셋합니다.
   const resetState = useCallback(() => {
     setExhibitionNm('');
-    setDispStartDt('');
-    setDispEndDt('');
+    setDispStartDate('');
+    setDispEndDate('');
+    setDispStartHour('00');
+    setDispEndHour('24');
     setListShowYn('Y');
     setShowYn('Y');
     setExhibitionPcDesc('');
@@ -261,8 +294,10 @@ const ExhibitionEditModal = ({
       });
       const detail = (response.data || {}) as ExhibitionDetail;
       setExhibitionNm(detail.exhibitionNm || '');
-      setDispStartDt(toInputDateTime(detail.dispStartDt));
-      setDispEndDt(toInputDateTime(detail.dispEndDt));
+      setDispStartDate(getInputDate(detail.dispStartDt));
+      setDispEndDate(getInputDate(detail.dispEndDt));
+      setDispStartHour(getInputHour(detail.dispStartDt, '00'));
+      setDispEndHour(getInputHour(detail.dispEndDt, '24'));
       setListShowYn(detail.listShowYn || 'Y');
       setShowYn(detail.showYn || 'Y');
       setThumbnailUrl(detail.thumbnailUrl || '');
@@ -274,6 +309,8 @@ const ExhibitionEditModal = ({
         exhibitionTabNo: tab.exhibitionTabNo,
         exhibitionNo: targetExhibitionNo,
         tabNm: tab.tabNm || '',
+        dispStartDt: tab.dispStartDt,
+        dispEndDt: tab.dispEndDt,
         dispOrd: tab.dispOrd || index + 1,
         showYn: tab.showYn || 'Y',
       })));
@@ -297,15 +334,15 @@ const ExhibitionEditModal = ({
     } finally {
       setLoading(false);
     }
-  }, [onClose, toExhibitionGoodsRow, toExhibitionTabRow, toInputDateTime]);
+  }, [getInputDate, getInputHour, onClose, toExhibitionGoodsRow, toExhibitionTabRow]);
 
   // 저장 시 기본 페이로드를 생성합니다.
   const buildPayload = useCallback((usrNo: number): ExhibitionSavePayload => {
     const payload: ExhibitionSavePayload = {
       exhibitionNo: exhibitionNo || undefined,
       exhibitionNm,
-      dispStartDt: toApiDateTime(dispStartDt),
-      dispEndDt: toApiDateTime(dispEndDt),
+      dispStartDt: toApiDateTime(dispStartDate, dispStartHour),
+      dispEndDt: toApiDateTime(dispEndDate, dispEndHour, true),
       listShowYn,
       showYn,
       exhibitionPcDesc,
@@ -321,6 +358,8 @@ const ExhibitionEditModal = ({
         exhibitionTabNo: item.exhibitionTabNo,
         exhibitionNo: exhibitionNo || undefined,
         tabNm: item.tabNm,
+        dispStartDt: item.dispStartDt,
+        dispEndDt: item.dispEndDt,
         dispOrd: index + 1,
         showYn: item.showYn || 'Y',
       }));
@@ -340,13 +379,15 @@ const ExhibitionEditModal = ({
   }, [
     exhibitionNo,
     exhibitionNm,
-    dispEndDt,
-    dispStartDt,
     exhibitionMoDesc,
     exhibitionPcDesc,
     isEditMode,
     listShowYn,
     showYn,
+    dispEndDate,
+    dispEndHour,
+    dispStartDate,
+    dispStartHour,
     tabs,
     goodsRows,
     buildNewTabRowKey,
@@ -499,23 +540,41 @@ const ExhibitionEditModal = ({
           <div className="col-md-3">
             <div className="form-group">
               <label>노출시작일시</label>
-              <input
-                type="datetime-local"
-                className="form-control"
-                value={dispStartDt}
-                onChange={(event) => setDispStartDt(event.target.value)}
-              />
+              <div className="d-flex gap-2">
+                <input
+                  type="date"
+                  className="form-control"
+                  value={dispStartDate}
+                  onChange={(event) => setDispStartDate(event.target.value)}
+                />
+                <select className="form-select w-auto" value={dispStartHour} onChange={(event) => setDispStartHour(event.target.value)}>
+                  {hourOptions.map((hour) => (
+                    <option key={hour} value={hour}>
+                      {hour}시
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
           <div className="col-md-3">
             <div className="form-group">
               <label>노출종료일시</label>
-              <input
-                type="datetime-local"
-                className="form-control"
-                value={dispEndDt}
-                onChange={(event) => setDispEndDt(event.target.value)}
-              />
+              <div className="d-flex gap-2">
+                <input
+                  type="date"
+                  className="form-control"
+                  value={dispEndDate}
+                  onChange={(event) => setDispEndDate(event.target.value)}
+                />
+                <select className="form-select w-auto" value={dispEndHour} onChange={(event) => setDispEndHour(event.target.value)}>
+                  {hourOptions.map((hour) => (
+                    <option key={hour} value={hour}>
+                      {hour}시
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
