@@ -342,13 +342,21 @@ const BannerGoodsDetailSection = ({
   return (
     <>
       <hr />
-      <div className="d-flex flex-wrap justify-content-end gap-2 mb-2">
-        {isTabBanner && (<button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleAddTab}>탭 추가</button>)}
-        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExcelDownload}>엑셀 다운로드</button>
-        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExcelUploadClick}>엑셀 업로드</button>
-        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleOpenGoodsModal}>상품 등록</button>
-        <button type="button" className="btn btn-danger btn-sm" onClick={handleDeleteSelectedGoods}>선택 삭제</button>
-      </div>
+      {isTabBanner && (
+        <>
+          <div className="d-flex flex-wrap justify-content-end gap-2 mb-2">
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleAddTab}>탭 추가</button>
+          </div>
+        </>
+      )}
+      {!isTabBanner && (
+        <div className="d-flex flex-wrap justify-content-end gap-2 mb-2">
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExcelDownload}>엑셀 다운로드</button>
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExcelUploadClick}>엑셀 업로드</button>
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleOpenGoodsModal}>상품 등록</button>
+          <button type="button" className="btn btn-danger btn-sm" onClick={handleDeleteSelectedGoods}>선택 삭제</button>
+        </div>
+      )}
       <input ref={excelInputRef} type="file" accept=".xlsx" style={{ display: 'none' }} onChange={handleExcelUploadChange} />
 
       {isTabBanner && (
@@ -360,6 +368,14 @@ const BannerGoodsDetailSection = ({
             <td><div className="d-flex gap-2"><button type="button" className="btn btn-outline-primary btn-sm" onClick={() => setActiveTabNm(tab.tabNm)}>선택</button><button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleDeleteTab(tab.rowKey || '')}>삭제</button></div></td>
           </tr>
         ))}</tbody></table></div></div>
+      )}
+      {isTabBanner && (
+        <div className="d-flex flex-wrap justify-content-end gap-2 mb-2">
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExcelDownload}>엑셀 다운로드</button>
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExcelUploadClick}>엑셀 업로드</button>
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleOpenGoodsModal}>상품 등록</button>
+          <button type="button" className="btn btn-danger btn-sm" onClick={handleDeleteSelectedGoods}>선택 삭제</button>
+        </div>
       )}
 
       <BannerGoodsGrid
