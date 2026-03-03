@@ -43,6 +43,12 @@ const NewsRssManagePage = () => {
   const [selectedCategoryRowIds, setSelectedCategoryRowIds] = useState<string[]>([]);
   const pressGridApiRef = useRef<GridApi<NewsPressRow> | null>(null);
   const categoryGridApiRef = useRef<GridApi<NewsCategoryRow> | null>(null);
+  // 멀티 선택 체크박스 행 선택 옵션을 정의합니다.
+  const multiRowSelection = useMemo(() => ({
+    mode: 'multiRow' as const,
+    checkboxes: true,
+    headerCheckbox: true,
+  }), []);
 
   // 빈값이면 null을 반환하도록 문자열을 정리합니다.
   const trimToNull = useCallback((value: string | null | undefined) => {
@@ -487,8 +493,6 @@ const NewsRssManagePage = () => {
   // 언론사 그리드 컬럼을 정의합니다.
   const pressColumnDefs = useMemo<ColDef<NewsPressRow>[]>(() => ([
     {
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
       width: 60,
     },
     {
@@ -524,8 +528,6 @@ const NewsRssManagePage = () => {
   // 카테고리 그리드 컬럼을 정의합니다.
   const categoryColumnDefs = useMemo<ColDef<NewsCategoryRow>[]>(() => ([
     {
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
       width: 60,
     },
     {
@@ -619,7 +621,7 @@ const NewsRssManagePage = () => {
                       rowData={pressRows}
                       columnDefs={pressColumnDefs}
                       defaultColDef={defaultColDef}
-                      rowSelection="multiple"
+                      rowSelection={multiRowSelection}
                       rowDragManaged
                       animateRows
                       overlayNoRowsTemplate="데이터가 없습니다."
@@ -652,7 +654,7 @@ const NewsRssManagePage = () => {
                       rowData={categoryRows}
                       columnDefs={categoryColumnDefs}
                       defaultColDef={defaultColDef}
-                      rowSelection="multiple"
+                      rowSelection={multiRowSelection}
                       rowDragManaged
                       animateRows
                       overlayNoRowsTemplate={selectedPressNo ? '데이터가 없습니다.' : '언론사를 선택해주세요.'}

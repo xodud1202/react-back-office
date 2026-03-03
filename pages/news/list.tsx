@@ -1,199 +1,277 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams, IDatasource, IGetRowsParams } from 'ag-grid-community';
-import api from '@/utils/axios/axios';
+import type { ColDef, GridReadyEvent, ICellRendererParams } from 'ag-grid-community';
 import { dateFormatter } from '@/utils/common';
 import NewsImagePreviewModal from '@/components/common/NewsImagePreviewModal';
+import { fetchNewsSnapshot, fetchTopArticleList } from '@/services/newsFileApi';
 
-// 언론사 선택 옵션 데이터 타입
+// 언론사 선택 옵션 데이터 타입입니다.
 interface NewsPressOption {
-  pressNo: number;
+  pressNo: string;
   pressNm: string;
 }
 
-// 카테고리 선택 옵션 데이터 타입
+// 카테고리 선택 옵션 데이터 타입입니다.
 interface NewsCategoryOption {
   categoryCd: string;
   categoryNm: string;
 }
 
-// 뉴스 목록 행 데이터 타입
+// 뉴스 목록 행 데이터 타입입니다.
 interface NewsListRow {
-  articleNo: number;
+  articleId: string;
+  pressNo: string;
   pressNm: string;
+  categoryCd: string;
   categoryNm: string;
   articleTitle: string;
   articleUrl: string;
   thumbnailUrl?: string | null;
   rankScore: number;
-  collectedDt: string;
-}
-
-// 뉴스 목록 API 응답 데이터 타입
-interface NewsListResponse {
-  list: NewsListRow[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
+  publishedDt: string;
 }
 
 /**
- * HTML 엔티티를 일반 문자열로 디코딩한다.
- * @param {string} value 원본 문자열
- * @returns {string} 디코딩된 문자열
+ * 언론사/카테고리/기사 목록으로 그리드 행 데이터를 생성합니다.
+ * @param params 변환 입력 데이터
+ * @returns 그리드 행 목록
  */
-function decodeHtmlEntities(value: string): string {
-  // 문자열이 비어 있으면 빈 문자열을 반환한다.
-  if (!value) {
-    return '';
-  }
-
-  // 주요 HTML 엔티티 및 숫자 엔티티를 문자열로 변환한다.
-  return value.replace(/&(#\d+|#x[0-9a-fA-F]+|quot|amp|apos|lt|gt);/g, (match, entity: string) => {
-    // 자주 사용되는 엔티티를 우선 매핑한다.
-    const namedEntityMap: Record<string, string> = {
-      quot: '"',
-      amp: '&',
-      apos: '\'',
-      lt: '<',
-      gt: '>',
-    };
-
-    if (entity in namedEntityMap) {
-      return namedEntityMap[entity];
-    }
-
-    // 10진수 숫자 엔티티를 문자로 변환한다.
-    if (entity.startsWith('#') && !entity.startsWith('#x')) {
-      const parsedCodePoint = Number(entity.slice(1));
-      return Number.isNaN(parsedCodePoint) ? match : String.fromCodePoint(parsedCodePoint);
-    }
-
-    // 16진수 숫자 엔티티를 문자로 변환한다.
-    if (entity.startsWith('#x')) {
-      const parsedCodePoint = Number.parseInt(entity.slice(2), 16);
-      return Number.isNaN(parsedCodePoint) ? match : String.fromCodePoint(parsedCodePoint);
-    }
-
-    // 변환할 수 없는 값은 원본 문자열을 유지한다.
-    return match;
-  });
+function mapArticleListToRows(params: {
+  pressNo: string;
+  pressNm: string;
+  categoryCd: string;
+  categoryNm: string;
+  articleList: Array<{
+    id: string;
+    title: string;
+    url: string;
+    thumbnailUrl?: string;
+    rankScore?: number;
+    publishedDt?: string;
+  }>;
+}): NewsListRow[] {
+  // 기사 목록을 화면 행 구조로 변환합니다.
+  return (params.articleList || []).map((article, index) => ({
+    articleId: article?.id || `${params.pressNo}-${params.categoryCd}-${index}`,
+    pressNo: params.pressNo,
+    pressNm: params.pressNm,
+    categoryCd: params.categoryCd,
+    categoryNm: params.categoryNm,
+    articleTitle: article?.title || '',
+    articleUrl: article?.url || '',
+    thumbnailUrl: article?.thumbnailUrl || null,
+    rankScore: Number.isFinite(article?.rankScore) ? Number(article.rankScore) : index + 1,
+    publishedDt: article?.publishedDt || '',
+  }));
 }
 
-// 뉴스 목록 화면 컴포넌트
+// 뉴스 목록 화면 컴포넌트입니다.
 const NewsListPage = () => {
-  const [loading, setLoading] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
-  const [searchParams, setSearchParams] = useState<Record<string, any>>({});
-  const gridApiRef = useRef<GridReadyEvent<NewsListRow>['api'] | null>(null);
   const [pressOptions, setPressOptions] = useState<NewsPressOption[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<NewsCategoryOption[]>([]);
   const [selectedPressNo, setSelectedPressNo] = useState<string>('');
   const [selectedCategoryCd, setSelectedCategoryCd] = useState<string>('');
+  const [allRowData, setAllRowData] = useState<NewsListRow[]>([]);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const requestSequenceRef = useRef(0);
 
-  // 언론사 목록 조회
-  const fetchPressOptions = useCallback(async () => {
-    try {
-      // 언론사 목록 호출
-      const response = await api.get('/api/admin/news/press/list');
-      setPressOptions(response.data || []);
-    } catch {
-      // 오류 메시지 출력
-      console.error('언론사 목록을 불러오지 못했습니다.');
-      alert('언론사 목록을 불러오지 못했습니다.');
-    }
+  /**
+   * 스냅샷 응답을 화면 상태로 반영합니다.
+   * @param snapshot 스냅샷 응답
+   */
+  const applySnapshotState = useCallback((snapshot: Awaited<ReturnType<typeof fetchNewsSnapshot>>) => {
+    // 언론사 선택 목록을 상태로 반영합니다.
+    const nextPressOptions = (snapshot.pressList || []).map((press) => ({
+      pressNo: String(press.id ?? ''),
+      pressNm: String(press.name ?? ''),
+    }));
+    setPressOptions(nextPressOptions);
+
+    // 카테고리 선택 목록을 상태로 반영합니다.
+    const nextCategoryOptions = (snapshot.categoryList || []).map((category) => ({
+      categoryCd: String(category.id ?? ''),
+      categoryNm: String(category.name ?? ''),
+    }));
+    setCategoryOptions(nextCategoryOptions);
+
+    // 선택 언론사/카테고리를 상태로 반영합니다.
+    const resolvedPressNo = String(snapshot.selectedPressId ?? '');
+    const resolvedCategoryCd = String(snapshot.selectedCategoryId ?? '');
+    setSelectedPressNo(resolvedPressNo);
+    setSelectedCategoryCd(resolvedCategoryCd);
+
+    // 선택된 언론사/카테고리명으로 기사 목록을 그리드 행으로 변환합니다.
+    const selectedPress = nextPressOptions.find((press) => press.pressNo === resolvedPressNo);
+    const selectedCategory = nextCategoryOptions.find((category) => category.categoryCd === resolvedCategoryCd);
+    const nextRowData = mapArticleListToRows({
+      pressNo: resolvedPressNo,
+      pressNm: selectedPress?.pressNm || '',
+      categoryCd: resolvedCategoryCd,
+      categoryNm: selectedCategory?.categoryNm || '',
+      articleList: (snapshot.articleList || []).map((article) => ({
+        id: String(article.id ?? ''),
+        title: String(article.title ?? ''),
+        url: String(article.url ?? ''),
+        thumbnailUrl: article.thumbnailUrl,
+        rankScore: article.rankScore,
+        publishedDt: article.publishedDt || article.collectedDt,
+      })),
+    });
+    setAllRowData(nextRowData);
   }, []);
 
-  // 카테고리 목록 조회
-  const fetchCategoryOptions = useCallback(async (pressNo: number) => {
+  /**
+   * 초기 진입/언론사 변경 스냅샷을 조회합니다.
+   * @param params 스냅샷 조회 파라미터
+   */
+  const loadNewsSnapshot = useCallback(async (params: { pressId?: string; categoryId?: string } = {}) => {
+    // 최신 요청만 반영하기 위해 요청 시퀀스를 갱신합니다.
+    requestSequenceRef.current += 1;
+    const requestSequence = requestSequenceRef.current;
+
     try {
-      // 언론사 기준 카테고리 조회
-      const response = await api.get('/api/admin/news/category/list', {
-        params: { pressNo },
+      // 메타/샤드 기반 스냅샷을 조회합니다.
+      const snapshot = await fetchNewsSnapshot(params);
+
+      // 이전 요청 응답이면 반영하지 않습니다.
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
+      applySnapshotState(snapshot);
+    } catch (error) {
+      // 조회 실패 시 경고를 표시합니다.
+      console.error('뉴스 스냅샷을 불러오지 못했습니다.', error);
+      alert('뉴스 스냅샷을 불러오지 못했습니다.');
+    } finally {
+      // 최신 요청 완료 시 응답 반영 여부만 유지합니다.
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
+    }
+  }, [applySnapshotState]);
+
+  /**
+   * 카테고리 변경 시 기사 목록을 조회합니다.
+   * @param pressNo 언론사 번호
+   * @param categoryCd 카테고리 코드
+   */
+  const loadTopArticlesByCategory = useCallback(async (pressNo: string, categoryCd: string) => {
+    // 조회 조건이 없으면 목록을 비웁니다.
+    if (!pressNo || !categoryCd) {
+      setAllRowData([]);
+      return;
+    }
+
+    // 최신 요청만 반영하기 위해 요청 시퀀스를 갱신합니다.
+    requestSequenceRef.current += 1;
+    const requestSequence = requestSequenceRef.current;
+
+    try {
+      // 언론사 shard 기반 상위 기사 목록을 조회합니다.
+      const articleList = await fetchTopArticleList(pressNo, categoryCd);
+
+      // 이전 요청 응답이면 반영하지 않습니다.
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
+
+      // 선택값에 맞춰 기사 목록을 행 데이터로 변환합니다.
+      const selectedPress = pressOptions.find((press) => press.pressNo === pressNo);
+      const selectedCategory = categoryOptions.find((category) => category.categoryCd === categoryCd);
+      const nextRows = mapArticleListToRows({
+        pressNo,
+        pressNm: selectedPress?.pressNm || '',
+        categoryCd,
+        categoryNm: selectedCategory?.categoryNm || '',
+        articleList: articleList.map((article) => ({
+          id: String(article.id ?? ''),
+          title: String(article.title ?? ''),
+          url: String(article.url ?? ''),
+          thumbnailUrl: article.thumbnailUrl,
+          rankScore: article.rankScore,
+          publishedDt: article.publishedDt || article.collectedDt,
+        })),
       });
-      setCategoryOptions(response.data || []);
-    } catch {
-      // 오류 메시지 출력
-      console.error('카테고리 목록을 불러오지 못했습니다.');
-      alert('카테고리 목록을 불러오지 못했습니다.');
+      setAllRowData(nextRows);
+    } catch (error) {
+      // 조회 실패 시 경고를 표시합니다.
+      console.error('기사 목록을 불러오지 못했습니다.', error);
+      alert('기사 목록을 불러오지 못했습니다.');
+    } finally {
+      // 최신 요청 완료 시 응답 반영 여부만 유지합니다.
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
     }
-  }, []);
+  }, [categoryOptions, pressOptions]);
 
-  // 언론사 선택 변경 처리
+  /**
+   * 언론사 선택 변경을 처리합니다.
+   * @param event select 변경 이벤트
+   */
   const handlePressChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
-    // 선택된 언론사 값 갱신
+    // 선택 언론사를 즉시 반영하고 카테고리/기사 목록을 초기화합니다.
     const nextPressNo = event.target.value;
     setSelectedPressNo(nextPressNo);
-
-    // 카테고리 초기화
     setSelectedCategoryCd('');
     setCategoryOptions([]);
+    setAllRowData([]);
 
-    // 선택된 언론사 기준 카테고리 재조회
+    // 언론사 변경 시 스냅샷을 다시 조회합니다.
     if (nextPressNo) {
-      fetchCategoryOptions(Number(nextPressNo));
+      loadNewsSnapshot({ pressId: nextPressNo });
+      return;
     }
-  }, [fetchCategoryOptions]);
+    loadNewsSnapshot();
+  }, [loadNewsSnapshot]);
 
-  // 카테고리 선택 변경 처리
+  /**
+   * 카테고리 선택 변경을 처리합니다.
+   * @param event select 변경 이벤트
+   */
   const handleCategoryChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
-    // 선택된 카테고리 값 갱신
-    setSelectedCategoryCd(event.target.value);
-  }, []);
+    // 선택 카테고리를 반영하고 기사 목록을 조회합니다.
+    const nextCategoryCd = event.target.value;
+    setSelectedCategoryCd(nextCategoryCd);
+    loadTopArticlesByCategory(selectedPressNo, nextCategoryCd);
+  }, [loadTopArticlesByCategory, selectedPressNo]);
 
-  // 조회 버튼 처리
-  const handleSearch = useCallback((event: React.FormEvent<HTMLFormElement>) => {
-    // 기본 동작 방지
-    event.preventDefault();
-
-    // 폼 데이터 수집
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const nextParams = Object.fromEntries(formData.entries());
-
-    // 조회 파라미터 갱신
-    setSearchParams(nextParams);
-  }, []);
-
-  // 초기화 버튼 처리
-  const handleReset = useCallback(() => {
-    // 선택 값 초기화
-    setSelectedPressNo('');
-    setSelectedCategoryCd('');
-    setCategoryOptions([]);
-
-    // 조회 파라미터 초기화
-    setSearchParams({});
-  }, []);
-
-  // 이미지 미리보기 열기
+  /**
+   * 이미지 미리보기 모달을 엽니다.
+   * @param imageUrl 이미지 URL
+   */
   const handleOpenImageModal = useCallback((imageUrl: string) => {
-    // 선택 이미지 설정
+    // 선택 이미지를 반영하고 모달을 표시합니다.
     setSelectedImageUrl(imageUrl);
     setIsImageModalOpen(true);
   }, []);
 
-  // 이미지 미리보기 닫기
+  /**
+   * 이미지 미리보기 모달을 닫습니다.
+   */
   const handleCloseImageModal = useCallback(() => {
-    // 모달 닫기 및 선택 이미지 제거
+    // 모달과 선택 이미지를 초기화합니다.
     setIsImageModalOpen(false);
     setSelectedImageUrl(null);
   }, []);
 
-  // 뉴스 타이틀 렌더링
+  /**
+   * 뉴스 타이틀 셀 렌더러를 반환합니다.
+   * @param params 그리드 셀 파라미터
+   * @returns 셀 렌더링 결과
+   */
   const renderTitleCell = useCallback((params: ICellRendererParams<NewsListRow>) => {
-    // 타이틀 및 링크 정보 확인
-    const title = decodeHtmlEntities(params.data?.articleTitle || '');
+    // 제목과 링크를 추출합니다.
+    const title = params.data?.articleTitle || '';
     const url = params.data?.articleUrl || '';
 
-    // 링크가 없으면 텍스트만 표시
+    // 링크가 없으면 텍스트만 표시합니다.
     if (!url) {
       return <span>{title}</span>;
     }
 
-    // 링크가 있으면 새 창으로 이동
+    // 링크가 있으면 새 창 이동 링크를 표시합니다.
     return (
       <a href={url} target="_blank" rel="noopener noreferrer">
         {title}
@@ -201,15 +279,19 @@ const NewsListPage = () => {
     );
   }, []);
 
-  // 타이틀 이미지 렌더링
+  /**
+   * 타이틀 이미지 셀 렌더러를 반환합니다.
+   * @param params 그리드 셀 파라미터
+   * @returns 셀 렌더링 결과
+   */
   const renderThumbnailCell = useCallback((params: ICellRendererParams<NewsListRow>) => {
-    // 이미지 URL 확인
+    // 이미지 URL이 없으면 렌더링하지 않습니다.
     const thumbnailUrl = params.data?.thumbnailUrl;
     if (!thumbnailUrl) {
       return null;
     }
 
-    // 이미지 클릭 시 모달 오픈
+    // 이미지 클릭 시 모달을 열어 원본을 확인합니다.
     return (
       <button
         type="button"
@@ -226,10 +308,16 @@ const NewsListPage = () => {
     );
   }, [handleOpenImageModal]);
 
-  // 그리드 컬럼 정의
+  /**
+   * 그리드 컬럼 정의를 생성합니다.
+   */
   const columnDefs = useMemo<ColDef<NewsListRow>[]>(() => [
-    { headerName: '언론사', field: 'pressNm', width: 140 },
-    { headerName: '카테고리', field: 'categoryNm', width: 140 },
+    {
+      headerName: '타이틀 이미지',
+      field: 'thumbnailUrl',
+      width: 140,
+      cellRenderer: renderThumbnailCell,
+    },
     {
       headerName: '뉴스 타이틀',
       field: 'articleTitle',
@@ -243,25 +331,16 @@ const NewsListPage = () => {
       cellRenderer: renderTitleCell,
     },
     {
-      headerName: '타이틀 이미지',
-      field: 'thumbnailUrl',
-      width: 140,
-      cellRenderer: renderThumbnailCell,
-    },
-    {
-      headerName: '랭크 점수',
-      field: 'rankScore',
-      width: 120,
-    },
-    {
-      headerName: '수집 일시',
-      field: 'collectedDt',
+      headerName: '뉴스 보도 일시',
+      field: 'publishedDt',
       width: 180,
       valueFormatter: (params) => dateFormatter({ value: params.value } as any),
     },
   ], [renderThumbnailCell, renderTitleCell]);
 
-  // 기본 컬럼 속성 정의
+  /**
+   * 기본 컬럼 속성을 생성합니다.
+   */
   const defaultColDef = useMemo<ColDef>(() => ({
     resizable: true,
     sortable: false,
@@ -273,69 +352,22 @@ const NewsListPage = () => {
     },
   }), []);
 
-  // 서버 사이드 데이터 소스 생성
-  const createDataSource = useCallback((): IDatasource => ({
-    getRows: async (params: IGetRowsParams) => {
-      // 페이지 정보 계산
-      const pageSize = 20;
-      const startRow = params.startRow ?? 0;
-      const page = Math.floor(startRow / pageSize) + 1;
-
-      setLoading(true);
-      try {
-        // 뉴스 목록 조회 요청
-        const response = await api.get('/api/admin/news/list', {
-          params: {
-            ...searchParams,
-            page,
-            pageSize,
-          },
-        });
-
-        // 결과 반영
-        const data = (response.data || {}) as NewsListResponse;
-        params.successCallback(data.list || [], data.totalCount || 0);
-      } catch {
-        // 오류 처리
-        console.error('뉴스 목록을 불러오지 못했습니다.');
-        params.failCallback();
-      } finally {
-        setLoading(false);
-      }
-    },
-  }), [searchParams]);
-
-  // 그리드 데이터 소스 적용
-  const applyDatasource = useCallback((apiRef: GridApi<NewsListRow>, datasource: IDatasource) => {
-    // 버전별 API 처리
-    if (typeof (apiRef as any).setGridOption === 'function') {
-      (apiRef as any).setGridOption('datasource', datasource);
-      return;
-    }
-    if (typeof (apiRef as any).setDatasource === 'function') {
-      (apiRef as any).setDatasource(datasource);
-    }
+  /**
+   * 그리드 초기화 시 처리합니다.
+   * @param event 그리드 준비 이벤트
+   */
+  const handleGridReady = useCallback((event: GridReadyEvent<NewsListRow>) => {
+    // 데이터 로딩 후 컬럼 너비를 자동 맞춤합니다.
+    event.api.sizeColumnsToFit();
   }, []);
 
-  // 그리드 초기화 처리
-  const handleGridReady = useCallback((event: GridReadyEvent<NewsListRow>) => {
-    // 그리드 API 저장
-    gridApiRef.current = event.api;
-    applyDatasource(event.api, createDataSource());
-  }, [applyDatasource, createDataSource]);
-
-  // 언론사 목록 초기 조회
+  /**
+   * 페이지 초기 진입 시 기본 스냅샷을 조회합니다.
+   */
   useEffect(() => {
-    fetchPressOptions();
-  }, [fetchPressOptions]);
-
-  // 조회 조건 변경 시 데이터 소스 갱신
-  useEffect(() => {
-    if (!gridApiRef.current) {
-      return;
-    }
-    applyDatasource(gridApiRef.current, createDataSource());
-  }, [applyDatasource, createDataSource]);
+    // 최초 진입 시 뉴스 스냅샷을 불러옵니다.
+    loadNewsSnapshot();
+  }, [loadNewsSnapshot]);
 
   return (
     <>
@@ -353,9 +385,9 @@ const NewsListPage = () => {
         <div className="col-12 grid-margin stretch-card">
           <div className="card">
             <div className="card-body">
-              <form ref={formRef} onSubmit={handleSearch} onReset={handleReset} className="forms-sample">
+              <form className="forms-sample">
                 <div className="row">
-                  <div className="col-md-3">
+                  <div className="col-md-2">
                     <div className="form-group">
                       <label>언론사</label>
                       <select
@@ -364,7 +396,6 @@ const NewsListPage = () => {
                         value={selectedPressNo}
                         onChange={handlePressChange}
                       >
-                        <option value="">선택</option>
                         {pressOptions.map((press) => (
                           <option key={press.pressNo} value={press.pressNo}>
                             {press.pressNm}
@@ -373,7 +404,7 @@ const NewsListPage = () => {
                       </select>
                     </div>
                   </div>
-                  <div className="col-md-3">
+                  <div className="col-md-2">
                     <div className="form-group">
                       <label>카테고리</label>
                       <select
@@ -383,7 +414,6 @@ const NewsListPage = () => {
                         onChange={handleCategoryChange}
                         disabled={!selectedPressNo}
                       >
-                        <option value="">선택</option>
                         {categoryOptions.map((category) => (
                           <option key={category.categoryCd} value={category.categoryCd}>
                             {category.categoryNm}
@@ -392,34 +422,6 @@ const NewsListPage = () => {
                       </select>
                     </div>
                   </div>
-                  <div className="col-md-3">
-                    <div className="form-group">
-                      <label>수집 일시 시작</label>
-                      <input
-                        type="date"
-                        name="collectedFrom"
-                        className="form-control"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-3">
-                    <div className="form-group">
-                      <label>수집 일시 종료</label>
-                      <input
-                        type="date"
-                        name="collectedTo"
-                        className="form-control"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="d-flex justify-content-center gap-2">
-                  <button type="submit" className="btn btn-primary" disabled={loading}>
-                    {loading ? '조회중..' : '조회'}
-                  </button>
-                  <button type="reset" className="btn btn-dark">
-                    초기화
-                  </button>
                 </div>
               </form>
             </div>
@@ -431,20 +433,17 @@ const NewsListPage = () => {
         <div className="col-lg-12 grid-margin stretch-card">
           <div className="card">
             <div className="card-body">
-              <h4 className="card-title">뉴스 목록</h4>
-              <p className="card-description">조회 결과가 표시됩니다.</p>
               <div className="ag-theme-alpine-dark header-center" style={{ width: '100%' }}>
                 <AgGridReact<NewsListRow>
                   columnDefs={columnDefs}
                   defaultColDef={defaultColDef}
+                  rowData={allRowData}
                   domLayout="autoHeight"
                   overlayNoRowsTemplate="조회 결과가 없습니다."
-                  rowModelType="infinite"
-                  cacheBlockSize={20}
                   pagination
                   paginationPageSize={20}
                   rowHeight={70}
-                  getRowId={(params) => String(params.data?.articleNo ?? '')}
+                  getRowId={(params) => String(params.data?.articleId ?? '')}
                   onGridReady={handleGridReady}
                 />
               </div>

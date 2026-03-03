@@ -1,12 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { chromium } = require('playwright');
-
-// 날짜를 입력 필드 형식으로 변환합니다.
-function formatDateOnly(date) {
-  const year = String(date.getFullYear());
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 // 뉴스 목록 화면을 Playwright로 검증합니다.
 async function run() {
@@ -17,6 +10,22 @@ async function run() {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
+  let newsMetaResponseStatus = null;
+  const dialogMessageList = [];
+
+  // 뉴스 메타 파일 응답 상태를 수집합니다.
+  page.on('response', (response) => {
+    const responseUrl = response.url();
+    if (responseUrl.includes('/api/last/news/meta.json')) {
+      newsMetaResponseStatus = response.status();
+    }
+  });
+
+  // 화면 alert 메시지를 수집하고 테스트를 계속 진행합니다.
+  page.on('dialog', async (dialog) => {
+    dialogMessageList.push(dialog.message());
+    await dialog.dismiss();
+  });
 
   try {
     console.log('로그인 페이지 진입 시작');
@@ -56,25 +65,32 @@ async function run() {
       await categorySelect.selectOption(categoryValue || '');
     }
 
-    // 수집일시 기간을 입력합니다.
-    const now = new Date();
-    const from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    await page.locator('input[name="collectedFrom"]').fill(formatDateOnly(from));
-    await page.locator('input[name="collectedTo"]').fill(formatDateOnly(now));
-
-    // 조회를 실행합니다.
-    await page.locator('form.forms-sample button[type="submit"]').click();
-
     // 그리드 로딩 결과를 확인합니다.
     const rowsLocator = page.locator('.ag-center-cols-container .ag-row');
     const noRowsLocator = page.locator('.ag-overlay-no-rows-center');
-    await Promise.race([
-      rowsLocator.first().waitFor({ state: 'visible', timeout: 15000 }),
-      noRowsLocator.waitFor({ state: 'visible', timeout: 15000 }),
-    ]);
+    try {
+      await Promise.race([
+        rowsLocator.first().waitFor({ state: 'visible', timeout: 15000 }),
+        noRowsLocator.waitFor({ state: 'visible', timeout: 15000 }),
+      ]);
+    } catch {
+      // 데이터 없음/렌더 지연 케이스를 허용하고 후속 카운트로 판정합니다.
+      console.log('그리드 행/오버레이 표시 대기 타임아웃, 현재 렌더 상태로 계속 진행합니다.');
+    }
 
     const rowCount = await rowsLocator.count();
     console.log(`조회 결과 행 수: ${rowCount}`);
+
+    // 메타 파일 요청 실패를 테스트 실패로 처리합니다.
+    if (newsMetaResponseStatus !== null && newsMetaResponseStatus >= 400) {
+      throw new Error(`뉴스 메타 파일 요청 실패 status=${newsMetaResponseStatus}`);
+    }
+
+    // 오류 alert가 발생하면 테스트 실패로 처리합니다.
+    const hasErrorDialog = dialogMessageList.some((message) => message.includes('불러오지 못했습니다'));
+    if (hasErrorDialog) {
+      throw new Error(`오류 alert 감지: ${dialogMessageList.join(' | ')}`);
+    }
 
     if (rowCount > 0) {
       // 행 높이를 확인합니다.

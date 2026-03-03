@@ -3,7 +3,7 @@ import { Html, Head, Main, NextScript } from 'next/document';
 
 export default function Document() {
   return (
-    <Html lang="ko">
+    <Html lang="ko" data-scroll-behavior="smooth">
       <Head>
         {/* 템플릿 CSS 로딩 */}
         <link rel="shortcut icon" href="https://image.xodud1202.kro.kr/publist/HDD1/Media/nas/image/common/xodud1202_icon_102x102.png" />

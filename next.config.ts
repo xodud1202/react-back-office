@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: '/api/last/news/:path*', // 뉴스 파일 API 경로
+        destination: 'https://be.xodud1202.kro.kr/api/last/news/:path*', // 크롬 확장프로그램과 동일하게 BE 도메인으로 프록시
+      },
+      {
         source: '/api/:path*', // 클라이언트에서 요청받을 API 경로
         destination: `${process.env.BACKEND_URL}/:path*`, // 실제 프록시할 서버 주소로 변경
       },
