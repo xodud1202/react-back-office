@@ -17,10 +17,12 @@ interface CouponListGridProps {
   onEdit: (cpnNo: number) => void;
   // 로딩 상태 전달 함수입니다.
   onLoadingChange?: (loading: boolean) => void;
+  // 외부 강제 재조회 토큰입니다.
+  reloadToken?: number;
 }
 
 // 쿠폰 목록 그리드를 렌더링합니다.
-const CouponListGrid = ({ searchParams, onEdit, onLoadingChange }: CouponListGridProps) => {
+const CouponListGrid = ({ searchParams, onEdit, onLoadingChange, reloadToken = 0 }: CouponListGridProps) => {
   const gridApiRef = useRef<GridApi<CouponItem> | null>(null);
 
   // 로딩 상태를 상위로 전달합니다.
@@ -123,7 +125,7 @@ const CouponListGrid = ({ searchParams, onEdit, onLoadingChange }: CouponListGri
       return;
     }
     applyDatasource(gridApiRef.current, createDataSource());
-  }, [applyDatasource, createDataSource]);
+  }, [applyDatasource, createDataSource, reloadToken]);
 
   return (
     <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '520px' }}>
