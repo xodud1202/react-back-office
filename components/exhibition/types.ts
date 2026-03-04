@@ -152,6 +152,8 @@ export interface ExhibitionSavePayload {
   tabList?: ExhibitionTabItem[];
   // 탭별 상품 목록입니다.
   goodsList?: ExhibitionGoodsItem[];
+  // 탭 삭제 시 연관 상품 강제 삭제 여부입니다.
+  forceDeleteGoodsWithTabs?: boolean;
 }
 
 // 기획전 기본 조회 조건 값입니다.

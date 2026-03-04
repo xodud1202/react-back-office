@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import api from '@/utils/axios/axios';
 import CategoryGoodsSearchModal from '@/components/categoryGoods/CategoryGoodsSearchModal';
 import type { ExhibitionGoodsItem, ExhibitionTabItem } from '@/components/exhibition/types';
@@ -31,10 +31,14 @@ interface ExhibitionTabGoodsSectionProps {
   goodsMerchList: GoodsMerch[];
   // 브랜드 목록입니다.
   brandList: BrandOption[];
-  // 저장 처리 함수입니다.
-  onSave: () => void;
-  // 저장 상태입니다.
-  saving: boolean;
+  // 탭 저장 처리 함수입니다.
+  onSaveTabs: () => void;
+  // 탭 저장 상태입니다.
+  tabSaving: boolean;
+  // 상품 저장 처리 함수입니다.
+  onSaveGoods: () => void;
+  // 상품 저장 상태입니다.
+  goodsSaving: boolean;
   // 기획전 번호입니다.
   exhibitionNo: number;
 }
@@ -53,98 +57,19 @@ const ExhibitionTabGoodsSection = ({
   goodsDivList,
   goodsMerchList,
   brandList,
-  onSave,
-  saving,
+  onSaveTabs,
+  tabSaving,
+  onSaveGoods,
+  goodsSaving,
   exhibitionNo,
 }: ExhibitionTabGoodsSectionProps) => {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [selectedGoodsRowKeys, setSelectedGoodsRowKeys] = useState<string[]>([]);
   const excelInputRef = useRef<HTMLInputElement | null>(null);
   const tabSequenceRef = useRef(1);
-  const [selectedTabStartDate, setSelectedTabStartDate] = useState('');
-  const [selectedTabStartHour, setSelectedTabStartHour] = useState('00');
-  const [selectedTabEndDate, setSelectedTabEndDate] = useState('');
-  const [selectedTabEndHour, setSelectedTabEndHour] = useState('24');
-  const hourOptions = useMemo(() => Array.from({ length: 25 }, (_, index) => String(index).padStart(2, '0')), []);
 
   // 선택된 탭 정보를 조회합니다.
   const selectedTab = useMemo(() => tabs.find((item) => item.rowKey === selectedTabRowKey), [selectedTabRowKey, tabs]);
-
-  // datetime 문자열에서 날짜를 추출합니다.
-  const getTabDate = useCallback((value?: string) => {
-    if (!value) {
-      return '';
-    }
-    const normalized = value.includes('T') ? value.replace('T', ' ') : value;
-    if (normalized.length < 10) {
-      return '';
-    }
-    return normalized.slice(0, 10);
-  }, []);
-
-  // datetime 문자열에서 시간 셀렉트 값을 추출합니다.
-  const getTabHour = useCallback((value?: string, defaultValue = '00') => {
-    if (!value) {
-      return defaultValue;
-    }
-    const normalized = value.includes('T') ? value.replace('T', ' ') : value;
-    const timePart = normalized.slice(11, 16);
-    if (!timePart) {
-      return defaultValue;
-    }
-    if (timePart === '23:59') {
-      return '24';
-    }
-    return timePart.slice(0, 2);
-  }, []);
-
-  // 선택된 탭 일시를 API 문자열로 변환합니다.
-  const buildTabDateTime = useCallback((date?: string, hour?: string) => {
-    if (!date) {
-      return undefined;
-    }
-    const normalizedHour = hour || '00';
-    const hourNumber = Number(normalizedHour);
-    if (hourNumber === 24) {
-      return `${date} 23:59:59`;
-    }
-    if (Number.isNaN(hourNumber) || hourNumber < 0 || hourNumber > 23) {
-      return undefined;
-    }
-    return `${date} ${normalizedHour}:00:00`;
-  }, []);
-
-  // 선택 탭 일시를 상태값에 반영합니다.
-  useEffect(() => {
-    if (selectedTab) {
-      setSelectedTabStartDate(getTabDate(selectedTab.dispStartDt));
-      setSelectedTabStartHour(getTabHour(selectedTab.dispStartDt, '00'));
-      setSelectedTabEndDate(getTabDate(selectedTab.dispEndDt));
-      setSelectedTabEndHour(getTabHour(selectedTab.dispEndDt, '24'));
-      return;
-    }
-    setSelectedTabStartDate('');
-    setSelectedTabStartHour('00');
-    setSelectedTabEndDate('');
-    setSelectedTabEndHour('24');
-  }, [getTabDate, getTabHour, selectedTab]);
-
-  // 선택 탭의 노출일시를 변경합니다.
-  const updateSelectedTabDateTime = useCallback((field: 'dispStartDt' | 'dispEndDt', date: string, hour: string) => {
-    if (!selectedTab?.rowKey) {
-      return;
-    }
-    const nextDateTime = buildTabDateTime(date, hour);
-    setTabs((prev) => prev.map((tab) => {
-      if (tab.rowKey !== selectedTab.rowKey) {
-        return tab;
-      }
-      if (field === 'dispStartDt') {
-        return { ...tab, dispStartDt: nextDateTime };
-      }
-      return { ...tab, dispEndDt: nextDateTime };
-    }));
-  }, [buildTabDateTime, selectedTab?.rowKey, setTabs]);
 
   // 등록 탭의 상품인지 판단합니다.
   const isGoodsInSelectedTab = useCallback((item: ExhibitionGoodsItem) => {
@@ -209,10 +134,6 @@ const ExhibitionTabGoodsSection = ({
     ]);
     setTabs(next);
     setSelectedTabRowKey(getSafeTabRowKey(next[next.length - 1]!));
-    setSelectedTabStartHour('00');
-    setSelectedTabEndHour('24');
-    setSelectedTabStartDate('');
-    setSelectedTabEndDate('');
   }, [buildNewTabRowKey, getSafeTabRowKey, normalizeTabRows, setSelectedTabRowKey, setTabs, tabs]);
 
   // 탭을 삭제합니다.
@@ -244,6 +165,15 @@ const ExhibitionTabGoodsSection = ({
     }
     setSelectedGoodsRowKeys([]);
   }, [goodsRows, normalizeTabRows, selectedTabRowKey, setGoodsRows, setSelectedTabRowKey, setTabs, tabs]);
+
+  // 현재 선택된 탭을 삭제합니다.
+  const handleDeleteSelectedTab = useCallback(() => {
+    if (!selectedTabRowKey) {
+      alert('삭제할 탭을 선택해주세요.');
+      return;
+    }
+    handleDeleteTab(selectedTabRowKey);
+  }, [handleDeleteTab, selectedTabRowKey]);
 
   // 탭 목록의 행을 정렬 또는 변경합니다.
   const handleTabRowsChange = useCallback((nextRows: ExhibitionTabItem[]) => {
@@ -299,7 +229,7 @@ const ExhibitionTabGoodsSection = ({
 
     setGoodsRows((prev) => [...prev, ...nextGoodsRows]);
     setIsSearchModalOpen(false);
-  }, [currentGoodsRows.length, isGoodsInSelectedTab, selectedTab, setGoodsRows, buildNewGoodsRowKey, goodsRows]);
+  }, [currentGoodsRows.length, isGoodsInSelectedTab, selectedTab, setGoodsRows, buildNewGoodsRowKey, goodsRows, exhibitionNo]);
 
   // 엑셀 파일 업로드 창을 엽니다.
   const handleExcelUploadClick = useCallback(() => {
@@ -357,7 +287,7 @@ const ExhibitionTabGoodsSection = ({
         excelInputRef.current.value = '';
       }
     }
-  }, [currentGoodsRows.length, isGoodsInSelectedTab, selectedTab, setGoodsRows, buildNewGoodsRowKey, goodsRows]);
+  }, [currentGoodsRows.length, isGoodsInSelectedTab, selectedTab, setGoodsRows, buildNewGoodsRowKey, goodsRows, exhibitionNo]);
 
   // 엑셀을 다운로드합니다.
   const handleExcelDownload = useCallback(async () => {
@@ -419,27 +349,16 @@ const ExhibitionTabGoodsSection = ({
 
   return (
     <>
-      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+      <div className="d-flex flex-wrap justify-content-end align-items-center gap-2 mb-2">
         <button type="button" className="btn btn-sm btn-outline-success" onClick={handleAddTab}>
           탭 추가
         </button>
-        <div className="d-flex gap-2">
-          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExcelDownload}>
-            엑셀 다운로드
-          </button>
-          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExcelUploadClick}>
-            엑셀 업로드
-          </button>
-          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleOpenGoodsModal}>
-            상품등록
-          </button>
-          <button type="button" className="btn btn-outline-danger btn-sm" onClick={handleDeleteSelectedGoods}>
-            삭제
-          </button>
-          <button type="button" className="btn btn-primary btn-sm" onClick={onSave} disabled={saving}>
-            {saving ? '저장중...' : '상품 저장'}
-          </button>
-        </div>
+        <button type="button" className="btn btn-sm btn-outline-danger" onClick={handleDeleteSelectedTab}>
+          삭제
+        </button>
+        <button type="button" className="btn btn-sm btn-primary" onClick={onSaveTabs} disabled={tabSaving}>
+          {tabSaving ? '저장중...' : '저장'}
+        </button>
       </div>
 
       <ExhibitionTabGrid
@@ -448,82 +367,30 @@ const ExhibitionTabGoodsSection = ({
         isEditable={isEditable}
         onRowsChange={handleTabRowsChange}
         onSelect={handleSelectTab}
-        onDelete={handleDeleteTab}
       />
-
-      <div className="mt-3 mb-3">
-        <div className="fw-semibold mb-2">선택 탭 노출일시</div>
-        {selectedTab ? (
-          <div className="row g-2">
-            <div className="col-md-6">
-              <label className="form-label">노출시작일시</label>
-              <div className="d-flex gap-2">
-                <input
-                  type="date"
-                  className="form-control"
-                  value={selectedTabStartDate}
-                  onChange={(event) => {
-                    const nextDate = event.target.value;
-                    setSelectedTabStartDate(nextDate);
-                    updateSelectedTabDateTime('dispStartDt', nextDate, selectedTabStartHour);
-                  }}
-                />
-                <select
-                  className="form-select w-auto"
-                  value={selectedTabStartHour}
-                  onChange={(event) => {
-                    const nextHour = event.target.value;
-                    setSelectedTabStartHour(nextHour);
-                    updateSelectedTabDateTime('dispStartDt', selectedTabStartDate, nextHour);
-                  }}
-                >
-                  {hourOptions.map((hour) => (
-                    <option key={hour} value={hour}>
-                      {hour}시
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">노출종료일시</label>
-              <div className="d-flex gap-2">
-                <input
-                  type="date"
-                  className="form-control"
-                  value={selectedTabEndDate}
-                  onChange={(event) => {
-                    const nextDate = event.target.value;
-                    setSelectedTabEndDate(nextDate);
-                    updateSelectedTabDateTime('dispEndDt', nextDate, selectedTabEndHour);
-                  }}
-                />
-                <select
-                  className="form-select w-auto"
-                  value={selectedTabEndHour}
-                  onChange={(event) => {
-                    const nextHour = event.target.value;
-                    setSelectedTabEndHour(nextHour);
-                    updateSelectedTabDateTime('dispEndDt', selectedTabEndDate, nextHour);
-                  }}
-                >
-                  {hourOptions.map((hour) => (
-                    <option key={hour} value={hour}>
-                      {hour}시
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="text-muted">탭을 선택하면 노출일시를 설정할 수 있습니다.</div>
-        )}
-      </div>
 
       <div className="mt-3 mb-2 fw-semibold">
         상품 정보
       </div>
+
+      <div className="d-flex flex-wrap justify-content-end align-items-center gap-2 mb-2">
+        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExcelDownload}>
+          엑셀 다운로드
+        </button>
+        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExcelUploadClick}>
+          엑셀 업로드
+        </button>
+        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleOpenGoodsModal}>
+          상품등록
+        </button>
+        <button type="button" className="btn btn-outline-danger btn-sm" onClick={handleDeleteSelectedGoods}>
+          삭제
+        </button>
+        <button type="button" className="btn btn-primary btn-sm" onClick={onSaveGoods} disabled={goodsSaving}>
+          {goodsSaving ? '저장중...' : '저장'}
+        </button>
+      </div>
+
       <ExhibitionGoodsGrid
         rows={currentGoodsRows}
         isEditable={isEditable}

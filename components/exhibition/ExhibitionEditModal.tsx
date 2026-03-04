@@ -57,6 +57,9 @@ const ExhibitionEditModal = ({
   categoryOptions,
 }: ExhibitionEditModalProps) => {
   const [loading, setLoading] = useState(false);
+  const [masterSaving, setMasterSaving] = useState(false);
+  const [tabSaving, setTabSaving] = useState(false);
+  const [goodsSaving, setGoodsSaving] = useState(false);
   const [activePanel, setActivePanel] = useState<'master' | 'detail'>('master');
   const [exhibitionNm, setExhibitionNm] = useState('');
   const [dispStartDate, setDispStartDate] = useState('');
@@ -266,6 +269,10 @@ const ExhibitionEditModal = ({
 
   // 팝업 상태를 리셋합니다.
   const resetState = useCallback(() => {
+    setLoading(false);
+    setMasterSaving(false);
+    setTabSaving(false);
+    setGoodsSaving(false);
     setExhibitionNm('');
     setDispStartDate('');
     setDispEndDate('');
@@ -336,8 +343,8 @@ const ExhibitionEditModal = ({
     }
   }, [getInputDate, getInputHour, onClose, toExhibitionGoodsRow, toExhibitionTabRow]);
 
-  // 저장 시 기본 페이로드를 생성합니다.
-  const buildPayload = useCallback((usrNo: number): ExhibitionSavePayload => {
+  // 마스터 저장용 페이로드를 생성합니다.
+  const buildMasterPayload = useCallback((usrNo: number): ExhibitionSavePayload => {
     const payload: ExhibitionSavePayload = {
       exhibitionNo: exhibitionNo || undefined,
       exhibitionNm,
@@ -350,31 +357,6 @@ const ExhibitionEditModal = ({
       regNo: isEditMode ? undefined : usrNo,
       udtNo: isEditMode ? usrNo : undefined,
     };
-
-    if (isEditMode) {
-      payload.tabList = tabs.map((item, index) => ({
-        ...item,
-        rowKey: item.rowKey || buildNewTabRowKey(),
-        exhibitionTabNo: item.exhibitionTabNo,
-        exhibitionNo: exhibitionNo || undefined,
-        tabNm: item.tabNm,
-        dispStartDt: item.dispStartDt,
-        dispEndDt: item.dispEndDt,
-        dispOrd: index + 1,
-        showYn: item.showYn || 'Y',
-      }));
-
-      payload.goodsList = goodsRows.map((item) => ({
-        rowKey: item.rowKey,
-        exhibitionTabNo: item.exhibitionTabNo,
-        exhibitionTabRowKey: item.exhibitionTabRowKey,
-        exhibitionNo: exhibitionNo || undefined,
-        goodsId: item.goodsId,
-        dispOrd: item.dispOrd,
-        showYn: item.showYn || 'Y',
-      }));
-    }
-
     return payload;
   }, [
     exhibitionNo,
@@ -388,29 +370,68 @@ const ExhibitionEditModal = ({
     dispEndHour,
     dispStartDate,
     dispStartHour,
-    tabs,
-    goodsRows,
-    buildNewTabRowKey,
     toApiDateTime,
   ]);
 
-  // 저장을 처리합니다.
-  const handleSave = useCallback(async () => {
+  // 탭 저장용 페이로드를 생성합니다.
+  const buildTabSavePayload = useCallback((usrNo: number, forceDeleteGoodsWithTabs = false) => {
+    const payload = {
+      exhibitionNo: exhibitionNo || undefined,
+      udtNo: usrNo,
+      forceDeleteGoodsWithTabs,
+      tabList: tabs.map((item, index) => ({
+        ...item,
+        rowKey: item.rowKey || buildNewTabRowKey(),
+        exhibitionTabNo: item.exhibitionTabNo,
+        exhibitionNo: exhibitionNo || undefined,
+        tabNm: item.tabNm,
+        dispStartDt: item.dispStartDt,
+        dispEndDt: item.dispEndDt,
+        dispOrd: index + 1,
+        showYn: item.showYn || 'Y',
+      })),
+    };
+    return payload;
+  }, [
+    exhibitionNo,
+    tabs,
+    buildNewTabRowKey,
+  ]);
+
+  // 상품 저장용 페이로드를 생성합니다.
+  const buildGoodsSavePayload = useCallback((usrNo: number) => {
+    return {
+      exhibitionNo: exhibitionNo || undefined,
+      udtNo: usrNo,
+      goodsList: goodsRows.map((item) => ({
+        rowKey: item.rowKey,
+        exhibitionTabNo: item.exhibitionTabNo,
+        exhibitionTabRowKey: item.exhibitionTabRowKey,
+        exhibitionNo: exhibitionNo || undefined,
+        goodsId: item.goodsId,
+        dispOrd: item.dispOrd,
+        showYn: item.showYn || 'Y',
+      })),
+    };
+  }, [exhibitionNo, goodsRows]);
+
+  // 마스터정보를 저장합니다.
+  const handleSaveMaster = useCallback(async () => {
     const usrNo = requireLoginUsrNo();
     if (!usrNo) {
       return;
     }
-    const payload = buildPayload(usrNo);
-    setLoading(true);
+    const payload = buildMasterPayload(usrNo);
+    setMasterSaving(true);
     try {
       if (isEditMode) {
-        await api.post('/api/admin/exhibition/update', payload);
+        await api.post('/api/admin/exhibition/master/save', payload);
         alert('기획전이 수정되었습니다.');
         onSaved(exhibitionNo);
         return;
       }
 
-      const response = await api.post('/api/admin/exhibition/create', payload);
+      const response = await api.post('/api/admin/exhibition/master/save', payload);
       const createdNo = (response.data?.exhibitionNo as number) || (typeof response.data === 'number' ? response.data : null);
       alert('기획전이 등록되었습니다.');
       onSaved(createdNo || null);
@@ -418,9 +439,70 @@ const ExhibitionEditModal = ({
       const message = error?.response?.data?.message || '저장에 실패했습니다.';
       alert(message);
     } finally {
-      setLoading(false);
+      setMasterSaving(false);
     }
-  }, [buildPayload, exhibitionNo, isEditMode, onSaved]);
+  }, [buildMasterPayload, exhibitionNo, isEditMode, onSaved]);
+
+  // 탭 정보를 저장합니다.
+  const handleSaveTabs = useCallback(async () => {
+    const usrNo = requireLoginUsrNo();
+    if (!usrNo) {
+      return;
+    }
+    if (!exhibitionNo) {
+      alert('마스터정보 저장 후 탭을 저장해주세요.');
+      return;
+    }
+    setTabSaving(true);
+    try {
+      await api.post('/api/admin/exhibition/tab/save', buildTabSavePayload(usrNo));
+      alert('탭 정보가 저장되었습니다.');
+      await fetchDetail(exhibitionNo);
+    } catch (error: any) {
+      const message = error?.response?.data?.message || '탭 저장에 실패했습니다.';
+      if (String(message).includes('삭제할 탭에 등록된 상품이 있습니다')) {
+        const confirmed = window.confirm('삭제 대상 탭에 등록된 상품도 함께 삭제하시겠습니까?');
+        if (!confirmed) {
+          return;
+        }
+        await api.post('/api/admin/exhibition/tab/save', buildTabSavePayload(usrNo, true));
+        alert('탭 정보가 저장되었습니다.');
+        await fetchDetail(exhibitionNo);
+        return;
+      }
+      alert(message);
+    } finally {
+      setTabSaving(false);
+    }
+  }, [buildTabSavePayload, exhibitionNo, fetchDetail]);
+
+  // 탭 상품 정보를 저장합니다.
+  const handleSaveGoods = useCallback(async () => {
+    const usrNo = requireLoginUsrNo();
+    if (!usrNo) {
+      return;
+    }
+    if (!exhibitionNo) {
+      alert('마스터정보 저장 후 상품을 저장해주세요.');
+      return;
+    }
+    const hasUnsavedTabGoods = goodsRows.some((item) => !item.exhibitionTabNo || item.exhibitionTabNo < 1);
+    if (hasUnsavedTabGoods) {
+      alert('탭 저장을 먼저 진행한 뒤 상품 저장을 해주세요.');
+      return;
+    }
+    setGoodsSaving(true);
+    try {
+      await api.post('/api/admin/exhibition/goods/save', buildGoodsSavePayload(usrNo));
+      alert('상품 정보가 저장되었습니다.');
+      await fetchDetail(exhibitionNo);
+    } catch (error: any) {
+      const message = error?.response?.data?.message || '상품 저장에 실패했습니다.';
+      alert(message);
+    } finally {
+      setGoodsSaving(false);
+    }
+  }, [buildGoodsSavePayload, exhibitionNo, fetchDetail, goodsRows]);
 
   // 삭제를 처리합니다.
   const handleDelete = useCallback(async () => {
@@ -482,22 +564,12 @@ const ExhibitionEditModal = ({
               type="button"
               className="btn btn-danger"
               onClick={handleDelete}
-              disabled={loading}
+              disabled={loading || masterSaving || tabSaving || goodsSaving}
             >
               삭제
             </button>
           )}
         </>
-      )}
-      footerActions={(
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={handleSave}
-          disabled={loading || thumbnailUploading}
-        >
-          {loading ? '저장중...' : '저장'}
-        </button>
       )}
       width="92vw"
       contentHeight="88vh"
@@ -658,6 +730,16 @@ const ExhibitionEditModal = ({
             formats={moDescEditor.quillFormats}
           />
         </div>
+        <div className="d-flex justify-content-end mt-4">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSaveMaster}
+            disabled={loading || masterSaving || thumbnailUploading}
+          >
+            {masterSaving ? '저장중...' : '저장'}
+          </button>
+        </div>
       </div>
 
       <div style={{ display: activePanel === 'detail' ? 'block' : 'none' }}>
@@ -675,8 +757,10 @@ const ExhibitionEditModal = ({
           goodsDivList={goodsDivList}
           goodsMerchList={goodsMerchList}
           brandList={brandList}
-          onSave={handleSave}
-          saving={loading}
+          onSaveTabs={handleSaveTabs}
+          tabSaving={tabSaving}
+          onSaveGoods={handleSaveGoods}
+          goodsSaving={goodsSaving}
         />
       </div>
 
