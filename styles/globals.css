@@ -59,3 +59,80 @@ button {
     min-width: 28px;
   }
 }
+
+/* 좌측 메뉴를 숨기는 레이아웃에서 본문 영역 폭을 보정합니다. */
+.container-scroller.no-sidebar-layout .page-body-wrapper.without-sidebar {
+  width: 100%;
+  margin-left: 0;
+}
+
+/* 좌측 메뉴를 숨기는 레이아웃에서 메인 패널 폭을 보정합니다. */
+.container-scroller.no-sidebar-layout .page-body-wrapper.without-sidebar .main-panel {
+  width: 100%;
+}
+
+/* 상단 1차 메뉴 영역 레이아웃을 정의합니다. */
+.top-menu-wrapper {
+  width: 100%;
+  min-width: 0;
+  justify-content: space-between;
+}
+
+/* 상단 1차 메뉴 목록 스크롤/정렬을 정의합니다. */
+.top-primary-menu {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row !important;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-left: 12px;
+}
+
+/* 상단 1차 메뉴 항목을 가로형으로 고정합니다. */
+.top-primary-menu .nav-item {
+  flex: 0 0 auto;
+  width: auto !important;
+}
+
+/* 상단 1차 메뉴 버튼 기본 스타일을 정의합니다. */
+.top-menu-button {
+  display: inline-flex;
+  align-items: center;
+  height: 70px;
+  border: 0;
+  padding: 0 14px;
+  background: transparent;
+  color: #c3c3c3;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 상단 1차 메뉴 버튼 hover 상태 스타일을 정의합니다. */
+.top-menu-button:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* 상단 1차 메뉴 버튼 활성 상태 스타일을 정의합니다. */
+.top-menu-button.active {
+  color: #ffffff;
+  border-bottom: 2px solid #0090e7;
+  background-color: rgba(0, 144, 231, 0.14);
+}
+
+/* 모바일에서 상단 1차 메뉴 버튼 높이/간격을 최적화합니다. */
+@media (max-width: 991.98px) {
+  .top-primary-menu {
+    padding-left: 0;
+  }
+
+  .top-menu-button {
+    height: 60px;
+    padding: 0 10px;
+    font-size: 0.8125rem;
+  }
+}

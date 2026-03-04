@@ -265,15 +265,22 @@ const NewsListPage = () => {
     // 제목과 링크를 추출합니다.
     const title = params.data?.articleTitle || '';
     const url = params.data?.articleUrl || '';
+    // 뉴스 타이틀 공통 텍스트 스타일을 정의합니다.
+    const titleTextStyle: React.CSSProperties = {
+      fontSize: '20px',
+      color: 'white',
+      textDecoration: 'none',
+      fontWeight: 'bold',
+    };
 
     // 링크가 없으면 텍스트만 표시합니다.
     if (!url) {
-      return <span>{title}</span>;
+      return <span style={titleTextStyle}>{title}</span>;
     }
 
     // 링크가 있으면 새 창 이동 링크를 표시합니다.
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer">
+      <a href={url} target="_blank" rel="noopener noreferrer" style={titleTextStyle}>
         {title}
       </a>
     );
@@ -313,9 +320,17 @@ const NewsListPage = () => {
    */
   const columnDefs = useMemo<ColDef<NewsListRow>[]>(() => [
     {
+      headerName: '뉴스 보도 일시',
+      field: 'publishedDt',
+      width: 180,
+      suppressSizeToFit: true,
+      valueFormatter: (params) => dateFormatter({ value: params.value } as any),
+    },
+    {
       headerName: '타이틀 이미지',
       field: 'thumbnailUrl',
-      width: 140,
+      width: 120,
+      suppressSizeToFit: true,
       cellRenderer: renderThumbnailCell,
     },
     {
@@ -329,12 +344,6 @@ const NewsListPage = () => {
         justifyContent: 'flex-start',
       },
       cellRenderer: renderTitleCell,
-    },
-    {
-      headerName: '뉴스 보도 일시',
-      field: 'publishedDt',
-      width: 180,
-      valueFormatter: (params) => dateFormatter({ value: params.value } as any),
     },
   ], [renderThumbnailCell, renderTitleCell]);
 

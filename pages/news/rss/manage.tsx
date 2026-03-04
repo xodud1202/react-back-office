@@ -493,9 +493,6 @@ const NewsRssManagePage = () => {
   // 언론사 그리드 컬럼을 정의합니다.
   const pressColumnDefs = useMemo<ColDef<NewsPressRow>[]>(() => ([
     {
-      width: 60,
-    },
-    {
       headerName: '이동',
       width: 60,
       rowDrag: true,
@@ -503,10 +500,9 @@ const NewsRssManagePage = () => {
     {
       headerName: '언론사명',
       field: 'pressNm',
-      flex: 1,
       editable: true,
       cellClass: 'text-start',
-      width: 100,
+      width: 120,
     },
     {
       headerName: '사용여부',
@@ -527,9 +523,6 @@ const NewsRssManagePage = () => {
 
   // 카테고리 그리드 컬럼을 정의합니다.
   const categoryColumnDefs = useMemo<ColDef<NewsCategoryRow>[]>(() => ([
-    {
-      width: 60,
-    },
     {
       headerName: '이동',
       width: 60,
