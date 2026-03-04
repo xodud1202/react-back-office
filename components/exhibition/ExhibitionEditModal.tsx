@@ -326,6 +326,7 @@ const ExhibitionEditModal = ({
         exhibitionNo: targetExhibitionNo,
         exhibitionTabNo: goods.exhibitionTabNo,
         goodsId: goods.goodsId,
+        imgUrl: goods.imgUrl,
         goodsNm: goods.goodsNm,
         erpStyleCd: goods.erpStyleCd,
         dispOrd: goods.dispOrd || index + 1,

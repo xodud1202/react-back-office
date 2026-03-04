@@ -34,6 +34,27 @@ const ExhibitionGoodsGrid = ({
       rowDrag: true,
       width: 80,
     },
+    {
+      headerName: '상품이미지',
+      field: 'imgUrl',
+      width: 110,
+      editable: false,
+      cellRenderer: (params: any) => {
+        const imageUrl = String(params.value || '').trim();
+        if (!imageUrl) {
+          return '-';
+        }
+        return (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <img
+              src={imageUrl}
+              alt="상품이미지"
+              style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
+            />
+          </div>
+        );
+      },
+    },
     { headerName: '상품코드', field: 'goodsId', width: 150 },
     { headerName: 'ERP품번코드', field: 'erpStyleCd', width: 140 },
     { headerName: '상품명', field: 'goodsNm', width: 260, cellClass: 'text-start' },
@@ -89,6 +110,7 @@ const ExhibitionGoodsGrid = ({
         columnDefs={columnDefs}
         defaultColDef={defaultColDef}
         rowData={rows}
+        rowHeight={60}
         rowSelection="multiple"
         rowDragManaged
         animateRows

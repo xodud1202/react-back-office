@@ -220,6 +220,7 @@ const ExhibitionTabGoodsSection = ({
         exhibitionTabNo: tabNo,
         exhibitionTabRowKey: tabNo == null ? tabRowKey : undefined,
         goodsId: item.goodsId,
+        imgUrl: item.imgUrl,
         erpStyleCd: item.erpStyleCd,
         goodsNm: item.goodsNm,
         dispOrd: currentGoodsRows.length + nextGoodsRows.length + 1,

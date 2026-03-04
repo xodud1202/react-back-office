@@ -78,6 +78,8 @@ export interface ExhibitionGoodsItem {
   exhibitionTabRowKey?: string;
   // 상품코드입니다.
   goodsId: string;
+  // 상품 이미지 URL입니다.
+  imgUrl?: string;
   // ERP 품번 코드입니다.
   erpStyleCd?: string;
   // 상품명입니다.
