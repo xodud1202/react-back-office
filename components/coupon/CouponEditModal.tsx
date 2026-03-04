@@ -517,7 +517,6 @@ const CouponEditModal = ({
             <div className="col-md-6"><DateHourInput label="사용 가능 종료일시" dateValue={form.cpnUseEndDate} hourValue={form.cpnUseEndHour} hourOptions={hourOptions} onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnUseEndDate: value }))} onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnUseEndHour: value }))} /></div>
           </div>
         )}
-        <div className="row"><div className="col-md-6"><DateHourInput label="상태 중지 일시" dateValue={form.statStopDate} hourValue={form.statStopHour} hourOptions={hourOptions} onChangeDate={(value) => setForm((prev) => ({ ...prev, statStopDate: value }))} onChangeHour={(value) => setForm((prev) => ({ ...prev, statStopHour: value }))} /></div></div>
       </div>
 
       <div style={{ display: activeTab === 'TARGET' ? 'block' : 'none' }}>
