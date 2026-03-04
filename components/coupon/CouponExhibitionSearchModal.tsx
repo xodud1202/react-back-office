@@ -24,11 +24,6 @@ const CouponExhibitionSearchModal = ({ isOpen, onClose, onApply }: CouponExhibit
 
   // 검색 결과 컬럼을 정의합니다.
   const columnDefs = useMemo<ColDef<ExhibitionItem>[]>(() => ([
-    {
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 70,
-    },
     { headerName: '기획전번호', field: 'exhibitionNo', width: 150 },
     { headerName: '기획전명', field: 'exhibitionNm', width: 340, cellClass: 'text-start' },
     { headerName: '노출시작일시', field: 'dispStartDt', width: 170 },
@@ -41,6 +36,14 @@ const CouponExhibitionSearchModal = ({ isOpen, onClose, onApply }: CouponExhibit
     sortable: false,
     editable: false,
     cellClass: 'text-center',
+  }), []);
+
+  // AG Grid v32.2+ 선택 옵션을 구성합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'multiRow' as const,
+    checkboxes: true,
+    headerCheckbox: true,
+    enableClickSelection: false,
   }), []);
 
   // 기획전 목록을 조회합니다.
@@ -155,8 +158,8 @@ const CouponExhibitionSearchModal = ({ isOpen, onClose, onApply }: CouponExhibit
         <AgGridReact<ExhibitionItem>
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
-          rowSelection="multiple"
-          suppressRowClickSelection
+          rowSelection={rowSelection}
+          selectionColumnDef={{ width: 70, resizable: false }}
           rowData={rows}
           pagination
           paginationPageSize={20}

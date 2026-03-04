@@ -146,6 +146,7 @@ const CouponEditModal = ({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'INFO' | 'TARGET'>('INFO');
+  const [cpnUseDtOptionList, setCpnUseDtOptionList] = useState<CommonCode[]>(cpnUseDtList);
   const [form, setForm] = useState<CouponFormState>({
     cpnNm: '',
     cpnStatCd: '',
@@ -177,6 +178,16 @@ const CouponEditModal = ({
   const applyExcelInputRef = useRef<HTMLInputElement | null>(null);
   const excludeExcelInputRef = useRef<HTMLInputElement | null>(null);
   const isEditMode = mode === 'EDIT' && Boolean(cpnNo);
+  const resolvedCpnUseDtOptionList = useMemo<CommonCode[]>(() => {
+    if (cpnUseDtOptionList.length > 0) {
+      return cpnUseDtOptionList;
+    }
+    // 코드 조회 실패 환경에서도 기본 라디오를 노출하기 위한 최소 옵션입니다.
+    return [
+      { grpCd: 'CPN_USE_DT', cd: COUPON_USE_DT_GB_CODE.PERIOD, cdNm: '기간', dispOrd: 1 },
+      { grpCd: 'CPN_USE_DT', cd: COUPON_USE_DT_GB_CODE.DATETIME, cdNm: '일시', dispOrd: 2 },
+    ];
+  }, [cpnUseDtOptionList]);
 
   // 기본 폼 상태를 생성합니다.
   const buildDefaultForm = useCallback((): CouponFormState => ({
@@ -188,7 +199,7 @@ const CouponEditModal = ({
     cpnDownStartHour: '00',
     cpnDownEndDate: '',
     cpnDownEndHour: '24',
-    cpnUseDtGb: cpnUseDtList.find((item) => item.cd === COUPON_USE_DT_GB_CODE.PERIOD)?.cd || cpnUseDtList[0]?.cd || COUPON_USE_DT_GB_CODE.PERIOD,
+    cpnUseDtGb: resolvedCpnUseDtOptionList.find((item) => item.cd === COUPON_USE_DT_GB_CODE.PERIOD)?.cd || resolvedCpnUseDtOptionList[0]?.cd || COUPON_USE_DT_GB_CODE.PERIOD,
     cpnUsableDt: '',
     cpnUseStartDate: '',
     cpnUseStartHour: '00',
@@ -197,7 +208,7 @@ const CouponEditModal = ({
     cpnDownAbleYn: 'Y',
     statStopDate: '',
     statStopHour: '24',
-  }), [cpnGbList, cpnStatList, cpnTargetList, cpnUseDtList]);
+  }), [cpnGbList, cpnStatList, cpnTargetList, resolvedCpnUseDtOptionList]);
 
   // 일시에서 날짜를 추출합니다.
   const getInputDate = useCallback((value?: string | null) => (value ? value.replace('T', ' ').slice(0, 10) : ''), []);
@@ -473,6 +484,44 @@ const CouponEditModal = ({
     }
   }, [activeTab, isEditMode]);
 
+  // SSR 공통코드 값을 우선 반영합니다.
+  useEffect(() => {
+    setCpnUseDtOptionList(cpnUseDtList);
+  }, [cpnUseDtList]);
+
+  // 사용기간 코드가 비어있으면 모달 오픈 시 클라이언트에서 재조회합니다.
+  useEffect(() => {
+    if (!isOpen || cpnUseDtOptionList.length > 0) {
+      return;
+    }
+    const fetchUseDtCodeList = async () => {
+      try {
+        const response = await api.get('/api/admin/common/code', {
+          params: { grpCd: 'CPN_USE_DT' },
+        });
+        const loadedCodeList = Array.isArray(response.data) ? (response.data as CommonCode[]) : [];
+        if (loadedCodeList.length > 0) {
+          setCpnUseDtOptionList(loadedCodeList);
+        }
+      } catch (error) {
+        console.error('쿠폰 사용기간 코드 조회에 실패했습니다.', error);
+      }
+    };
+    void fetchUseDtCodeList();
+  }, [cpnUseDtOptionList.length, isOpen]);
+
+  // 사용기간 코드가 바뀌면 현재 선택값 유효성을 보정합니다.
+  useEffect(() => {
+    const isValidUseDtGb = resolvedCpnUseDtOptionList.some((item) => item.cd === form.cpnUseDtGb);
+    if (isValidUseDtGb) {
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      cpnUseDtGb: resolvedCpnUseDtOptionList.find((item) => item.cd === COUPON_USE_DT_GB_CODE.PERIOD)?.cd || resolvedCpnUseDtOptionList[0]?.cd || COUPON_USE_DT_GB_CODE.PERIOD,
+    }));
+  }, [resolvedCpnUseDtOptionList, form.cpnUseDtGb]);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -506,7 +555,7 @@ const CouponEditModal = ({
         <div className="form-group mb-3">
           <label>사용 가능 기간</label>
           <div className="d-flex flex-wrap gap-3 mt-2">
-            {cpnUseDtList.map((item) => <label key={item.cd} className="form-check form-check-inline"><input className="form-check-input" type="radio" value={item.cd} checked={form.cpnUseDtGb === item.cd} onChange={(event) => setForm((prev) => ({ ...prev, cpnUseDtGb: event.target.value }))} /><span className="ms-1">{item.cdNm}</span></label>)}
+            {resolvedCpnUseDtOptionList.map((item) => <label key={item.cd} className="form-check form-check-inline"><input className="form-check-input" type="radio" value={item.cd} checked={form.cpnUseDtGb === item.cd} onChange={(event) => setForm((prev) => ({ ...prev, cpnUseDtGb: event.target.value }))} /><span className="ms-1">{item.cdNm}</span></label>)}
           </div>
         </div>
         {form.cpnUseDtGb === COUPON_USE_DT_GB_CODE.PERIOD ? (

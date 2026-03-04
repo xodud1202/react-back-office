@@ -28,11 +28,6 @@ const CouponCategorySearchModal = ({
 
   // 검색 결과 컬럼을 정의합니다.
   const columnDefs = useMemo<ColDef<CategoryOption>[]>(() => ([
-    {
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 70,
-    },
     { headerName: '카테고리ID', field: 'categoryId', width: 180 },
     { headerName: '카테고리명', field: 'categoryNm', width: 320, cellClass: 'text-start' },
     { headerName: '레벨', field: 'categoryLevel', width: 120 },
@@ -44,6 +39,14 @@ const CouponCategorySearchModal = ({
     sortable: false,
     editable: false,
     cellClass: 'text-center',
+  }), []);
+
+  // AG Grid v32.2+ 선택 옵션을 구성합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'multiRow' as const,
+    checkboxes: true,
+    headerCheckbox: true,
+    enableClickSelection: false,
   }), []);
 
   // 검색 조건으로 카테고리 목록을 필터링합니다.
@@ -121,8 +124,8 @@ const CouponCategorySearchModal = ({
         <AgGridReact<CategoryOption>
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
-          rowSelection="multiple"
-          suppressRowClickSelection
+          rowSelection={rowSelection}
+          selectionColumnDef={{ width: 70, resizable: false }}
           rowData={filteredRows}
           pagination
           paginationPageSize={20}

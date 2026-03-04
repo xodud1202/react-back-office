@@ -24,18 +24,10 @@ const CouponTargetGrid = ({
   height = '240px',
   emptyMessage = '데이터가 없습니다.',
 }: CouponTargetGridProps) => {
-  // 선택 가능한 컬럼을 기본 생성합니다.
-  const getSelectionColumn = useCallback((): ColDef<CouponTargetRow> => ({
-    checkboxSelection: true,
-    headerCheckboxSelection: true,
-    width: 70,
-  }), []);
-
   // 그리드 타입별 컬럼을 생성합니다.
   const columnDefs = useMemo<ColDef<CouponTargetRow>[]>(() => {
     if (gridType === 'GOODS') {
       return [
-        getSelectionColumn(),
         { headerName: '상품코드', field: 'goodsId', width: 160, valueGetter: (params) => params.data?.goodsId || params.data?.targetValue || '' },
         { headerName: 'ERP품번코드', field: 'erpStyleCd', width: 160 },
         { headerName: '상품명', field: 'goodsNm', width: 340, cellClass: 'text-start' },
@@ -43,14 +35,12 @@ const CouponTargetGrid = ({
     }
     if (gridType === 'EXHIBITION') {
       return [
-        getSelectionColumn(),
         { headerName: '기획전번호', field: 'exhibitionNo', width: 160, valueGetter: (params) => String(params.data?.exhibitionNo || params.data?.targetValue || '') },
         { headerName: '기획전명', field: 'exhibitionNm', width: 360, cellClass: 'text-start', valueGetter: (params) => params.data?.exhibitionNm || params.data?.targetNm || '' },
       ];
     }
     if (gridType === 'CATEGORY') {
       return [
-        getSelectionColumn(),
         { headerName: '카테고리ID', field: 'categoryId', width: 160, valueGetter: (params) => params.data?.categoryId || params.data?.targetValue || '' },
         { headerName: '카테고리명', field: 'categoryNm', width: 320, cellClass: 'text-start', valueGetter: (params) => params.data?.categoryNm || params.data?.targetNm || '' },
         { headerName: '레벨', field: 'categoryLevel', width: 120 },
@@ -59,7 +49,7 @@ const CouponTargetGrid = ({
     return [
       { headerName: '대상값', field: 'targetValue', width: 200 },
     ];
-  }, [getSelectionColumn, gridType]);
+  }, [gridType]);
 
   // 공통 컬럼 속성을 정의합니다.
   const defaultColDef = useMemo<ColDef>(() => ({
@@ -67,6 +57,14 @@ const CouponTargetGrid = ({
     sortable: false,
     editable: false,
     cellClass: 'text-center',
+  }), []);
+
+  // AG Grid v32.2+ 선택 옵션을 구성합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'multiRow' as const,
+    checkboxes: true,
+    headerCheckbox: true,
+    enableClickSelection: false,
   }), []);
 
   // 선택된 대상값 목록을 상위로 전달합니다.
@@ -87,8 +85,8 @@ const CouponTargetGrid = ({
         columnDefs={columnDefs}
         defaultColDef={defaultColDef}
         rowData={rows}
-        rowSelection="multiple"
-        suppressRowClickSelection
+        rowSelection={rowSelection}
+        selectionColumnDef={{ width: 70, resizable: false }}
         overlayNoRowsTemplate={emptyMessage}
         getRowId={(params) => String(params.data?.targetValue ?? '')}
         onSelectionChanged={handleSelectionChanged}

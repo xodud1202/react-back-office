@@ -34,11 +34,6 @@ const CategoryGoodsSearchModal = ({
 
   // 그리드 컬럼 정보를 구성합니다.
   const columnDefs = useMemo<ColDef<GoodsData>[]>(() => ([
-    {
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 70,
-    },
     { headerName: '상품코드', field: 'goodsId', width: 150 },
     {
       headerName: '이미지',
@@ -71,6 +66,14 @@ const CategoryGoodsSearchModal = ({
     sortable: false,
     editable: false,
     cellClass: 'text-center',
+  }), []);
+
+  // AG Grid v32.2+ 선택 옵션을 구성합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'multiRow' as const,
+    checkboxes: true,
+    headerCheckbox: true,
+    enableClickSelection: false,
   }), []);
 
   // 검색 조건을 갱신합니다.
@@ -259,8 +262,8 @@ const CategoryGoodsSearchModal = ({
         <AgGridReact<GoodsData>
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
-          rowSelection="multiple"
-          suppressRowClickSelection
+          rowSelection={rowSelection}
+          selectionColumnDef={{ width: 70, resizable: false }}
           rowData={rows}
           pagination
           paginationPageSize={20}
