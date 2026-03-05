@@ -30,7 +30,7 @@ export const getServerSideProps: GetServerSideProps<BannerListPageProps> = async
     fetchSSRList<CommonCode>(ctx, `/api/admin/common/code?grpCd=${encodeURIComponent('GOODS_STAT')}`),
     fetchSSRList<CommonCode>(ctx, `/api/admin/common/code?grpCd=${encodeURIComponent('GOODS_DIV')}`),
     fetchSSRList<GoodsMerch>(ctx, '/api/admin/goods/merch/list'),
-    fetchSSRList<BrandOption>(ctx, '/api/admin/brand/list'),
+    fetchSSRList<BrandOption>(ctx, '/api/admin/brand/list'), 
     fetchSSRList<CategoryOption>(ctx, '/api/admin/category/list?categoryLevel=3'),
   ]);
 
