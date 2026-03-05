@@ -4,20 +4,29 @@ import { AgGridReact } from 'ag-grid-react';
 import api from '@/utils/axios/axios';
 import Modal from '@/components/common/Modal';
 import type { BrandOption, CategoryOption, CommonCode, GoodsData, GoodsListResponse, GoodsMerch } from '@/components/goods/types';
+import { notifyError } from '@/utils/ui/feedback';
 
-interface CategoryGoodsSearchModalProps {
+interface GoodsSelectorModalProps {
+  // 모달 오픈 여부입니다.
   isOpen: boolean;
+  // 모달 닫기 처리입니다.
   onClose: () => void;
+  // 카테고리 옵션 목록입니다.
   categoryOptions: CategoryOption[];
+  // 브랜드 목록입니다.
   brandList: BrandOption[];
+  // 상품 상태 코드 목록입니다.
   goodsStatList: CommonCode[];
+  // 상품 구분 코드 목록입니다.
   goodsDivList: CommonCode[];
+  // 상품 분류 목록입니다.
   goodsMerchList: GoodsMerch[];
+  // 선택 반영 처리입니다.
   onApply: (selectedGoods: GoodsData[]) => void;
 }
 
-// 카테고리 상품 등록용 검색 팝업을 렌더링합니다.
-const CategoryGoodsSearchModal = ({
+// 공통 상품 선택 검색 팝업을 렌더링합니다.
+const GoodsSelectorModal = ({
   isOpen,
   onClose,
   categoryOptions,
@@ -26,7 +35,7 @@ const CategoryGoodsSearchModal = ({
   goodsDivList,
   goodsMerchList,
   onApply,
-}: CategoryGoodsSearchModalProps) => {
+}: GoodsSelectorModalProps) => {
   const [searchParams, setSearchParams] = useState<Record<string, any>>({});
   const [selectedGoodsRows, setSelectedGoodsRows] = useState<GoodsData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -68,7 +77,7 @@ const CategoryGoodsSearchModal = ({
     cellClass: 'text-center',
   }), []);
 
-  // AG Grid v32.2+ 선택 옵션을 구성합니다.
+  // AG Grid 선택 옵션을 구성합니다.
   const rowSelection = useMemo(() => ({
     mode: 'multiRow' as const,
     checkboxes: true,
@@ -104,11 +113,11 @@ const CategoryGoodsSearchModal = ({
       const data = (response.data || {}) as GoodsListResponse;
       setRows(data.list || []);
       if ((data.totalCount || 0) > 200) {
-        alert('검색 결과가 많습니다. 검색 조건을 추가해주세요.');
+        notifyError('검색 결과가 많습니다. 검색 조건을 추가해주세요.');
       }
     } catch (e) {
       console.error('상품 검색에 실패했습니다.', e);
-      alert('상품 검색에 실패했습니다.');
+      notifyError('상품 검색에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -123,7 +132,7 @@ const CategoryGoodsSearchModal = ({
   // 선택한 상품을 등록 대상으로 전달합니다.
   const handleApply = useCallback(() => {
     if (selectedGoodsRows.length === 0) {
-      alert('등록할 상품을 선택해주세요.');
+      notifyError('등록할 상품을 선택해주세요.');
       return;
     }
     onApply(selectedGoodsRows);
@@ -151,10 +160,10 @@ const CategoryGoodsSearchModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="상품 등록"
+      title="상품 선택"
       footerActions={(
         <button type="button" className="btn btn-primary" onClick={handleApply}>
-          선택 등록
+          선택 적용
         </button>
       )}
       width="85vw"
@@ -186,7 +195,6 @@ const CategoryGoodsSearchModal = ({
               </select>
             </div>
           </div>
-
           <div className="col-md-2">
             <div className="form-group">
               <label>상품상태</label>
@@ -277,4 +285,4 @@ const CategoryGoodsSearchModal = ({
   );
 };
 
-export default CategoryGoodsSearchModal;
+export default GoodsSelectorModal;

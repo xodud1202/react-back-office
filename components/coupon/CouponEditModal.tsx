@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import api from '@/utils/axios/axios';
 import { requireLoginUsrNo } from '@/utils/auth';
 import Modal from '@/components/common/Modal';
-import CategoryGoodsSearchModal from '@/components/categoryGoods/CategoryGoodsSearchModal';
+import GoodsSelectorModal from '@/components/common/selector/GoodsSelectorModal';
 import CouponTargetGrid from '@/components/coupon/CouponTargetGrid';
-import CouponExhibitionSearchModal from '@/components/coupon/CouponExhibitionSearchModal';
-import CouponCategorySearchModal from '@/components/coupon/CouponCategorySearchModal';
+import ExhibitionSelectorModal from '@/components/common/selector/ExhibitionSelectorModal';
+import CategorySelectorModal from '@/components/common/selector/CategorySelectorModal';
 import type {
   CouponDetail,
   CouponSavePayload,
@@ -589,9 +589,9 @@ const CouponEditModal = ({
       <input ref={applyExcelInputRef} type="file" accept=".xlsx" style={{ display: 'none' }} onChange={(event) => void handleUploadExcel(event, 'APPLY')} />
       <input ref={excludeExcelInputRef} type="file" accept=".xlsx" style={{ display: 'none' }} onChange={(event) => void handleUploadExcel(event, 'EXCLUDE')} />
 
-      <CategoryGoodsSearchModal isOpen={isGoodsSearchOpen} onClose={() => setIsGoodsSearchOpen(false)} categoryOptions={categoryOptions} goodsStatList={goodsStatList} goodsDivList={goodsDivList} goodsMerchList={goodsMerchList} brandList={brandList} onApply={handleApplyGoods} />
-      <CouponExhibitionSearchModal isOpen={isExhibitionSearchOpen} onClose={() => setIsExhibitionSearchOpen(false)} onApply={handleApplyExhibitions} />
-      <CouponCategorySearchModal isOpen={isCategorySearchOpen} onClose={() => setIsCategorySearchOpen(false)} categoryOptions={categoryOptions} onApply={handleApplyCategories} />
+      <GoodsSelectorModal isOpen={isGoodsSearchOpen} onClose={() => setIsGoodsSearchOpen(false)} categoryOptions={categoryOptions} goodsStatList={goodsStatList} goodsDivList={goodsDivList} goodsMerchList={goodsMerchList} brandList={brandList} onApply={handleApplyGoods} />
+      <ExhibitionSelectorModal isOpen={isExhibitionSearchOpen} onClose={() => setIsExhibitionSearchOpen(false)} onApply={handleApplyExhibitions} />
+      <CategorySelectorModal isOpen={isCategorySearchOpen} onClose={() => setIsCategorySearchOpen(false)} categoryOptions={categoryOptions} onApply={handleApplyCategories} />
     </Modal>
   );
 };

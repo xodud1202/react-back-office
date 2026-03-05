@@ -3,8 +3,9 @@ import type { ColDef, SelectionChangedEvent } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import Modal from '@/components/common/Modal';
 import type { CategoryOption } from '@/components/goods/types';
+import { notifyError } from '@/utils/ui/feedback';
 
-interface CouponCategorySearchModalProps {
+interface CategorySelectorModalProps {
   // 모달 오픈 여부입니다.
   isOpen: boolean;
   // 모달 닫기 함수입니다.
@@ -15,13 +16,13 @@ interface CouponCategorySearchModalProps {
   onApply: (selectedRows: CategoryOption[]) => void;
 }
 
-// 쿠폰 카테고리 대상 선택 모달을 렌더링합니다.
-const CouponCategorySearchModal = ({
+// 공통 카테고리 선택 모달을 렌더링합니다.
+const CategorySelectorModal = ({
   isOpen,
   onClose,
   categoryOptions,
   onApply,
-}: CouponCategorySearchModalProps) => {
+}: CategorySelectorModalProps) => {
   const [selectedRows, setSelectedRows] = useState<CategoryOption[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [categoryLevel, setCategoryLevel] = useState<string>('');
@@ -41,7 +42,7 @@ const CouponCategorySearchModal = ({
     cellClass: 'text-center',
   }), []);
 
-  // AG Grid v32.2+ 선택 옵션을 구성합니다.
+  // AG Grid 선택 옵션을 구성합니다.
   const rowSelection = useMemo(() => ({
     mode: 'multiRow' as const,
     checkboxes: true,
@@ -73,7 +74,7 @@ const CouponCategorySearchModal = ({
   // 선택한 카테고리를 상위로 전달합니다.
   const handleApply = useCallback(() => {
     if (selectedRows.length === 0) {
-      alert('추가할 카테고리를 선택해주세요.');
+      notifyError('추가할 카테고리를 선택해주세요.');
       return;
     }
     onApply(selectedRows);
@@ -83,12 +84,12 @@ const CouponCategorySearchModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="카테고리 추가"
+      title="카테고리 선택"
       width="75vw"
       contentHeight="78vh"
       footerActions={(
         <button type="button" className="btn btn-primary" onClick={handleApply}>
-          선택 추가
+          선택 적용
         </button>
       )}
     >
@@ -138,4 +139,4 @@ const CouponCategorySearchModal = ({
   );
 };
 
-export default CouponCategorySearchModal;
+export default CategorySelectorModal;

@@ -4,8 +4,9 @@ import { AgGridReact } from 'ag-grid-react';
 import api from '@/utils/axios/axios';
 import Modal from '@/components/common/Modal';
 import type { ExhibitionItem, ExhibitionListResponse } from '@/components/exhibition/types';
+import { notifyError } from '@/utils/ui/feedback';
 
-interface CouponExhibitionSearchModalProps {
+interface ExhibitionSelectorModalProps {
   // 모달 오픈 여부입니다.
   isOpen: boolean;
   // 모달 닫기 함수입니다.
@@ -14,8 +15,8 @@ interface CouponExhibitionSearchModalProps {
   onApply: (selectedRows: ExhibitionItem[]) => void;
 }
 
-// 쿠폰 기획전 대상 선택 모달을 렌더링합니다.
-const CouponExhibitionSearchModal = ({ isOpen, onClose, onApply }: CouponExhibitionSearchModalProps) => {
+// 공통 기획전 선택 모달을 렌더링합니다.
+const ExhibitionSelectorModal = ({ isOpen, onClose, onApply }: ExhibitionSelectorModalProps) => {
   const [rows, setRows] = useState<ExhibitionItem[]>([]);
   const [selectedRows, setSelectedRows] = useState<ExhibitionItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,7 +39,7 @@ const CouponExhibitionSearchModal = ({ isOpen, onClose, onApply }: CouponExhibit
     cellClass: 'text-center',
   }), []);
 
-  // AG Grid v32.2+ 선택 옵션을 구성합니다.
+  // AG Grid 선택 옵션을 구성합니다.
   const rowSelection = useMemo(() => ({
     mode: 'multiRow' as const,
     checkboxes: true,
@@ -61,11 +62,11 @@ const CouponExhibitionSearchModal = ({ isOpen, onClose, onApply }: CouponExhibit
       const data = (response.data || {}) as ExhibitionListResponse;
       setRows(data.list || []);
       if ((data.totalCount || 0) > 200) {
-        alert('검색 결과가 많습니다. 검색 조건을 추가해주세요.');
+        notifyError('검색 결과가 많습니다. 검색 조건을 추가해주세요.');
       }
     } catch (error) {
       console.error('기획전 목록 조회에 실패했습니다.', error);
-      alert('기획전 목록 조회에 실패했습니다.');
+      notifyError('기획전 목록 조회에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ const CouponExhibitionSearchModal = ({ isOpen, onClose, onApply }: CouponExhibit
   // 선택한 기획전을 상위로 전달합니다.
   const handleApply = useCallback(() => {
     if (selectedRows.length === 0) {
-      alert('추가할 기획전을 선택해주세요.');
+      notifyError('추가할 기획전을 선택해주세요.');
       return;
     }
     onApply(selectedRows);
@@ -114,12 +115,12 @@ const CouponExhibitionSearchModal = ({ isOpen, onClose, onApply }: CouponExhibit
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="기획전 추가"
+      title="기획전 선택"
       width="80vw"
       contentHeight="80vh"
       footerActions={(
         <button type="button" className="btn btn-primary" onClick={handleApply}>
-          선택 추가
+          선택 적용
         </button>
       )}
     >
@@ -172,4 +173,4 @@ const CouponExhibitionSearchModal = ({ isOpen, onClose, onApply }: CouponExhibit
   );
 };
 
-export default CouponExhibitionSearchModal;
+export default ExhibitionSelectorModal;

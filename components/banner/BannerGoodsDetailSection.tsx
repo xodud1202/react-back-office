@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import api from '@/utils/axios/axios';
 import BannerGoodsGrid from '@/components/banner/BannerGoodsGrid';
-import CategoryGoodsSearchModal from '@/components/categoryGoods/CategoryGoodsSearchModal';
+import GoodsSelectorModal from '@/components/common/selector/GoodsSelectorModal';
 import type { BannerGoodsItem, BannerTabItem } from '@/components/banner/types';
 import type { BrandOption, CategoryOption, CommonCode, GoodsData, GoodsMerch } from '@/components/goods/types';
 
@@ -384,7 +384,7 @@ const BannerGoodsDetailSection = ({
         onSelectionChange={setSelectedRowKeys}
       />
 
-      <CategoryGoodsSearchModal
+      <GoodsSelectorModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
         categoryOptions={categoryOptions}

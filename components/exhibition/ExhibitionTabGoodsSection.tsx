@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import api from '@/utils/axios/axios';
-import CategoryGoodsSearchModal from '@/components/categoryGoods/CategoryGoodsSearchModal';
+import GoodsSelectorModal from '@/components/common/selector/GoodsSelectorModal';
 import type { ExhibitionGoodsItem, ExhibitionTabItem } from '@/components/exhibition/types';
 import type { BrandOption, CategoryOption, CommonCode, GoodsData, GoodsMerch } from '@/components/goods/types';
 import ExhibitionGoodsGrid from '@/components/exhibition/ExhibitionGoodsGrid';
@@ -407,7 +407,7 @@ const ExhibitionTabGoodsSection = ({
         onChange={handleExcelUploadChange}
       />
 
-      <CategoryGoodsSearchModal
+      <GoodsSelectorModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
         categoryOptions={categoryOptions}

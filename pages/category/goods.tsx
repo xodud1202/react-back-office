@@ -6,7 +6,7 @@ import { requireLoginUsrNo } from '@/utils/auth';
 import CategoryTree from '@/components/category/CategoryTree';
 import type { CategoryItem, CategoryTreeNode } from '@/components/category/types';
 import CategoryGoodsGrid from '@/components/categoryGoods/CategoryGoodsGrid';
-import CategoryGoodsSearchModal from '@/components/categoryGoods/CategoryGoodsSearchModal';
+import GoodsSelectorModal from '@/components/common/selector/GoodsSelectorModal';
 import type { CategoryGoodsItem } from '@/components/categoryGoods/types';
 import type { BrandOption, CategoryOption, CommonCode, GoodsData, GoodsMerch } from '@/components/goods/types';
 
@@ -445,7 +445,7 @@ const CategoryGoodsPage = ({
         </div>
       </div>
 
-      <CategoryGoodsSearchModal
+      <GoodsSelectorModal
         isOpen={isSearchModalOpen}
         onClose={handleCloseSearchModal}
         categoryOptions={leafCategoryOptions}
