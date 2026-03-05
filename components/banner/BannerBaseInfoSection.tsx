@@ -8,10 +8,16 @@ interface BannerBaseInfoSectionProps {
   bannerDivCd: string;
   // 배너명입니다.
   bannerNm: string;
-  // 노출 시작일시입니다.
-  dispStartDt: string;
-  // 노출 종료일시입니다.
-  dispEndDt: string;
+  // 노출 시작일입니다.
+  dispStartDate: string;
+  // 노출 시작시입니다.
+  dispStartHour: string;
+  // 노출 종료일입니다.
+  dispEndDate: string;
+  // 노출 종료시입니다.
+  dispEndHour: string;
+  // 시 선택 옵션 목록입니다.
+  hourOptions: string[];
   // 노출 순서입니다.
   dispOrd: string;
   // 노출 여부입니다.
@@ -20,10 +26,14 @@ interface BannerBaseInfoSectionProps {
   setBannerDivCd: React.Dispatch<React.SetStateAction<string>>;
   // 배너명 변경 함수입니다.
   setBannerNm: React.Dispatch<React.SetStateAction<string>>;
-  // 노출 시작일시 변경 함수입니다.
-  setDispStartDt: React.Dispatch<React.SetStateAction<string>>;
-  // 노출 종료일시 변경 함수입니다.
-  setDispEndDt: React.Dispatch<React.SetStateAction<string>>;
+  // 노출 시작일 변경 함수입니다.
+  setDispStartDate: React.Dispatch<React.SetStateAction<string>>;
+  // 노출 시작시 변경 함수입니다.
+  setDispStartHour: React.Dispatch<React.SetStateAction<string>>;
+  // 노출 종료일 변경 함수입니다.
+  setDispEndDate: React.Dispatch<React.SetStateAction<string>>;
+  // 노출 종료시 변경 함수입니다.
+  setDispEndHour: React.Dispatch<React.SetStateAction<string>>;
   // 노출 순서 변경 함수입니다.
   setDispOrd: React.Dispatch<React.SetStateAction<string>>;
   // 노출 여부 변경 함수입니다.
@@ -35,14 +45,19 @@ const BannerBaseInfoSection = ({
   bannerDivList,
   bannerDivCd,
   bannerNm,
-  dispStartDt,
-  dispEndDt,
+  dispStartDate,
+  dispStartHour,
+  dispEndDate,
+  dispEndHour,
+  hourOptions,
   dispOrd,
   showYn,
   setBannerDivCd,
   setBannerNm,
-  setDispStartDt,
-  setDispEndDt,
+  setDispStartDate,
+  setDispStartHour,
+  setDispEndDate,
+  setDispEndHour,
   setDispOrd,
   setShowYn,
 }: BannerBaseInfoSectionProps) => (
@@ -67,13 +82,27 @@ const BannerBaseInfoSection = ({
       <div className="col-md-2">
         <div className="form-group">
           <label>노출시작일시</label>
-          <input className="form-control" type="datetime-local" value={dispStartDt} onChange={(e) => setDispStartDt(e.target.value)} />
+          <div className="d-flex gap-2">
+            <input className="form-control" type="date" value={dispStartDate} onChange={(e) => setDispStartDate(e.target.value)} />
+            <select className="form-select w-auto" value={dispStartHour} onChange={(e) => setDispStartHour(e.target.value)}>
+              {hourOptions.map((item) => (
+                <option key={`disp-start-${item}`} value={item}>{item}시</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
       <div className="col-md-2">
         <div className="form-group">
           <label>노출종료일시</label>
-          <input className="form-control" type="datetime-local" value={dispEndDt} onChange={(e) => setDispEndDt(e.target.value)} />
+          <div className="d-flex gap-2">
+            <input className="form-control" type="date" value={dispEndDate} onChange={(e) => setDispEndDate(e.target.value)} />
+            <select className="form-select w-auto" value={dispEndHour} onChange={(e) => setDispEndHour(e.target.value)}>
+              {hourOptions.map((item) => (
+                <option key={`disp-end-${item}`} value={item}>{item}시</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
     </div>

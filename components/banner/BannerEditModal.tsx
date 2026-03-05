@@ -47,8 +47,10 @@ const BannerEditModal = ({
   const [loading, setLoading] = useState(false);
   const [bannerDivCd, setBannerDivCd] = useState('BANNER_DIV_01');
   const [bannerNm, setBannerNm] = useState('');
-  const [dispStartDt, setDispStartDt] = useState('');
-  const [dispEndDt, setDispEndDt] = useState('');
+  const [dispStartDate, setDispStartDate] = useState('');
+  const [dispStartHour, setDispStartHour] = useState('00');
+  const [dispEndDate, setDispEndDate] = useState('');
+  const [dispEndHour, setDispEndHour] = useState('24');
   const [dispOrd, setDispOrd] = useState('1');
   const [showYn, setShowYn] = useState('Y');
 
@@ -70,13 +72,17 @@ const BannerEditModal = ({
   const isGoodsListBanner = useMemo(() => bannerDivCd === 'BANNER_DIV_04', [bannerDivCd]);
   // 수정 모드 여부를 계산합니다.
   const isEditMode = useMemo(() => Boolean(bannerNo), [bannerNo]);
+  // 시 선택 옵션 목록을 생성합니다.
+  const hourOptions = useMemo(() => Array.from({ length: 25 }, (_, index) => String(index).padStart(2, '0')), []);
 
   // 팝업 초기 상태를 설정합니다.
   const resetState = useCallback(() => {
     setBannerDivCd('BANNER_DIV_01');
     setBannerNm('');
-    setDispStartDt('');
-    setDispEndDt('');
+    setDispStartDate('');
+    setDispStartHour('00');
+    setDispEndDate('');
+    setDispEndHour('24');
     setDispOrd('1');
     setShowYn('Y');
     setImageRows([]);
@@ -111,23 +117,30 @@ const BannerEditModal = ({
     return null;
   }, []);
 
-  // 서버 날짜 문자열을 datetime-local 입력값으로 변환합니다.
-  const toInputDateTime = useCallback((value?: string) => {
+  // API 일시 문자열에서 날짜 입력값을 추출합니다.
+  const getInputDate = useCallback((value?: string | null) => (value ? value.replace('T', ' ').slice(0, 10) : ''), []);
+
+  // API 일시 문자열에서 시 입력값을 추출합니다.
+  const getInputHour = useCallback((value?: string | null, isEnd = false) => {
     if (!value) {
-      return '';
+      return isEnd ? '24' : '00';
     }
-    if (value.includes('T')) {
-      return value.slice(0, 16);
+    const normalized = value.replace('T', ' ');
+    const hour = normalized.slice(11, 13);
+    const minute = normalized.slice(14, 16);
+    const second = normalized.slice(17, 19);
+    if (hour === '23' && minute === '59' && (second === '59' || second === '')) {
+      return '24';
     }
-    return value.replace(' ', 'T').slice(0, 16);
+    return /^\d{2}$/.test(hour) ? hour : (isEnd ? '24' : '00');
   }, []);
 
-  // datetime-local 입력값을 서버 저장 형식으로 변환합니다.
-  const toApiDateTime = useCallback((value?: string) => {
-    if (!value) {
+  // 날짜/시 입력값을 API 일시 문자열로 변환합니다.
+  const toApiDateTime = useCallback((date: string, hour: string, isEnd = false) => {
+    if (!date) {
       return undefined;
     }
-    return `${value.replace('T', ' ')}:00`;
+    return hour === '24' || (!hour && isEnd) ? `${date} 23:59:59` : `${date} ${hour || '00'}:00:00`;
   }, []);
 
   // 상세 데이터를 조회해 화면에 반영합니다.
@@ -138,8 +151,10 @@ const BannerEditModal = ({
       const detail = (response.data || {}) as BannerDetail;
       setBannerDivCd(detail.bannerDivCd || 'BANNER_DIV_01');
       setBannerNm(detail.bannerNm || '');
-      setDispStartDt(toInputDateTime(detail.dispStartDt));
-      setDispEndDt(toInputDateTime(detail.dispEndDt));
+      setDispStartDate(getInputDate(detail.dispStartDt));
+      setDispStartHour(getInputHour(detail.dispStartDt, false));
+      setDispEndDate(getInputDate(detail.dispEndDt));
+      setDispEndHour(getInputHour(detail.dispEndDt, true));
       setDispOrd(String(detail.dispOrd || 1));
       setShowYn(detail.showYn || 'Y');
 
@@ -155,8 +170,8 @@ const BannerEditModal = ({
         url: item.url || '',
         bannerOpenCd: item.bannerOpenCd || 'S',
         dispOrd: item.dispOrd || index + 1,
-        dispStartDt: toInputDateTime(item.dispStartDt),
-        dispEndDt: toInputDateTime(item.dispEndDt),
+        dispStartDt: toApiDateTime(getInputDate(item.dispStartDt), getInputHour(item.dispStartDt, false), false) || '',
+        dispEndDt: toApiDateTime(getInputDate(item.dispEndDt), getInputHour(item.dispEndDt, true), true) || '',
         showYn: item.showYn || 'Y',
         delYn: item.delYn || 'N',
       }));
@@ -207,7 +222,7 @@ const BannerEditModal = ({
     } finally {
       setLoading(false);
     }
-  }, [onClose, toInputDateTime]);
+  }, [getInputDate, getInputHour, onClose, toApiDateTime]);
 
   // 팝업 오픈 시 신규/수정 초기화를 수행합니다.
   useEffect(() => {
@@ -235,8 +250,8 @@ const BannerEditModal = ({
       bannerNo: bannerNo || undefined,
       bannerDivCd,
       bannerNm,
-      dispStartDt: toApiDateTime(dispStartDt),
-      dispEndDt: toApiDateTime(dispEndDt),
+      dispStartDt: toApiDateTime(dispStartDate, dispStartHour, false),
+      dispEndDt: toApiDateTime(dispEndDate, dispEndHour, true),
       dispOrd: Number(dispOrd || 1),
       showYn,
       regNo: usrNo,
@@ -253,8 +268,8 @@ const BannerEditModal = ({
         url: row.url,
         bannerOpenCd: row.bannerOpenCd || 'S',
         dispOrd: row.dispOrd || index + 1,
-        dispStartDt: toApiDateTime(row.dispStartDt),
-        dispEndDt: toApiDateTime(row.dispEndDt),
+        dispStartDt: row.dispStartDt || undefined,
+        dispEndDt: row.dispEndDt || undefined,
         showYn: row.showYn || 'Y',
         delYn: 'N',
       }));
@@ -286,7 +301,7 @@ const BannerEditModal = ({
     }
 
     return payload;
-  }, [bannerDivCd, bannerNm, bannerNo, dispEndDt, dispOrd, dispStartDt, goodsRows, imageRows, isEditMode, isGoodsListBanner, isImageBanner, isTabBanner, showYn, tabGoodsRows, tabList, toApiDateTime]);
+  }, [bannerDivCd, bannerNm, bannerNo, dispEndDate, dispEndHour, dispOrd, dispStartDate, dispStartHour, goodsRows, imageRows, isEditMode, isGoodsListBanner, isImageBanner, isTabBanner, showYn, tabGoodsRows, tabList, toApiDateTime]);
 
   // 저장을 실행합니다.
   const handleSave = useCallback(async () => {
@@ -384,14 +399,19 @@ const BannerEditModal = ({
         bannerDivList={bannerDivList}
         bannerDivCd={bannerDivCd}
         bannerNm={bannerNm}
-        dispStartDt={dispStartDt}
-        dispEndDt={dispEndDt}
+        dispStartDate={dispStartDate}
+        dispStartHour={dispStartHour}
+        dispEndDate={dispEndDate}
+        dispEndHour={dispEndHour}
+        hourOptions={hourOptions}
         dispOrd={dispOrd}
         showYn={showYn}
         setBannerDivCd={setBannerDivCd}
         setBannerNm={setBannerNm}
-        setDispStartDt={setDispStartDt}
-        setDispEndDt={setDispEndDt}
+        setDispStartDate={setDispStartDate}
+        setDispStartHour={setDispStartHour}
+        setDispEndDate={setDispEndDate}
+        setDispEndHour={setDispEndHour}
         setDispOrd={setDispOrd}
         setShowYn={setShowYn}
       />
@@ -417,6 +437,10 @@ const BannerEditModal = ({
         setSelectedImageRowKey={setSelectedImageRowKey}
         setImageFileMap={setImageFileMap}
         setImagePreviewMap={setImagePreviewMap}
+        hourOptions={hourOptions}
+        getInputDate={getInputDate}
+        getInputHour={getInputHour}
+        toApiDateTime={toApiDateTime}
       />
 
       <BannerGoodsDetailSection

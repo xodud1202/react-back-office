@@ -27,6 +27,14 @@ interface BannerImageDetailSectionProps {
   setImageFileMap: React.Dispatch<React.SetStateAction<Record<string, File>>>;
   // 이미지 미리보기 맵 상태 변경 함수입니다.
   setImagePreviewMap: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  // 시 선택 옵션 목록입니다.
+  hourOptions: string[];
+  // API 일시 문자열에서 날짜 입력값을 추출하는 함수입니다.
+  getInputDate: (value?: string | null) => string;
+  // API 일시 문자열에서 시 입력값을 추출하는 함수입니다.
+  getInputHour: (value?: string | null, isEnd?: boolean) => string;
+  // 날짜/시 입력값을 API 일시 문자열로 변환하는 함수입니다.
+  toApiDateTime: (date: string, hour: string, isEnd?: boolean) => string | undefined;
 }
 
 // 이미지 배너 상세 섹션을 렌더링합니다.
@@ -42,6 +50,10 @@ const BannerImageDetailSection = ({
   setSelectedImageRowKey,
   setImageFileMap,
   setImagePreviewMap,
+  hourOptions,
+  getInputDate,
+  getInputHour,
+  toApiDateTime,
 }: BannerImageDetailSectionProps) => {
   // 현재 선택된 이미지 행을 계산합니다.
   const selectedImageRow = useMemo(() => {
@@ -133,6 +145,12 @@ const BannerImageDetailSection = ({
         : row
     )));
   }, [selectedImageRowKey, setImageRows]);
+
+  // 선택 이미지의 날짜/시 값을 API 일시 문자열로 합쳐 반영합니다.
+  const handleChangeImageDateTime = useCallback((field: 'dispStartDt' | 'dispEndDt', date: string, hour: string, isEnd: boolean) => {
+    const nextValue = toApiDateTime(date, hour, isEnd) || '';
+    handleChangeImageField(field, nextValue);
+  }, [handleChangeImageField, toApiDateTime]);
 
   // 선택된 이미지 파일을 반영하고 수정 모드에서는 즉시 업로드합니다.
   const handleChangeImageFile = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,6 +253,13 @@ const BannerImageDetailSection = ({
     return null;
   }
 
+  // 선택 이미지의 시작일/시 입력값을 계산합니다.
+  const imageDispStartDate = getInputDate(selectedImageRow?.dispStartDt);
+  const imageDispStartHour = getInputHour(selectedImageRow?.dispStartDt, false);
+  // 선택 이미지의 종료일/시 입력값을 계산합니다.
+  const imageDispEndDate = getInputDate(selectedImageRow?.dispEndDt);
+  const imageDispEndHour = getInputHour(selectedImageRow?.dispEndDt, true);
+
   return (
     <>
       <hr />
@@ -259,8 +284,50 @@ const BannerImageDetailSection = ({
             <div className="col-md-3"><div className="form-group"><label>링크 URL</label><input className="form-control" value={selectedImageRow.url || ''} onChange={(e) => handleChangeImageField('url', e.target.value)} /></div></div>
             <div className="col-md-2"><div className="form-group"><label>오픈방식</label><select className="form-select" value={selectedImageRow.bannerOpenCd || 'S'} onChange={(e) => handleChangeImageField('bannerOpenCd', e.target.value)}><option value="S">동일창</option><option value="N">새창</option></select></div></div>
             <div className="col-md-1 d-flex align-items-end">{selectedImagePreview && (<img src={selectedImagePreview} alt="미리보기" style={{ width: '100%', maxHeight: '90px', objectFit: 'contain' }} />)}</div>
-            <div className="col-md-3"><div className="form-group"><label>이미지 노출시작일시</label><input className="form-control" type="datetime-local" value={selectedImageRow.dispStartDt || ''} onChange={(e) => handleChangeImageField('dispStartDt', e.target.value)} /></div></div>
-            <div className="col-md-3"><div className="form-group"><label>이미지 노출종료일시</label><input className="form-control" type="datetime-local" value={selectedImageRow.dispEndDt || ''} onChange={(e) => handleChangeImageField('dispEndDt', e.target.value)} /></div></div>
+            <div className="col-md-3">
+              <div className="form-group">
+                <label>이미지 노출시작일시</label>
+                <div className="d-flex gap-2">
+                  <input
+                    className="form-control"
+                    type="date"
+                    value={imageDispStartDate}
+                    onChange={(e) => handleChangeImageDateTime('dispStartDt', e.target.value, imageDispStartHour, false)}
+                  />
+                  <select
+                    className="form-select w-auto"
+                    value={imageDispStartHour}
+                    onChange={(e) => handleChangeImageDateTime('dispStartDt', imageDispStartDate, e.target.value, false)}
+                  >
+                    {hourOptions.map((item) => (
+                      <option key={`img-disp-start-${item}`} value={item}>{item}시</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div className="form-group">
+                <label>이미지 노출종료일시</label>
+                <div className="d-flex gap-2">
+                  <input
+                    className="form-control"
+                    type="date"
+                    value={imageDispEndDate}
+                    onChange={(e) => handleChangeImageDateTime('dispEndDt', e.target.value, imageDispEndHour, true)}
+                  />
+                  <select
+                    className="form-select w-auto"
+                    value={imageDispEndHour}
+                    onChange={(e) => handleChangeImageDateTime('dispEndDt', imageDispEndDate, e.target.value, true)}
+                  >
+                    {hourOptions.map((item) => (
+                      <option key={`img-disp-end-${item}`} value={item}>{item}시</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
             <div className="col-md-2"><div className="form-group"><label>이미지 노출여부</label><select className="form-select" value={selectedImageRow.showYn || 'Y'} onChange={(e) => handleChangeImageField('showYn', e.target.value)}><option value="Y">Y</option><option value="N">N</option></select></div></div>
             <div className="col-md-4"><div className="form-group"><label>이미지 경로</label><input className="form-control" value={selectedImageRow.imgPath || ''} readOnly /></div></div>
           </div>
