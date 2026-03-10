@@ -21,6 +21,11 @@ interface BrandFormState {
   useYn: string;
 }
 
+interface UploadErrorResponse {
+  error?: string;
+  message?: string;
+}
+
 // 리액트 퀼 에디터를 SSR 없이 로딩합니다.
 const ReactQuill = dynamic(
   async () => {
@@ -34,6 +39,18 @@ const ReactQuill = dynamic(
   },
   {ssr: false}
 );
+
+// 업로드 실패 응답에서 사용자에게 보여줄 메시지를 추출합니다.
+const getUploadErrorMessage = (error: unknown): string => {
+  const responseData = (error as {response?: {data?: UploadErrorResponse}} | null)?.response?.data;
+  if (responseData?.error) {
+    return responseData.error;
+  }
+  if (responseData?.message) {
+    return responseData.message;
+  }
+  return error instanceof Error ? error.message : String(error);
+};
 
 // 브랜드 등록/수정 모달을 렌더링합니다.
 const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps) => {
@@ -168,7 +185,9 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
       formData.append('image', file);
       formData.append('brandNo', String(brandNo));
 
-      const response = await api.post('/api/upload/brand-logo', formData);
+      const response = await api.post('/api/upload/brand-logo', formData, {
+        headers: {'Content-Type': 'multipart/form-data'},
+      });
       const data = response.data || {};
       if (data?.error) {
         throw new Error(data.error);
@@ -180,7 +199,7 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
       }));
       alert(data.message || '로고가 업로드되었습니다.');
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = getUploadErrorMessage(error);
       alert('로고 업로드 중 오류가 발생했습니다: ' + message);
     } finally {
       setUploadingLogo(false);
