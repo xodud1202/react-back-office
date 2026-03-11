@@ -92,6 +92,10 @@ export interface CouponTargetRow {
   targetValue: string;
   // 대상 표시명입니다.
   targetNm?: string;
+  // 브랜드 번호입니다.
+  brandNo?: number;
+  // 브랜드명입니다.
+  brandNm?: string;
   // 상품코드입니다.
   goodsId?: string;
   // 상품명입니다.
@@ -205,6 +209,8 @@ export const COUPON_TARGET_CODE = {
   ALL: 'CPN_TARGET_99',
   // 상품 타겟 코드입니다.
   GOODS: 'CPN_TARGET_01',
+  // 브랜드 타겟 코드입니다.
+  BRAND: 'CPN_TARGET_04',
   // 기획전 타겟 코드입니다.
   EXHIBITION: 'CPN_TARGET_02',
   // 카테고리 타겟 코드입니다.

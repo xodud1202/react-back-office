@@ -5,7 +5,7 @@ import type { CouponTargetRow } from '@/components/coupon/types';
 
 interface CouponTargetGridProps {
   // 대상 그리드 타입입니다.
-  gridType: 'GOODS' | 'EXHIBITION' | 'CATEGORY' | 'EMPTY';
+  gridType: 'GOODS' | 'BRAND' | 'EXHIBITION' | 'CATEGORY' | 'EMPTY';
   // 대상 행 목록입니다.
   rows: CouponTargetRow[];
   // 선택 행 변경 함수입니다.
@@ -31,6 +31,12 @@ const CouponTargetGrid = ({
         { headerName: '상품코드', field: 'goodsId', width: 160, valueGetter: (params) => params.data?.goodsId || params.data?.targetValue || '' },
         { headerName: 'ERP품번코드', field: 'erpStyleCd', width: 160 },
         { headerName: '상품명', field: 'goodsNm', width: 340, cellClass: 'text-start' },
+      ];
+    }
+    if (gridType === 'BRAND') {
+      return [
+        { headerName: '브랜드번호', field: 'brandNo', width: 160, valueGetter: (params) => String(params.data?.brandNo || params.data?.targetValue || '') },
+        { headerName: '브랜드명', field: 'brandNm', width: 360, cellClass: 'text-start', valueGetter: (params) => params.data?.brandNm || params.data?.targetNm || '' },
       ];
     }
     if (gridType === 'EXHIBITION') {

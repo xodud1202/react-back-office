@@ -6,6 +6,7 @@ import GoodsSelectorModal from '@/components/common/selector/GoodsSelectorModal'
 import CouponTargetGrid from '@/components/coupon/CouponTargetGrid';
 import ExhibitionSelectorModal from '@/components/common/selector/ExhibitionSelectorModal';
 import CategorySelectorModal from '@/components/common/selector/CategorySelectorModal';
+import BrandSelectorModal from '@/components/common/selector/BrandSelectorModal';
 import type {
   CouponDetail,
   CouponSavePayload,
@@ -173,6 +174,7 @@ const CouponEditModal = ({
   const [excludeSelectedKeys, setExcludeSelectedKeys] = useState<string[]>([]);
   const [goodsModalType, setGoodsModalType] = useState<'APPLY' | 'EXCLUDE'>('APPLY');
   const [isGoodsSearchOpen, setIsGoodsSearchOpen] = useState(false);
+  const [isBrandSearchOpen, setIsBrandSearchOpen] = useState(false);
   const [isExhibitionSearchOpen, setIsExhibitionSearchOpen] = useState(false);
   const [isCategorySearchOpen, setIsCategorySearchOpen] = useState(false);
   const applyExcelInputRef = useRef<HTMLInputElement | null>(null);
@@ -431,6 +433,18 @@ const CouponEditModal = ({
     setIsGoodsSearchOpen(false);
   }, [applyRows, excludeRows, goodsModalType, mergeTargetRows]);
 
+  // 브랜드 선택 결과를 반영합니다.
+  const handleApplyBrands = useCallback((selectedRows: BrandOption[]) => {
+    const mappedRows: CouponTargetRow[] = selectedRows.map((item) => ({
+      targetValue: String(item.brandNo),
+      brandNo: item.brandNo,
+      brandNm: item.brandNm,
+      targetNm: `[${item.brandNo}] ${item.brandNm || ''}`,
+    }));
+    setApplyRows(mergeTargetRows(applyRows, mappedRows).rows);
+    setIsBrandSearchOpen(false);
+  }, [applyRows, mergeTargetRows]);
+
   // 기획전 선택 결과를 반영합니다.
   const handleApplyExhibitions = useCallback((selectedRows: ExhibitionItem[]) => {
     const mappedRows: CouponTargetRow[] = selectedRows.map((item) => ({
@@ -457,8 +471,9 @@ const CouponEditModal = ({
   }, [applyRows, mergeTargetRows]);
 
   // 대상 탭 타입을 계산합니다.
-  const applyGridType = useMemo<'GOODS' | 'EXHIBITION' | 'CATEGORY' | 'EMPTY'>(() => {
+  const applyGridType = useMemo<'GOODS' | 'BRAND' | 'EXHIBITION' | 'CATEGORY' | 'EMPTY'>(() => {
     if (form.cpnTargetCd === COUPON_TARGET_CODE.GOODS) return 'GOODS';
+    if (form.cpnTargetCd === COUPON_TARGET_CODE.BRAND) return 'BRAND';
     if (form.cpnTargetCd === COUPON_TARGET_CODE.EXHIBITION) return 'EXHIBITION';
     if (form.cpnTargetCd === COUPON_TARGET_CODE.CATEGORY) return 'CATEGORY';
     return 'EMPTY';
@@ -573,6 +588,7 @@ const CouponEditModal = ({
           <div className="fw-semibold">적용 대상</div>
           <div className="d-flex gap-2">
             {form.cpnTargetCd === COUPON_TARGET_CODE.GOODS && <><button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleDownloadTemplate}>엑셀 템플릿 다운로드</button><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => applyExcelInputRef.current?.click()}>엑셀 업로드</button><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => { setGoodsModalType('APPLY'); setIsGoodsSearchOpen(true); }}>상품추가</button></>}
+            {form.cpnTargetCd === COUPON_TARGET_CODE.BRAND && <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setIsBrandSearchOpen(true)}>브랜드 추가</button>}
             {form.cpnTargetCd === COUPON_TARGET_CODE.EXHIBITION && <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setIsExhibitionSearchOpen(true)}>기획전 추가</button>}
             {form.cpnTargetCd === COUPON_TARGET_CODE.CATEGORY && <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setIsCategorySearchOpen(true)}>카테고리 추가</button>}
             {form.cpnTargetCd !== COUPON_TARGET_CODE.ALL && <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => setApplyRows(removeSelectedRows(applyRows, applySelectedKeys))}>삭제</button>}
@@ -590,6 +606,7 @@ const CouponEditModal = ({
       <input ref={excludeExcelInputRef} type="file" accept=".xlsx" style={{ display: 'none' }} onChange={(event) => void handleUploadExcel(event, 'EXCLUDE')} />
 
       <GoodsSelectorModal isOpen={isGoodsSearchOpen} onClose={() => setIsGoodsSearchOpen(false)} categoryOptions={categoryOptions} goodsStatList={goodsStatList} goodsDivList={goodsDivList} goodsMerchList={goodsMerchList} brandList={brandList} onApply={handleApplyGoods} />
+      <BrandSelectorModal isOpen={isBrandSearchOpen} onClose={() => setIsBrandSearchOpen(false)} brandList={brandList} onApply={handleApplyBrands} />
       <ExhibitionSelectorModal isOpen={isExhibitionSearchOpen} onClose={() => setIsExhibitionSearchOpen(false)} onApply={handleApplyExhibitions} />
       <CategorySelectorModal isOpen={isCategorySearchOpen} onClose={() => setIsCategorySearchOpen(false)} categoryOptions={categoryOptions} onApply={handleApplyCategories} />
     </Modal>
