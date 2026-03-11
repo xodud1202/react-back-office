@@ -15,7 +15,7 @@ import type {
   CouponTargetListResponse,
   CouponTargetRow,
 } from '@/components/coupon/types';
-import { COUPON_TARGET_CODE, COUPON_USE_DT_GB_CODE } from '@/components/coupon/types';
+import { COUPON_DC_GB_CODE, COUPON_TARGET_CODE, COUPON_USE_DT_GB_CODE } from '@/components/coupon/types';
 import type { BrandOption, CategoryOption, CommonCode, GoodsData, GoodsMerch } from '@/components/goods/types';
 import type { ExhibitionItem } from '@/components/exhibition/types';
 
@@ -34,6 +34,8 @@ interface CouponEditModalProps {
   cpnTargetList: CommonCode[];
   // 쿠폰 사용기간 코드 목록입니다.
   cpnUseDtList: CommonCode[];
+  // 쿠폰 할인 구분 코드 목록입니다.
+  cpnDcGbList: CommonCode[];
   // 상품 상태 코드 목록입니다.
   goodsStatList: CommonCode[];
   // 상품 구분 코드 목록입니다.
@@ -61,6 +63,10 @@ interface CouponFormState {
   cpnGbCd: string;
   // 쿠폰 타겟 코드입니다.
   cpnTargetCd: string;
+  // 쿠폰 할인 구분 코드입니다.
+  cpnDcGbCd: string;
+  // 쿠폰 할인 값입니다.
+  cpnDcVal: string;
   // 다운로드 가능 시작일입니다.
   cpnDownStartDate: string;
   // 다운로드 가능 시작시입니다.
@@ -102,6 +108,8 @@ interface DateHourInputProps {
   onChangeDate: (value: string) => void;
   // 시 변경 함수입니다.
   onChangeHour: (value: string) => void;
+  // 입력창 최소 너비 클래스입니다.
+  compact?: boolean;
 }
 
 // 날짜/시 입력 컴포넌트를 렌더링합니다.
@@ -112,12 +120,13 @@ const DateHourInput = ({
   hourOptions,
   onChangeDate,
   onChangeHour,
+  compact = false,
 }: DateHourInputProps) => (
-  <div className="form-group">
-    <label>{label}</label>
+  <div className="form-group mb-2">
+    <label className={compact ? 'mb-1' : undefined}>{label}</label>
     <div className="d-flex gap-2">
-      <input type="date" className="form-control" value={dateValue} onChange={(event) => onChangeDate(event.target.value)} />
-      <select className="form-select w-auto" value={hourValue} onChange={(event) => onChangeHour(event.target.value)}>
+      <input type="date" className={`form-control ${compact ? 'form-control-sm' : ''}`} value={dateValue} onChange={(event) => onChangeDate(event.target.value)} />
+      <select className={`form-select ${compact ? 'form-select-sm w-auto' : 'w-auto'}`} value={hourValue} onChange={(event) => onChangeHour(event.target.value)}>
         {hourOptions.map((item) => (
           <option key={`${label}-${item}`} value={item}>{item}시</option>
         ))}
@@ -135,6 +144,7 @@ const CouponEditModal = ({
   cpnGbList,
   cpnTargetList,
   cpnUseDtList,
+  cpnDcGbList,
   goodsStatList,
   goodsDivList,
   goodsMerchList,
@@ -153,6 +163,8 @@ const CouponEditModal = ({
     cpnStatCd: '',
     cpnGbCd: '',
     cpnTargetCd: COUPON_TARGET_CODE.ALL,
+    cpnDcGbCd: COUPON_DC_GB_CODE.AMOUNT,
+    cpnDcVal: '0',
     cpnDownStartDate: '',
     cpnDownStartHour: '00',
     cpnDownEndDate: '',
@@ -190,6 +202,16 @@ const CouponEditModal = ({
       { grpCd: 'CPN_USE_DT', cd: COUPON_USE_DT_GB_CODE.DATETIME, cdNm: '일시', dispOrd: 2 },
     ];
   }, [cpnUseDtOptionList]);
+  const resolvedCpnDcGbOptionList = useMemo<CommonCode[]>(() => {
+    if (cpnDcGbList.length > 0) {
+      return cpnDcGbList;
+    }
+    // 코드 조회 실패 환경에서도 기본 라디오를 노출하기 위한 최소 옵션입니다.
+    return [
+      { grpCd: 'CPN_DC_GB', cd: COUPON_DC_GB_CODE.AMOUNT, cdNm: '할인금액', dispOrd: 1 },
+      { grpCd: 'CPN_DC_GB', cd: COUPON_DC_GB_CODE.RATE, cdNm: '할인율', dispOrd: 2 },
+    ];
+  }, [cpnDcGbList]);
 
   // 기본 폼 상태를 생성합니다.
   const buildDefaultForm = useCallback((): CouponFormState => ({
@@ -197,6 +219,8 @@ const CouponEditModal = ({
     cpnStatCd: cpnStatList[0]?.cd || '',
     cpnGbCd: cpnGbList[0]?.cd || '',
     cpnTargetCd: cpnTargetList.find((item) => item.cd === COUPON_TARGET_CODE.ALL)?.cd || cpnTargetList[0]?.cd || COUPON_TARGET_CODE.ALL,
+    cpnDcGbCd: resolvedCpnDcGbOptionList.find((item) => item.cd === COUPON_DC_GB_CODE.AMOUNT)?.cd || resolvedCpnDcGbOptionList[0]?.cd || COUPON_DC_GB_CODE.AMOUNT,
+    cpnDcVal: '0',
     cpnDownStartDate: '',
     cpnDownStartHour: '00',
     cpnDownEndDate: '',
@@ -210,7 +234,7 @@ const CouponEditModal = ({
     cpnDownAbleYn: 'Y',
     statStopDate: '',
     statStopHour: '24',
-  }), [cpnGbList, cpnStatList, cpnTargetList, resolvedCpnUseDtOptionList]);
+  }), [cpnGbList, cpnStatList, cpnTargetList, resolvedCpnDcGbOptionList, resolvedCpnUseDtOptionList]);
 
   // 일시에서 날짜를 추출합니다.
   const getInputDate = useCallback((value?: string | null) => (value ? value.replace('T', ' ').slice(0, 10) : ''), []);
@@ -289,6 +313,8 @@ const CouponEditModal = ({
         cpnStatCd: detail.cpnStatCd || cpnStatList[0]?.cd || '',
         cpnGbCd: detail.cpnGbCd || cpnGbList[0]?.cd || '',
         cpnTargetCd: detail.cpnTargetCd || COUPON_TARGET_CODE.ALL,
+        cpnDcGbCd: detail.cpnDcGbCd || resolvedCpnDcGbOptionList.find((item) => item.cd === COUPON_DC_GB_CODE.AMOUNT)?.cd || resolvedCpnDcGbOptionList[0]?.cd || COUPON_DC_GB_CODE.AMOUNT,
+        cpnDcVal: detail.cpnDcVal == null ? '0' : String(detail.cpnDcVal),
         cpnDownStartDate: getInputDate(detail.cpnDownStartDt),
         cpnDownStartHour: getInputHour(detail.cpnDownStartDt, false),
         cpnDownEndDate: getInputDate(detail.cpnDownEndDt),
@@ -313,7 +339,7 @@ const CouponEditModal = ({
     } finally {
       setLoading(false);
     }
-  }, [cpnGbList, cpnStatList, getInputDate, getInputHour, onClose]);
+  }, [cpnGbList, cpnStatList, getInputDate, getInputHour, onClose, resolvedCpnDcGbOptionList]);
 
   // 타겟 코드 변경 시 목록을 스냅샷 기반으로 교체합니다.
   const handleChangeTargetCd = useCallback((nextTargetCd: string) => {
@@ -331,6 +357,8 @@ const CouponEditModal = ({
       cpnStatCd: form.cpnStatCd,
       cpnGbCd: form.cpnGbCd,
       cpnTargetCd: form.cpnTargetCd,
+      cpnDcGbCd: form.cpnDcGbCd,
+      cpnDcVal: Number(form.cpnDcVal),
       cpnDownStartDt: toApiDateTime(form.cpnDownStartDate, form.cpnDownStartHour, false),
       cpnDownEndDt: toApiDateTime(form.cpnDownEndDate, form.cpnDownEndHour, true),
       cpnUseDtGb: form.cpnUseDtGb,
@@ -360,6 +388,23 @@ const CouponEditModal = ({
       alert('쿠폰명을 입력해주세요.');
       return;
     }
+    if (!form.cpnDcVal.trim()) {
+      alert('쿠폰 할인 값을 입력해주세요.');
+      return;
+    }
+    const resolvedCpnDcVal = Number(form.cpnDcVal);
+    if (!Number.isFinite(resolvedCpnDcVal)) {
+      alert('쿠폰 할인 값은 숫자만 입력해주세요.');
+      return;
+    }
+    if (resolvedCpnDcVal < 0) {
+      alert('쿠폰 할인 값은 0 이상만 입력할 수 있습니다.');
+      return;
+    }
+    if (form.cpnDcGbCd === COUPON_DC_GB_CODE.RATE && resolvedCpnDcVal >= 100) {
+      alert('할인율은 99 이하만 입력할 수 있습니다.');
+      return;
+    }
     setSaving(true);
     try {
       const response = await api.post('/api/admin/coupon/save', buildPayload(usrNo));
@@ -371,7 +416,7 @@ const CouponEditModal = ({
     } finally {
       setSaving(false);
     }
-  }, [buildPayload, form.cpnNo, form.cpnNm, onSaved]);
+  }, [buildPayload, form.cpnDcGbCd, form.cpnDcVal, form.cpnNo, form.cpnNm, onSaved]);
 
   // 엑셀 템플릿 다운로드를 처리합니다.
   const handleDownloadTemplate = useCallback(async () => {
@@ -564,23 +609,124 @@ const CouponEditModal = ({
           <div className="col-md-2"><div className="form-group"><label>고객 다운로드 가능</label><select className="form-select" value={form.cpnDownAbleYn} onChange={(event) => setForm((prev) => ({ ...prev, cpnDownAbleYn: event.target.value }))}><option value="Y">Y</option><option value="N">N</option></select></div></div>
         </div>
         <div className="row">
-          <div className="col-md-6"><DateHourInput label="다운로드 가능 시작일시" dateValue={form.cpnDownStartDate} hourValue={form.cpnDownStartHour} hourOptions={hourOptions} onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnDownStartDate: value }))} onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnDownStartHour: value }))} /></div>
-          <div className="col-md-6"><DateHourInput label="다운로드 가능 종료일시" dateValue={form.cpnDownEndDate} hourValue={form.cpnDownEndHour} hourOptions={hourOptions} onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnDownEndDate: value }))} onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnDownEndHour: value }))} /></div>
+          <div className="col-md-2">
+            <DateHourInput
+              label="다운로드 시작일시"
+              dateValue={form.cpnDownStartDate}
+              hourValue={form.cpnDownStartHour}
+              hourOptions={hourOptions}
+              onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnDownStartDate: value }))}
+              onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnDownStartHour: value }))}
+              compact
+            />
+          </div>
+          <div className="col-md-2">
+            <DateHourInput
+              label="다운로드 종료일시"
+              dateValue={form.cpnDownEndDate}
+              hourValue={form.cpnDownEndHour}
+              hourOptions={hourOptions}
+              onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnDownEndDate: value }))}
+              onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnDownEndHour: value }))}
+              compact
+            />
+          </div>
+          <div className="col-md-2">
+            <div className="form-group mb-2">
+              <label className="mb-1">사용 가능 기간</label>
+              <div className="d-flex flex-column gap-1">
+                {resolvedCpnUseDtOptionList.map((item) => (
+                  <label key={item.cd} className="form-check form-check-inline m-0">
+                    <input
+                      className="form-check-input"
+                      type="radio"
+                      value={item.cd}
+                      checked={form.cpnUseDtGb === item.cd}
+                      onChange={(event) => setForm((prev) => ({ ...prev, cpnUseDtGb: event.target.value }))}
+                    />
+                    <span className="ms-1">{item.cdNm}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          {form.cpnUseDtGb === COUPON_USE_DT_GB_CODE.PERIOD ? (
+            <div className="col-md-2">
+              <div className="form-group mb-2">
+                <label className="mb-1">다운로드 후 사용일수</label>
+                <input
+                  type="number"
+                  className="form-control form-control-sm"
+                  value={form.cpnUsableDt}
+                  onChange={(event) => setForm((prev) => ({ ...prev, cpnUsableDt: event.target.value }))}
+                  min={1}
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="col-md-2">
+                <DateHourInput
+                  label="사용 시작일시"
+                  dateValue={form.cpnUseStartDate}
+                  hourValue={form.cpnUseStartHour}
+                  hourOptions={hourOptions}
+                  onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnUseStartDate: value }))}
+                  onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnUseStartHour: value }))}
+                  compact
+                />
+              </div>
+              <div className="col-md-2">
+                <DateHourInput
+                  label="사용 종료일시"
+                  dateValue={form.cpnUseEndDate}
+                  hourValue={form.cpnUseEndHour}
+                  hourOptions={hourOptions}
+                  onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnUseEndDate: value }))}
+                  onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnUseEndHour: value }))}
+                  compact
+                />
+              </div>
+            </>
+          )}
         </div>
-        <div className="form-group mb-3">
-          <label>사용 가능 기간</label>
-          <div className="d-flex flex-wrap gap-3 mt-2">
-            {resolvedCpnUseDtOptionList.map((item) => <label key={item.cd} className="form-check form-check-inline"><input className="form-check-input" type="radio" value={item.cd} checked={form.cpnUseDtGb === item.cd} onChange={(event) => setForm((prev) => ({ ...prev, cpnUseDtGb: event.target.value }))} /><span className="ms-1">{item.cdNm}</span></label>)}
+        <div className="row">
+          <div className="col-md-2">
+            <div className="form-group mb-2">
+              <label className="mb-1">쿠폰 할인 구분</label>
+              <div className="d-flex flex-column gap-1">
+                {resolvedCpnDcGbOptionList.map((item) => (
+                  <label key={item.cd} className="form-check form-check-inline m-0">
+                    <input
+                      className="form-check-input"
+                      type="radio"
+                      value={item.cd}
+                      checked={form.cpnDcGbCd === item.cd}
+                      onChange={(event) => setForm((prev) => ({ ...prev, cpnDcGbCd: event.target.value }))}
+                    />
+                    <span className="ms-1">{item.cdNm}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="col-md-2">
+            <div className="form-group mb-2">
+              <label className="mb-1">할인값</label>
+              <input
+                type="number"
+                className="form-control form-control-sm"
+                value={form.cpnDcVal}
+                min={0}
+                max={form.cpnDcGbCd === COUPON_DC_GB_CODE.RATE ? 99 : undefined}
+                onChange={(event) => setForm((prev) => ({ ...prev, cpnDcVal: event.target.value }))}
+              />
+              <small className="text-muted">
+                {form.cpnDcGbCd === COUPON_DC_GB_CODE.RATE ? '할인율은 0~99만 입력할 수 있습니다.' : '0 이상의 값을 입력해주세요.'}
+              </small>
+            </div>
           </div>
         </div>
-        {form.cpnUseDtGb === COUPON_USE_DT_GB_CODE.PERIOD ? (
-          <div className="row"><div className="col-md-4"><div className="form-group"><label>다운로드 후 사용 가능 일수</label><input type="number" className="form-control" value={form.cpnUsableDt} onChange={(event) => setForm((prev) => ({ ...prev, cpnUsableDt: event.target.value }))} min={1} /></div></div></div>
-        ) : (
-          <div className="row">
-            <div className="col-md-6"><DateHourInput label="사용 가능 시작일시" dateValue={form.cpnUseStartDate} hourValue={form.cpnUseStartHour} hourOptions={hourOptions} onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnUseStartDate: value }))} onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnUseStartHour: value }))} /></div>
-            <div className="col-md-6"><DateHourInput label="사용 가능 종료일시" dateValue={form.cpnUseEndDate} hourValue={form.cpnUseEndHour} hourOptions={hourOptions} onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnUseEndDate: value }))} onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnUseEndHour: value }))} /></div>
-          </div>
-        )}
       </div>
 
       <div style={{ display: activeTab === 'TARGET' ? 'block' : 'none' }}>

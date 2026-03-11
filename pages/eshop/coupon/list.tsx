@@ -17,6 +17,8 @@ interface CouponListPageProps {
   cpnTargetList: CommonCode[];
   // 쿠폰 사용기간 코드 목록입니다.
   cpnUseDtList: CommonCode[];
+  // 쿠폰 할인 구분 코드 목록입니다.
+  cpnDcGbList: CommonCode[];
   // 상품 상태 코드 목록입니다.
   goodsStatList: CommonCode[];
   // 상품 구분 코드 목록입니다.
@@ -33,11 +35,12 @@ interface CouponListPageProps {
 export const getServerSideProps: GetServerSideProps<CouponListPageProps> = async (
   ctx: GetServerSidePropsContext,
 ) => {
-  const [cpnStatList, cpnGbList, cpnTargetList, cpnUseDtList, goodsStatList, goodsDivList, goodsMerchList, brandList, categoryOptions] = await Promise.all([
+  const [cpnStatList, cpnGbList, cpnTargetList, cpnUseDtList, cpnDcGbList, goodsStatList, goodsDivList, goodsMerchList, brandList, categoryOptions] = await Promise.all([
     fetchSSRList<CommonCode>(ctx, '/api/admin/common/code?grpCd=CPN_STAT'),
     fetchSSRList<CommonCode>(ctx, '/api/admin/common/code?grpCd=CPN_GB'),
     fetchSSRList<CommonCode>(ctx, '/api/admin/common/code?grpCd=CPN_TARGET'),
     fetchSSRList<CommonCode>(ctx, '/api/admin/common/code?grpCd=CPN_USE_DT'),
+    fetchSSRList<CommonCode>(ctx, '/api/admin/common/code?grpCd=CPN_DC_GB'),
     fetchSSRList<CommonCode>(ctx, '/api/admin/common/code?grpCd=GOODS_STAT'),
     fetchSSRList<CommonCode>(ctx, '/api/admin/common/code?grpCd=GOODS_DIV'),
     fetchSSRList<GoodsMerch>(ctx, '/api/admin/goods/merch/list'),
@@ -51,6 +54,7 @@ export const getServerSideProps: GetServerSideProps<CouponListPageProps> = async
       cpnGbList,
       cpnTargetList,
       cpnUseDtList,
+      cpnDcGbList,
       goodsStatList,
       goodsDivList,
       goodsMerchList,
@@ -66,6 +70,7 @@ const CouponListPage = ({
   cpnGbList,
   cpnTargetList,
   cpnUseDtList,
+  cpnDcGbList,
   goodsStatList,
   goodsDivList,
   goodsMerchList,
@@ -168,6 +173,7 @@ const CouponListPage = ({
         cpnGbList={cpnGbList}
         cpnTargetList={cpnTargetList}
         cpnUseDtList={cpnUseDtList}
+        cpnDcGbList={cpnDcGbList}
         goodsStatList={goodsStatList}
         goodsDivList={goodsDivList}
         goodsMerchList={goodsMerchList}

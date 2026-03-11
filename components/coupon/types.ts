@@ -66,6 +66,10 @@ export interface CouponDetail {
   cpnGbCd: string;
   // 쿠폰 타겟 코드입니다.
   cpnTargetCd: string;
+  // 쿠폰 할인 구분 코드입니다.
+  cpnDcGbCd: string;
+  // 쿠폰 할인 값입니다.
+  cpnDcVal: number;
   // 다운로드 시작일시입니다.
   cpnDownStartDt?: string | null;
   // 다운로드 종료일시입니다.
@@ -144,6 +148,10 @@ export interface CouponSavePayload {
   cpnGbCd: string;
   // 쿠폰 타겟 코드입니다.
   cpnTargetCd: string;
+  // 쿠폰 할인 구분 코드입니다.
+  cpnDcGbCd: string;
+  // 쿠폰 할인 값입니다.
+  cpnDcVal: number;
   // 다운로드 시작일시입니다.
   cpnDownStartDt: string;
   // 다운로드 종료일시입니다.
@@ -223,4 +231,12 @@ export const COUPON_USE_DT_GB_CODE = {
   PERIOD: 'CPN_USE_DT_01',
   // 사용 일시 코드입니다.
   DATETIME: 'CPN_USE_DT_02',
+} as const;
+
+// 쿠폰 할인 구분 코드 상수를 정의합니다.
+export const COUPON_DC_GB_CODE = {
+  // 할인금액 코드입니다.
+  AMOUNT: 'CPN_DC_GB_01',
+  // 할인율 코드입니다.
+  RATE: 'CPN_DC_GB_02',
 } as const;
