@@ -60,6 +60,7 @@ const useExhibitionEdit = ({ isOpen, exhibitionNo, onClose, onSaved }: UseExhibi
     () => ([
       [{ header: [1, 2, 3, false] }],
       ['bold', 'italic', 'underline', 'strike'],
+      [{ align: [] }],
       [{ list: 'ordered' }, { list: 'bullet' }],
       ['link', 'image'],
       ['clean'],
@@ -75,6 +76,7 @@ const useExhibitionEdit = ({ isOpen, exhibitionNo, onClose, onSaved }: UseExhibi
       'italic',
       'underline',
       'strike',
+      'align',
       'list',
       'link',
       'image',

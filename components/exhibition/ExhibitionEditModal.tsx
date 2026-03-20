@@ -185,21 +185,6 @@ const ExhibitionEditModal = ({
           goodsSaving={goodsSaving}
         />
       </div>
-
-      <style jsx>{`
-        :global(.board-editor .ql-container) {
-          height: 280px;
-        }
-        :global(.board-editor .ql-editor) {
-          min-height: 280px;
-        }
-        :global(.board-editor .ql-editor img) {
-          width: unset;
-          max-width: 100%;
-          height: auto;
-          border-radius: 0;
-        }
-      `}</style>
       <NewsImagePreviewModal
         isOpen={isThumbnailPreviewOpen}
         imageUrl={thumbnailUrl}

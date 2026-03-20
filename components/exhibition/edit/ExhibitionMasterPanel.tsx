@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import LazyQuillEditor from '@/components/common/editor/LazyQuillEditor';
 
 interface QuillEditorBinding {
@@ -69,6 +69,13 @@ interface ExhibitionMasterPanelProps {
   moDescEditor: QuillEditorBinding;
 }
 
+interface ExhibitionDescViewMode {
+  // PC 상세 뷰 모드입니다.
+  pc: 'editor' | 'html';
+  // MO 상세 뷰 모드입니다.
+  mo: 'editor' | 'html';
+}
+
 // 기획전 마스터 정보 패널을 렌더링합니다.
 const ExhibitionMasterPanel = ({
   loading,
@@ -99,6 +106,12 @@ const ExhibitionMasterPanel = ({
   pcDescEditor,
   moDescEditor,
 }: ExhibitionMasterPanelProps) => {
+  // PC/MO 상세를 에디터 또는 HTML 모드로 전환합니다.
+  const [viewMode, setViewMode] = useState<ExhibitionDescViewMode>({
+    pc: 'editor',
+    mo: 'editor',
+  });
+
   return (
     <>
       <div className="row">
@@ -211,29 +224,81 @@ const ExhibitionMasterPanel = ({
 
       <div className="mt-3">
         <label className="d-block mb-2">PC 상세</label>
-        <LazyQuillEditor
-          id="exhibition-pc-desc"
-          ref={pcDescEditor.quillRef}
-          theme="snow"
-          className="board-editor"
-          value={exhibitionPcDesc}
-          onChange={pcDescEditor.handleEditorChange}
-          modules={pcDescEditor.quillModules}
-          formats={pcDescEditor.quillFormats}
-        />
+        <div className="d-flex justify-content-end gap-2 mb-2">
+          <button
+            type="button"
+            className={`btn btn-sm ${viewMode.pc === 'editor' ? 'btn-primary' : 'btn-outline-primary'}`}
+            onClick={() => setViewMode((prev) => ({ ...prev, pc: 'editor' }))}
+          >
+            에디터
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${viewMode.pc === 'html' ? 'btn-primary' : 'btn-outline-primary'}`}
+            onClick={() => setViewMode((prev) => ({ ...prev, pc: 'html' }))}
+          >
+            HTML
+          </button>
+        </div>
+        <div className="exhibition-desc-editor">
+          {viewMode.pc === 'editor' ? (
+            <LazyQuillEditor
+              id="exhibition-pc-desc"
+              ref={pcDescEditor.quillRef}
+              theme="snow"
+              className="board-editor"
+              value={exhibitionPcDesc}
+              onChange={pcDescEditor.handleEditorChange}
+              modules={pcDescEditor.quillModules}
+              formats={pcDescEditor.quillFormats}
+            />
+          ) : (
+            <textarea
+              className="form-control exhibition-desc-html"
+              value={exhibitionPcDesc}
+              onChange={(event) => pcDescEditor.handleEditorChange(event.target.value)}
+            />
+          )}
+        </div>
       </div>
       <div className="mt-4">
         <label className="d-block mb-2">MO 상세</label>
-        <LazyQuillEditor
-          id="exhibition-mo-desc"
-          ref={moDescEditor.quillRef}
-          theme="snow"
-          className="board-editor"
-          value={exhibitionMoDesc}
-          onChange={moDescEditor.handleEditorChange}
-          modules={moDescEditor.quillModules}
-          formats={moDescEditor.quillFormats}
-        />
+        <div className="d-flex justify-content-end gap-2 mb-2">
+          <button
+            type="button"
+            className={`btn btn-sm ${viewMode.mo === 'editor' ? 'btn-primary' : 'btn-outline-primary'}`}
+            onClick={() => setViewMode((prev) => ({ ...prev, mo: 'editor' }))}
+          >
+            에디터
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${viewMode.mo === 'html' ? 'btn-primary' : 'btn-outline-primary'}`}
+            onClick={() => setViewMode((prev) => ({ ...prev, mo: 'html' }))}
+          >
+            HTML
+          </button>
+        </div>
+        <div className="exhibition-desc-editor">
+          {viewMode.mo === 'editor' ? (
+            <LazyQuillEditor
+              id="exhibition-mo-desc"
+              ref={moDescEditor.quillRef}
+              theme="snow"
+              className="board-editor"
+              value={exhibitionMoDesc}
+              onChange={moDescEditor.handleEditorChange}
+              modules={moDescEditor.quillModules}
+              formats={moDescEditor.quillFormats}
+            />
+          ) : (
+            <textarea
+              className="form-control exhibition-desc-html"
+              value={exhibitionMoDesc}
+              onChange={(event) => moDescEditor.handleEditorChange(event.target.value)}
+            />
+          )}
+        </div>
       </div>
       <div className="d-flex justify-content-end mt-4">
         <button
@@ -245,6 +310,26 @@ const ExhibitionMasterPanel = ({
           {masterSaving ? '저장중...' : '저장'}
         </button>
       </div>
+      <style jsx>{`
+        .exhibition-desc-editor :global(.ql-container) {
+          height: 500px;
+        }
+        .exhibition-desc-editor :global(.ql-editor) {
+          min-height: 500px;
+          max-height: 500px;
+          height: 500px;
+        }
+        .exhibition-desc-editor :global(.ql-editor img) {
+          width: unset;
+          max-width: 100%;
+          height: auto;
+          border-radius: 0;
+        }
+        .exhibition-desc-html {
+          height: 500px;
+          resize: vertical;
+        }
+      `}</style>
     </>
   );
 };

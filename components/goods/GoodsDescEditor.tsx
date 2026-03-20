@@ -39,6 +39,7 @@ const GoodsDescEditor = ({ goodsId, isOpen }: GoodsDescEditorProps) => {
     () => ([
       [{ header: [1, 2, 3, false] }],
       ['bold', 'italic', 'underline', 'strike'],
+      [{ align: [] }],
       [{ list: 'ordered' }, { list: 'bullet' }],
       ['link', 'image'],
       ['clean'],
@@ -52,6 +53,7 @@ const GoodsDescEditor = ({ goodsId, isOpen }: GoodsDescEditorProps) => {
       'italic',
       'underline',
       'strike',
+      'align',
       'list',
       'link',
       'image',

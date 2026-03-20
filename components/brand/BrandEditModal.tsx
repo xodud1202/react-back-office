@@ -75,6 +75,7 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
   const quillToolbarOptions = useMemo(
     () => ([
       ['bold', 'italic', 'underline', 'strike'],
+      [{align: []}],
       [{list: 'ordered'}, {list: 'bullet'}],
       ['link', 'image'],
       ['clean'],
@@ -87,6 +88,7 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
       'italic',
       'underline',
       'strike',
+      'align',
       'list',
       'link',
       'image',
