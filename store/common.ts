@@ -1,6 +1,6 @@
 // /store/store.ts
 export interface User {
-  usrNo: 0;
+  usrNo: number;
   userNm: string;
   loginId: string;
   usrGradeCd: string;

@@ -1,0 +1,10 @@
+
+> bo@0.1.0 start
+> cross-env PORT=3011 next start
+
+▲ Next.js 16.1.6
+- Local:         http://localhost:3011
+- Network:       http://10.101.13.122:3011
+
+✓ Starting...
+✓ Ready in 2.4s
