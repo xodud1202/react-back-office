@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import api from '@/utils/axios/axios';
 
@@ -49,7 +49,7 @@ const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo }) 
   }, [otherExperienceList]);
 
   // 기타 항목 목록을 조회합니다.
-  const fetchOtherExperienceList = async () => {
+  const fetchOtherExperienceList = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get(`/api/admin/resume/other-experience/${usrNo}`);
@@ -68,15 +68,15 @@ const ResumeOtherExperience: React.FC<ResumeOtherExperienceProps> = ({ usrNo }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [usrNo]);
 
-  // 사용자 변경 시 데이터와 폼을 초기화합니다.
+  // 사용자 변경 시 기타 항목 데이터와 폼을 초기화합니다.
   useEffect(() => {
     if (usrNo) {
       fetchOtherExperienceList();
       setFormData(createEmptyForm());
     }
-  }, [usrNo]);
+  }, [usrNo, fetchOtherExperienceList]);
   useEffect(() => {
     if (typeof document !== 'undefined') {
       setFooterEl(document.querySelector('.modal-footer-actions'));

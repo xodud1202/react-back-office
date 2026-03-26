@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 import LazyQuillEditor from '@/components/common/editor/LazyQuillEditor';
 
 interface QuillEditorBinding {
@@ -208,11 +209,14 @@ const ExhibitionMasterPanel = ({
           <div className="form-group">
             <label>썸네일 미리보기</label>
             {thumbnailUrl ? (
-              <img
+              <Image
                 src={thumbnailUrl}
                 alt="기획전 썸네일"
+                width={300}
+                height={140}
+                unoptimized
                 className="border rounded"
-                style={{ width: '100%', maxHeight: '140px', objectFit: 'contain', cursor: 'pointer' }}
+                style={{ width: '100%', height: 'auto', maxHeight: '140px', objectFit: 'contain', cursor: 'pointer' }}
                 onClick={onOpenThumbnailPreview}
               />
             ) : (

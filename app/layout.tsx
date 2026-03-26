@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="ko" data-scroll-behavior="smooth">
       <head>
-        {/* 템플릿 CSS를 App Router 루트에서 공통 로드합니다. */}
+        {/* /public 벤더 CSS를 루트 레이아웃에서 직접 연결합니다. (Next.js 번들러 외부 정적 자산) */}
         <link rel="stylesheet" href="/assets/vendors/mdi/css/materialdesignicons.min.css" />
         <link rel="stylesheet" href="/assets/vendors/ti-icons/css/themify-icons.css" />
         <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />

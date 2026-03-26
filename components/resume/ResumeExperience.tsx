@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import api from "@/utils/axios/axios";
 
@@ -59,7 +59,7 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo }) => {
   }, [employmentTypeOptions]);
 
   // 경력 목록을 조회합니다.
-  const fetchExperienceList = async () => {
+  const fetchExperienceList = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get(`/api/admin/resume/experience/${usrNo}`);
@@ -82,10 +82,10 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [usrNo]);
 
   // 고용형태 공통코드를 조회합니다.
-  const fetchEmploymentTypes = async () => {
+  const fetchEmploymentTypes = useCallback(async () => {
     try {
       const response = await api.get('/api/admin/common/code', {
         params: { grpCd: 'EMPLOYMENT_TYPE' },
@@ -101,15 +101,16 @@ const ResumeExperience: React.FC<ResumeExperienceProps> = ({ usrNo }) => {
       console.error('Failed to fetch employment types', e);
       setEmploymentTypeOptions([]);
     }
-  };
+  }, []);
 
+  // 사용자 변경 시 경력 데이터와 폼을 초기화합니다.
   useEffect(() => {
     if (usrNo) {
       fetchExperienceList();
       fetchEmploymentTypes();
       setFormData(createEmptyForm());
     }
-  }, [usrNo]);
+  }, [usrNo, fetchExperienceList, fetchEmploymentTypes]);
   useEffect(() => {
     if (typeof document !== 'undefined') {
       setFooterEl(document.querySelector('.modal-footer-actions'));

@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, RowDragEndEvent, SelectionChangedEvent } from 'ag-grid-community';
 import type { CategoryGoodsItem } from '@/components/categoryGoods/types';
@@ -46,10 +47,13 @@ const CategoryGoodsGrid = ({
           return null;
         }
         return (
-          <img
+          <Image
             src={imgUrl}
             alt="상품 이미지"
-            style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+            width={50}
+            height={50}
+            unoptimized
+            style={{ objectFit: 'cover' }}
           />
         );
       },

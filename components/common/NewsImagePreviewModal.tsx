@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
+import Image from 'next/image';
 
 // 이미지 미리보기 모달 속성 타입입니다.
 interface NewsImagePreviewModalProps {
@@ -79,14 +80,13 @@ const NewsImagePreviewModal: React.FC<NewsImagePreviewModalProps> = ({ isOpen, i
           >
             닫기
           </button>
-          <img
+          <Image
             src={imageUrl}
             alt="뉴스 타이틀 이미지"
+            fill
+            unoptimized
             style={{
-              width: '100%',
-              height: '100%',
               objectFit: 'contain',
-              display: 'block',
               backgroundColor: '#f8f9fa',
             }}
           />

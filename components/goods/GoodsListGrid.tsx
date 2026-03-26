@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
+import Image from 'next/image';
 import { AgGridReact } from 'ag-grid-react';
 import type {
   ColDef,
@@ -58,10 +59,13 @@ const GoodsListGrid = forwardRef<GoodsListGridHandle, GoodsListGridProps>(({
           return null;
         }
         return (
-          <img
+          <Image
             src={imgUrl}
             alt="상품 이미지"
-            style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+            width={50}
+            height={50}
+            unoptimized
+            style={{ objectFit: 'cover' }}
           />
         );
       },

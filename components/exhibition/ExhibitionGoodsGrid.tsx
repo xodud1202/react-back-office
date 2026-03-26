@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import type { ColDef, RowDragEndEvent } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import type { ExhibitionGoodsItem } from '@/components/exhibition/types';
@@ -46,10 +47,13 @@ const ExhibitionGoodsGrid = ({
         }
         return (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <img
+            <Image
               src={imageUrl}
               alt="상품이미지"
-              style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
+              width={48}
+              height={48}
+              unoptimized
+              style={{ objectFit: 'cover', borderRadius: '4px' }}
             />
           </div>
         );

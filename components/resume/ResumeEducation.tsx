@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import api from '@/utils/axios/axios';
 import { uploadResumeImage } from '@/utils/upload';
@@ -53,7 +54,7 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo }) => {
   }, [educationStatOptions]);
 
   // 학력 목록을 조회합니다.
-  const fetchEducationList = async () => {
+  const fetchEducationList = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get(`/api/admin/resume/education/${usrNo}`);
@@ -72,10 +73,10 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [usrNo]);
 
   // 학력 상태 공통코드를 조회합니다.
-  const fetchEducationStats = async () => {
+  const fetchEducationStats = useCallback(async () => {
     try {
       const response = await api.get('/api/admin/common/code', {
         params: { grpCd: 'EDUCATION_STAT' },
@@ -91,15 +92,16 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo }) => {
       console.error('학력 상태를 불러오는 데 실패했습니다.', e);
       setEducationStatOptions([]);
     }
-  };
+  }, []);
 
+  // 사용자 변경 시 학력 데이터와 폼을 초기화합니다.
   useEffect(() => {
     if (usrNo) {
       fetchEducationList();
       fetchEducationStats();
       setFormData(createEmptyForm());
     }
-  }, [usrNo]);
+  }, [usrNo, fetchEducationList, fetchEducationStats]);
   useEffect(() => {
     if (typeof document !== 'undefined') {
       setFooterEl(document.querySelector('.modal-footer-actions'));
@@ -432,11 +434,14 @@ const ResumeEducation: React.FC<ResumeEducationProps> = ({ usrNo }) => {
                   <td colSpan={3}>
                     <div className="d-flex align-items-center">
                       {formData.logoPath ? (
-                        <img
+                        <Image
                           src={formData.logoPath}
                           alt="학교 로고"
+                          width={48}
+                          height={48}
+                          unoptimized
                           className="img-fluid border"
-                          style={{ width: '48px', height: '48px', objectFit: 'contain' }}
+                          style={{ objectFit: 'contain' }}
                         />
                       ) : (
                         <div

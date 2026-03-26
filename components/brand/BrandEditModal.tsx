@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import api from '@/utils/axios/axios';
 import {requireLoginUsrNo} from '@/utils/auth';
@@ -399,11 +400,14 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
                     <label>브랜드 로고</label>
                     <div className="d-flex align-items-center">
                       {form.brandLogoPath ? (
-                        <img
+                        <Image
                           src={form.brandLogoPath}
                           alt="브랜드 로고"
+                          width={48}
+                          height={48}
+                          unoptimized
                           className="img-fluid border"
-                          style={{width: '48px', height: '48px', objectFit: 'contain'}}
+                          style={{ objectFit: 'contain' }}
                         />
                       ) : (
                         <div

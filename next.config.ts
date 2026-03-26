@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // GitHub Runner에서 빌드한 서버 산출물만 OCI 서버에 배포할 수 있도록 standalone 출력을 사용합니다.
+  output: 'standalone',
   images: {
     // 1) 도메인 허용할 때
     remotePatterns: [

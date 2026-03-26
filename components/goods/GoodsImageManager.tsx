@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import NextImage from 'next/image';
 import api from '@/utils/axios/axios';
 import { requireLoginUsrNo } from '@/utils/auth';
 import type { GoodsImageData } from '@/components/goods/types';
@@ -217,16 +218,19 @@ const GoodsImageManager = ({ goodsId, isOpen }: GoodsImageManagerProps) => {
       setDragOverPosition(null);
       return;
     }
+    // 상태 업데이터 실행 전 클로저 값을 로컬로 캡처하여 stale closure 방지합니다.
+    const fromImgNo = draggingImgNo;
+    const dropPosition = dragOverPosition;
     setImageList((prev) => {
       const currentList = [...prev];
-      const fromIndex = currentList.findIndex((item) => item.imgNo === draggingImgNo);
+      const fromIndex = currentList.findIndex((item) => item.imgNo === fromImgNo);
       const toIndex = currentList.findIndex((item) => item.imgNo === targetImgNo);
       if (fromIndex < 0 || toIndex < 0) {
         return prev;
       }
       const [moved] = currentList.splice(fromIndex, 1);
       const baseIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
-      const insertIndex = dragOverPosition === 'right' ? baseIndex + 1 : baseIndex;
+      const insertIndex = dropPosition === 'right' ? baseIndex + 1 : baseIndex;
       currentList.splice(insertIndex, 0, moved);
       saveImageOrder(currentList);
       return currentList;
@@ -234,7 +238,7 @@ const GoodsImageManager = ({ goodsId, isOpen }: GoodsImageManagerProps) => {
     setDraggingImgNo(null);
     setDragOverImgNo(null);
     setDragOverPosition(null);
-  }, [draggingImgNo, saveImageOrder]);
+  }, [draggingImgNo, dragOverPosition, saveImageOrder]);
 
   // 드래그 종료를 처리합니다.
   const handleDragEnd = useCallback(() => {
@@ -357,15 +361,12 @@ const GoodsImageManager = ({ goodsId, isOpen }: GoodsImageManagerProps) => {
                         }}
                       />
                     )}
-                    <img
+                    <NextImage
                       src={imgUrl}
                       alt="상품 이미지"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block',
-                      }}
+                      fill
+                      unoptimized
+                      style={{ objectFit: 'cover' }}
                     />
                     {hoveredImgNo === item.imgNo && (
                       <button

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, GridReadyEvent, ICellRendererParams } from 'ag-grid-community';
 import { dateFormatter } from '@/utils/common';
@@ -306,10 +307,13 @@ const NewsListPage = () => {
         onClick={() => handleOpenImageModal(thumbnailUrl)}
         style={{ lineHeight: 0 }}
       >
-        <img
+        <Image
           src={thumbnailUrl}
           alt="뉴스 타이틀 이미지"
-          style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
+          width={60}
+          height={60}
+          unoptimized
+          style={{ objectFit: 'cover', borderRadius: '4px' }}
         />
       </button>
     );

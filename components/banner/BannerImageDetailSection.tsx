@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import api from '@/utils/axios/axios';
 import { requireLoginUsrNo } from '@/utils/auth';
 import BannerImageGrid from '@/components/banner/BannerImageGrid';
@@ -283,7 +284,7 @@ const BannerImageDetailSection = ({
             <div className="col-md-3"><div className="form-group"><label>배너 이미지</label><input type="file" className="form-control" accept="image/*" onChange={handleChangeImageFile} /><small className="text-muted d-block mt-1">{bannerDivCd === 'BANNER_DIV_01' ? '권장 규격: 1280x1280' : '권장 규격: 1280x200'}</small></div></div>
             <div className="col-md-3"><div className="form-group"><label>링크 URL</label><input className="form-control" value={selectedImageRow.url || ''} onChange={(e) => handleChangeImageField('url', e.target.value)} /></div></div>
             <div className="col-md-2"><div className="form-group"><label>오픈방식</label><select className="form-select" value={selectedImageRow.bannerOpenCd || 'S'} onChange={(e) => handleChangeImageField('bannerOpenCd', e.target.value)}><option value="S">동일창</option><option value="N">새창</option></select></div></div>
-            <div className="col-md-1 d-flex align-items-end">{selectedImagePreview && (<img src={selectedImagePreview} alt="미리보기" style={{ width: '100%', maxHeight: '90px', objectFit: 'contain' }} />)}</div>
+            <div className="col-md-1 d-flex align-items-end">{selectedImagePreview && (<Image src={selectedImagePreview} alt="미리보기" width={90} height={90} unoptimized style={{ width: '100%', maxHeight: '90px', objectFit: 'contain' }} />)}</div>
             <div className="col-md-3">
               <div className="form-group">
                 <label>이미지 노출시작일시</label>

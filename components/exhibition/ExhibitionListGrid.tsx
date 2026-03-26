@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import Image from 'next/image';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef } from 'ag-grid-community';
 import type { ExhibitionItem } from '@/components/exhibition/types';
@@ -51,10 +52,13 @@ const ExhibitionListGrid = ({ rows, onEdit }: ExhibitionListGridProps) => {
           return <span className="text-muted">-</span>;
         }
         return (
-          <img
+          <Image
             src={imageUrl}
             alt="썸네일"
-            style={{ width: '60px', height: '80px', objectFit: 'cover', cursor: 'pointer' }}
+            width={60}
+            height={80}
+            unoptimized
+            style={{ objectFit: 'cover', cursor: 'pointer' }}
             onClick={(event) => {
               event.preventDefault();
               setPreviewImageUrl(imageUrl);

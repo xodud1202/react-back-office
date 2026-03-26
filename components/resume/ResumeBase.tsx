@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { createPortal } from 'react-dom';
 
 import api from "@/utils/axios/axios";
@@ -236,7 +237,17 @@ const ResumeBase: React.FC<ResumeBaseProps> = ({ usrNo, onClose }) => {
             <td rowSpan={2}>
               <div>
                 <div className="d-flex align-items-center" style={{ height: '100px' }}>
-                  <img src={formData?.faceImgPath || ''} alt="이력서 사진" className="img-fluid" style={{ maxHeight: '100%', height: '100%', width: 'auto', borderRadius: 'unset' }} />
+                  {formData?.faceImgPath && (
+                    <Image
+                      src={formData.faceImgPath}
+                      alt="이력서 사진"
+                      width={80}
+                      height={100}
+                      unoptimized
+                      className="img-fluid"
+                      style={{ maxHeight: '100%', height: '100%', width: 'auto', borderRadius: 'unset' }}
+                    />
+                  )}
 
                   <input
                       type="file"
