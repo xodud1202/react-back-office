@@ -30,7 +30,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const hasAuthCookie = Boolean(request.cookies.get('accessToken')?.value || request.cookies.get('usrNo')?.value);
+  // 실제 인증 유지에 사용되는 accessToken/refreshToken 쿠키만 보호 경로 통과 기준으로 사용합니다.
+  const hasAuthCookie = Boolean(
+    request.cookies.get('accessToken')?.value || request.cookies.get('refreshToken')?.value,
+  );
   if (!hasAuthCookie && !isPublicPath(pathname)) {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);

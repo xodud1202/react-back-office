@@ -39,6 +39,11 @@ const refreshClient = axios.create({
 let cachedAccessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;
 
+interface AccessTokenResponse {
+  accessToken?: string;
+  usrNo?: string | number;
+}
+
 // 로컬 쿠키에서 accessToken을 꺼내 옵니다.
 const getCookieAccessToken = (): string | null => {
   if (typeof window === 'undefined') {
@@ -59,6 +64,31 @@ export const setAccessToken = (token: string | null) => {
   } else {
     deleteCookie('accessToken', { path: '/' });
   }
+};
+
+// accessToken 재검증 요청에 Authorization 헤더를 구성합니다.
+const buildAccessTokenValidationConfig = (accessToken?: string | null): AxiosRequestConfig => {
+  if (!accessToken) {
+    return {};
+  }
+
+  const headers = new AxiosHeaders();
+  headers.set('Authorization', `Bearer ${accessToken}`);
+  return { headers };
+};
+
+// 서버가 확정한 사용자 번호를 브라우저 쿠키와 동기화합니다.
+const syncUsrNoCookie = (usrNo?: string | number | null) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (usrNo !== undefined && usrNo !== null && `${usrNo}`.trim() !== '') {
+    setCookie('usrNo', `${usrNo}`, USER_COOKIE_OPTIONS);
+    return;
+  }
+
+  deleteCookie('usrNo', { path: '/' });
 };
 
 // 모든 인증 정보를 지우고 쿠키를 제거합니다.
@@ -87,25 +117,28 @@ const attachAuthHeader = (config: AxiosRequestConfig, token: string) => {
   }
 };
 
-// refresh 토큰을 사용하여 accessToken을 갱신합니다.
-export const refreshAccessToken = async (): Promise<string | null> => {
+// 현재 accessToken을 검증하고 필요 시 refresh 토큰으로 accessToken을 재발급합니다.
+export const refreshAccessToken = async (accessToken?: string | null): Promise<string | null> => {
   if (refreshPromise) {
     return refreshPromise;
   }
 
+  const requestAccessToken = accessToken ?? cachedAccessToken ?? getCookieAccessToken();
+
   refreshPromise = refreshClient
-    .get('/api/token/backoffice/access-token')
+    .get<AccessTokenResponse>(
+      '/api/token/backoffice/access-token',
+      buildAccessTokenValidationConfig(requestAccessToken),
+    )
     .then((response) => {
       const nextToken = response.data?.accessToken;
       if (!nextToken) {
         throw new Error('새로운 Access Token을 받아올 수 없습니다.');
       }
       setAccessToken(nextToken);
-      // 서버가 내려준 사용자 번호를 쿠키에 동기화합니다.
-      const usrNo = response.data?.usrNo;
-      if (usrNo !== undefined && usrNo !== null && `${usrNo}`.trim() !== '') {
-        setCookie('usrNo', `${usrNo}`, USER_COOKIE_OPTIONS);
-      }
+
+      // 서버가 확정한 사용자 번호로 사용자 식별 쿠키를 재동기화합니다.
+      syncUsrNoCookie(response.data?.usrNo ?? null);
       return nextToken;
     })
     .catch((error) => {
