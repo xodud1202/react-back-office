@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import api from '@/utils/axios/axios';
 import {requireLoginUsrNo} from '@/utils/auth';
 import useQuillImageUpload from '@/hooks/useQuillImageUpload';
+import AdminFormTable from '@/components/common/AdminFormTable';
 import type {BrandDetail, BrandSavePayload} from '@/components/brand/types';
 
 interface BrandEditModalProps {
@@ -355,108 +356,109 @@ const BrandEditModal = ({isOpen, brandNo, onClose, onSaved}: BrandEditModalProps
               {!loading && error && <div className="text-danger mb-3">{error}</div>}
               {!loading && (
                 <>
-                  <div className={"row"}>
-                    <div className="col-md-3">
-                      <div className="form-group mb-3">
-                        <label>브랜드명</label>
-                        <input
-                          type="text"
-                          name="brandNm"
-                          className="form-control"
-                          value={form.brandNm}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="form-group mb-3">
-                        <label>정렬순서</label>
-                        <input
-                          type="number"
-                          name="dispOrd"
-                          className="form-control"
-                          value={form.dispOrd}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="form-group mb-3">
-                        <label>노출여부</label>
-                        <select
-                          name="useYn"
-                          className="form-select"
-                          value={form.useYn}
-                          onChange={handleChange}
-                        >
-                          <option value="Y">Y</option>
-                          <option value="N">N</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-group mb-3">
-                    <label>브랜드 로고</label>
-                    <div className="d-flex align-items-center">
-                      {form.brandLogoPath ? (
-                        <Image
-                          src={form.brandLogoPath}
-                          alt="브랜드 로고"
-                          width={48}
-                          height={48}
-                          unoptimized
-                          className="img-fluid border"
-                          style={{ objectFit: 'contain' }}
-                        />
-                      ) : (
-                        <div
-                          className="border text-muted d-flex align-items-center justify-content-center"
-                          style={{width: '48px', height: '48px', fontSize: '12px'}}
-                        >
-                          없음
-                        </div>
-                      )}
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleLogoFileChange}
-                        className="d-none"
-                        accept="image/*"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleLogoUploadClick}
-                        className="btn btn-secondary btn-sm ml-3"
-                        disabled={uploadingLogo}
-                      >
-                        {uploadingLogo ? '업로드 중...' : '로고 업로드'}
-                      </button>
-                      <input
-                        type="text"
-                        name="brandLogoPath"
-                        value={form.brandLogoPath}
-                        readOnly
-                        className="form-control ml-3"
-                      />
-                    </div>
-                    {!brandNo && (
-                      <small className="text-muted d-block mt-2">브랜드 등록 후 로고를 업로드할 수 있습니다.</small>
-                    )}
-                  </div>
-                  <div className="form-group mb-3">
-                    <label>상품 상단 안내</label>
-                    <ReactQuill
-                      id="brand-noti-editor"
-                      ref={brandNotiQuill.quillRef}
-                      theme="snow"
-                      className="board-editor brand-noti-editor"
-                      value={form.brandNoti}
-                      onChange={brandNotiQuill.handleEditorChange}
-                      modules={brandNotiQuill.quillModules}
-                      formats={brandNotiQuill.quillFormats}
-                    />
-                  </div>
+                  <AdminFormTable>
+                    <tbody>
+                      <tr>
+                        <th scope="row">브랜드명</th>
+                        <td>
+                          <input
+                            type="text"
+                            name="brandNm"
+                            className="form-control"
+                            value={form.brandNm}
+                            onChange={handleChange}
+                          />
+                        </td>
+                        <th scope="row">정렬순서</th>
+                        <td>
+                          <input
+                            type="number"
+                            name="dispOrd"
+                            className="form-control"
+                            value={form.dispOrd}
+                            onChange={handleChange}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">노출여부</th>
+                        <td>
+                          <select
+                            name="useYn"
+                            className="form-select"
+                            value={form.useYn}
+                            onChange={handleChange}
+                          >
+                            <option value="Y">Y</option>
+                            <option value="N">N</option>
+                          </select>
+                        </td>
+                        <th scope="row">브랜드 로고</th>
+                        <td>
+                          <div className="admin-form-inline">
+                            {form.brandLogoPath ? (
+                              <Image
+                                src={form.brandLogoPath}
+                                alt="브랜드 로고"
+                                width={48}
+                                height={48}
+                                unoptimized
+                                className="img-fluid border"
+                                style={{ objectFit: 'contain' }}
+                              />
+                            ) : (
+                              <div
+                                className="border text-muted d-flex align-items-center justify-content-center"
+                                style={{width: '48px', height: '48px', fontSize: '12px'}}
+                              >
+                                없음
+                              </div>
+                            )}
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              onChange={handleLogoFileChange}
+                              className="d-none"
+                              accept="image/*"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleLogoUploadClick}
+                              className="btn btn-secondary btn-sm"
+                              disabled={uploadingLogo}
+                            >
+                              {uploadingLogo ? '업로드 중...' : '로고 업로드'}
+                            </button>
+                            <input
+                              type="text"
+                              name="brandLogoPath"
+                              value={form.brandLogoPath}
+                              readOnly
+                              className="form-control"
+                            />
+                          </div>
+                          {!brandNo && (
+                            <small className="admin-form-hint">브랜드 등록 후 로고를 업로드할 수 있습니다.</small>
+                          )}
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">상품 상단 안내</th>
+                        <td colSpan={3}>
+                          <ReactQuill
+                            id="brand-noti-editor"
+                            ref={brandNotiQuill.quillRef}
+                            theme="snow"
+                            className="board-editor brand-noti-editor"
+                            value={form.brandNoti}
+                            onChange={brandNotiQuill.handleEditorChange}
+                            modules={brandNotiQuill.quillModules}
+                            formats={brandNotiQuill.quillFormats}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </AdminFormTable>
 
                 </>
               )}

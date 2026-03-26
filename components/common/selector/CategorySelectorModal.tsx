@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import type { ColDef, SelectionChangedEvent } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import Modal from '@/components/common/Modal';
+import AdminSearchPanel from '@/components/common/AdminSearchPanel';
 import type { CategoryOption } from '@/components/goods/types';
 import { notifyError } from '@/utils/ui/feedback';
 
@@ -80,6 +81,17 @@ const CategorySelectorModal = ({
     onApply(selectedRows);
   }, [onApply, selectedRows]);
 
+  // 검색 폼 제출을 처리합니다.
+  const handleSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+  }, []);
+
+  // 검색 조건을 기본값으로 초기화합니다.
+  const handleReset = useCallback(() => {
+    setCategoryLevel('');
+    setSearchValue('');
+  }, []);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -93,33 +105,29 @@ const CategorySelectorModal = ({
         </button>
       )}
     >
-      <div className="forms-sample mb-3">
-        <div className="row">
-          <div className="col-md-3">
-            <div className="form-group">
-              <label>레벨</label>
-              <select className="form-select" value={categoryLevel} onChange={(event) => setCategoryLevel(event.target.value)}>
-                <option value="">전체</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-              </select>
-            </div>
-          </div>
-          <div className="col-md-9">
-            <div className="form-group">
-              <label>검색어</label>
-              <input
-                type="text"
-                className="form-control"
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="카테고리ID 또는 카테고리명을 입력하세요"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <AdminSearchPanel onSubmit={handleSubmit} onReset={handleReset} resetType="button">
+        <tr>
+          <th scope="row">레벨</th>
+          <td>
+            <select className="form-select admin-search-control" value={categoryLevel} onChange={(event) => setCategoryLevel(event.target.value)}>
+              <option value="">전체</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </td>
+          <th scope="row">검색어</th>
+          <td colSpan={3}>
+            <input
+              type="text"
+              className="form-control"
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+              placeholder="카테고리ID 또는 카테고리명을 입력하세요"
+            />
+          </td>
+        </tr>
+      </AdminSearchPanel>
 
       <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '470px' }}>
         <AgGridReact<CategoryOption>

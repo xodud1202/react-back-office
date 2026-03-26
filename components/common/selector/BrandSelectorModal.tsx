@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ColDef, SelectionChangedEvent } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import Modal from '@/components/common/Modal';
+import AdminSearchPanel from '@/components/common/AdminSearchPanel';
 import type { BrandOption } from '@/components/goods/types';
 import { notifyError } from '@/utils/ui/feedback';
 
@@ -77,6 +78,17 @@ const BrandSelectorModal = ({
     onApply(selectedRows);
   }, [onApply, selectedRows]);
 
+  // 검색 폼 제출을 처리합니다.
+  const handleSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+  }, []);
+
+  // 검색 조건을 기본값으로 초기화합니다.
+  const handleReset = useCallback(() => {
+    setSearchGb('NM');
+    setSearchValue('');
+  }, []);
+
   // 모달이 닫히면 상태를 초기화합니다.
   useEffect(() => {
     if (isOpen) {
@@ -100,31 +112,26 @@ const BrandSelectorModal = ({
         </button>
       )}
     >
-      <div className="forms-sample mb-3">
-        <div className="row">
-          <div className="col-md-3">
-            <div className="form-group">
-              <label>검색구분</label>
-              <select className="form-select" value={searchGb} onChange={(event) => setSearchGb(event.target.value as 'NO' | 'NM')}>
+      <AdminSearchPanel onSubmit={handleSubmit} onReset={handleReset} resetType="button">
+        <tr>
+          <th scope="row">검색조건</th>
+          <td colSpan={5}>
+            <div className="admin-search-inline">
+              <select className="form-select admin-search-gb-select" value={searchGb} onChange={(event) => setSearchGb(event.target.value as 'NO' | 'NM')}>
                 <option value="NO">브랜드번호</option>
                 <option value="NM">브랜드명</option>
               </select>
-            </div>
-          </div>
-          <div className="col-md-9">
-            <div className="form-group">
-              <label>검색어</label>
               <input
                 type="text"
-                className="form-control"
+                className="form-control admin-search-keyword"
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
                 placeholder="브랜드번호 또는 브랜드명을 입력하세요"
               />
             </div>
-          </div>
-        </div>
-      </div>
+          </td>
+        </tr>
+      </AdminSearchPanel>
 
       <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '470px' }}>
         <AgGridReact<BrandOption>

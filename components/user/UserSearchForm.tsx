@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import AdminSearchPanel from '@/components/common/AdminSearchPanel';
 import type { CommonCodeRow, SearchGb } from '@/components/user/types';
 
 interface UserSearchFormProps {
@@ -40,83 +41,60 @@ const UserSearchForm = ({
   }, [onSearch]);
 
   return (
-    <div className="row">
-      <div className="col-12 grid-margin stretch-card">
-        <div className="card">
-          <div className="card-body">
-            <form onSubmit={handleSubmit} className="forms-sample">
-              <div className="row">
-                <div className="col-md-2">
-                  <div className="form-group">
-                    <label>검색 구분</label>
-                    <select
-                      className="form-select"
-                      value={searchGb}
-                      onChange={(event) => onChangeSearchGb(event.target.value as SearchGb)}
-                    >
-                      <option value="loginId">ID</option>
-                      <option value="userNm">이름</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label>검색어</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={searchValue}
-                      onChange={(event) => onChangeSearchValue(event.target.value)}
-                      placeholder="검색어를 입력하세요"
-                    />
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="form-group">
-                    <label>상태</label>
-                    <select
-                      className="form-select"
-                      value={usrStatCd}
-                      onChange={(event) => onChangeUsrStatCd(event.target.value)}
-                    >
-                      <option value="">전체</option>
-                      {usrStatOptions.map((item) => (
-                        <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="form-group">
-                    <label>등급</label>
-                    <select
-                      className="form-select"
-                      value={usrGradeCd}
-                      onChange={(event) => onChangeUsrGradeCd(event.target.value)}
-                    >
-                      <option value="">전체</option>
-                      {usrGradeOptions.map((item) => (
-                        <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div className="d-flex justify-content-center gap-2">
-                <button type="submit" className="btn btn-primary" disabled={isLoading}>
-                  {isLoading ? '검색중...' : '검색'}
-                </button>
-                <button type="button" className="btn btn-dark" onClick={onReset}>
-                  초기화
-                </button>
-              </div>
-            </form>
+    <AdminSearchPanel loading={isLoading} onSubmit={handleSubmit} onReset={onReset} resetType="button">
+      <tr>
+        <th scope="row">검색조건</th>
+        <td colSpan={3}>
+          <div className="admin-search-inline">
+            <select
+              className="form-select admin-search-gb-select"
+              value={searchGb}
+              onChange={(event) => onChangeSearchGb(event.target.value as SearchGb)}
+            >
+              <option value="loginId">ID</option>
+              <option value="userNm">이름</option>
+            </select>
+            <input
+              type="text"
+              className="form-control admin-search-keyword"
+              value={searchValue}
+              onChange={(event) => onChangeSearchValue(event.target.value)}
+              placeholder="검색어를 입력하세요"
+            />
           </div>
-        </div>
-      </div>
-    </div>
+        </td>
+        <th scope="row">상태</th>
+        <td>
+          <select
+            className="form-select admin-search-control"
+            value={usrStatCd}
+            onChange={(event) => onChangeUsrStatCd(event.target.value)}
+          >
+            <option value="">전체</option>
+            {usrStatOptions.map((item) => (
+              <option key={item.cd} value={item.cd}>{item.cdNm}</option>
+            ))}
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">등급</th>
+        <td>
+          <select
+            className="form-select admin-search-control"
+            value={usrGradeCd}
+            onChange={(event) => onChangeUsrGradeCd(event.target.value)}
+          >
+            <option value="">전체</option>
+            {usrGradeOptions.map((item) => (
+              <option key={item.cd} value={item.cd}>{item.cdNm}</option>
+            ))}
+          </select>
+        </td>
+        <td colSpan={4} />
+      </tr>
+    </AdminSearchPanel>
   );
 };
 
 export default UserSearchForm;
-

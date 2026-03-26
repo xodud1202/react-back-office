@@ -1,4 +1,5 @@
 import React from 'react';
+import AdminFormTable from '@/components/common/AdminFormTable';
 import { CategoryFormState } from './types';
 
 type CategoryDetailFormProps = {
@@ -54,48 +55,61 @@ const CategoryDetailForm = ({
             <input type="hidden" value={safeForm.categoryId} readOnly />
             <input type="hidden" value={safeForm.parentCategoryId ?? ''} readOnly />
             <input type="hidden" value={safeForm.categoryLevel != null ? String(safeForm.categoryLevel) : ''} readOnly />
-            <div className="mb-3">
-              <label className="form-label">카테고리명</label>
-              <input
-                type="text"
-                className="form-control"
-                value={safeForm.categoryNm}
-                onChange={(event) => {
-                  // 카테고리명을 입력합니다.
-                  onChange('categoryNm', event.target.value);
-                }}
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">정렬 순서</label>
-              <input
-                type="number"
-                className="form-control"
-                value={safeForm.dispOrd ?? ''}
-                onChange={(event) => {
-                  // 정렬 순서를 입력합니다.
-                  onChange('dispOrd', event.target.value);
-                }}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="form-label">노출 여부</label>
-              <select
-                className="form-select"
-                value={safeForm.showYn}
-                onChange={(event) => {
-                  // 노출 여부를 변경합니다.
-                  onChange('showYn', event.target.value);
-                }}
-              >
-                <option value="Y">노출</option>
-                <option value="N">비노출</option>
-              </select>
-            </div>
 
-            <button type="button" className="btn btn-primary" onClick={onSave} disabled={loading}>
-              {loading ? '처리 중...' : buttonLabel}
-            </button>
+            <AdminFormTable>
+              <tbody>
+                <tr>
+                  <th scope="row">카테고리명</th>
+                  <td>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={safeForm.categoryNm}
+                      onChange={(event) => {
+                        // 카테고리명을 입력합니다.
+                        onChange('categoryNm', event.target.value);
+                      }}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">정렬 순서</th>
+                  <td>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={safeForm.dispOrd ?? ''}
+                      onChange={(event) => {
+                        // 정렬 순서를 입력합니다.
+                        onChange('dispOrd', event.target.value);
+                      }}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">노출 여부</th>
+                  <td>
+                    <select
+                      className="form-select"
+                      value={safeForm.showYn}
+                      onChange={(event) => {
+                        // 노출 여부를 변경합니다.
+                        onChange('showYn', event.target.value);
+                      }}
+                    >
+                      <option value="Y">노출</option>
+                      <option value="N">비노출</option>
+                    </select>
+                  </td>
+                </tr>
+              </tbody>
+            </AdminFormTable>
+
+            <div className="admin-form-actions">
+              <button type="button" className="btn btn-primary" onClick={onSave} disabled={loading}>
+                {loading ? '처리 중...' : buttonLabel}
+              </button>
+            </div>
           </>
         )}
       </div>

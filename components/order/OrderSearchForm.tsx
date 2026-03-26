@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AdminSearchPanel from '@/components/common/AdminSearchPanel';
 import type { CommonCode } from '@/components/goods/types';
 import type { OrderSearchParams } from '@/components/order/types';
 import { createDefaultOrderSearchParams } from '@/components/order/types';
@@ -47,108 +48,85 @@ const OrderSearchForm = ({
   };
 
   return (
-    <form className="forms-sample mb-3" onSubmit={handleSubmit}>
-      <div className="row">
-        <div className="col-md-2">
-          <div className="form-group">
-            <label>검색구분</label>
+    <AdminSearchPanel loading={loading} onSubmit={handleSubmit} onReset={handleReset} resetType="button">
+      <tr>
+        <th scope="row">검색조건</th>
+        <td colSpan={3}>
+          <div className="admin-search-inline">
             <select
-              className="form-select"
+              className="form-select admin-search-gb-select"
               value={formState.searchGb}
               onChange={(event) => updateField('searchGb', event.target.value as OrderSearchParams['searchGb'])}
             >
               <option value="ordNo">주문번호</option>
               <option value="goodsId">상품코드</option>
             </select>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="form-group">
-            <label>검색어</label>
             <input
               type="text"
-              className="form-control"
+              className="form-control admin-search-keyword"
               value={formState.searchValue}
               placeholder={formState.searchGb === 'ordNo' ? '주문번호를 입력하세요' : '상품코드를 입력하세요'}
               onChange={(event) => updateField('searchValue', event.target.value)}
             />
           </div>
-        </div>
-        <div className="col-md-2">
-          <div className="form-group">
-            <label>기간구분</label>
+        </td>
+        <th scope="row">기간</th>
+        <td>
+          <div className="admin-search-inline">
             <select
-              className="form-select"
+              className="form-select admin-search-date-select"
               value={formState.dateGb}
               onChange={(event) => updateField('dateGb', event.target.value as OrderSearchParams['dateGb'])}
             >
               <option value="ORDER_DT">주문기간</option>
               <option value="PAY_DT">결제기간</option>
             </select>
-          </div>
-        </div>
-        <div className="col-md-2">
-          <div className="form-group">
-            <label>시작일</label>
             <input
               type="date"
-              className="form-control"
+              className="form-control admin-search-date-input"
               value={formState.searchStartDt}
               onChange={(event) => updateField('searchStartDt', event.target.value)}
             />
-          </div>
-        </div>
-        <div className="col-md-2">
-          <div className="form-group">
-            <label>종료일</label>
+            <span className="admin-search-separator">~</span>
             <input
               type="date"
-              className="form-control"
+              className="form-control admin-search-date-input"
               value={formState.searchEndDt}
               onChange={(event) => updateField('searchEndDt', event.target.value)}
             />
           </div>
-        </div>
-      </div>
-
-      <div className="row">
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>주문상세상태</label>
-            <select
-              className="form-select"
-              value={formState.ordDtlStatCd}
-              onChange={(event) => updateField('ordDtlStatCd', event.target.value)}
-            >
-              <option value="">전체</option>
-              {ordDtlStatList.map((item) => (
-                <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>클레임상세상태</label>
-            <select
-              className="form-select"
-              value={formState.chgDtlStatCd}
-              onChange={(event) => updateField('chgDtlStatCd', event.target.value)}
-            >
-              <option value="">전체</option>
-              {chgDtlStatList.map((item) => (
-                <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="d-flex justify-content-center gap-2">
-        <button type="submit" className="btn btn-primary" disabled={loading}>검색</button>
-        <button type="button" className="btn btn-light" disabled={loading} onClick={handleReset}>초기화</button>
-      </div>
-    </form>
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">주문상세상태</th>
+        <td>
+          <select
+            className="form-select admin-search-control"
+            value={formState.ordDtlStatCd}
+            onChange={(event) => updateField('ordDtlStatCd', event.target.value)}
+          >
+            <option value="">전체</option>
+            {ordDtlStatList.map((item) => (
+              <option key={item.cd} value={item.cd}>{item.cdNm}</option>
+            ))}
+          </select>
+        </td>
+        <th scope="row">클레임상세상태</th>
+        <td>
+          <select
+            className="form-select admin-search-control"
+            value={formState.chgDtlStatCd}
+            onChange={(event) => updateField('chgDtlStatCd', event.target.value)}
+          >
+            <option value="">전체</option>
+            {chgDtlStatList.map((item) => (
+              <option key={item.cd} value={item.cd}>{item.cdNm}</option>
+            ))}
+          </select>
+        </td>
+        <td colSpan={2} />
+      </tr>
+    </AdminSearchPanel>
   );
 };
 

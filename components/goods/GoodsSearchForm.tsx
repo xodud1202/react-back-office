@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import AdminSearchPanel from '@/components/common/AdminSearchPanel';
 import type { BrandOption, CommonCode } from '@/components/goods/types';
 
 interface GoodsSearchFormProps {
@@ -26,92 +27,63 @@ const GoodsSearchForm = ({ goodsStatList, goodsDivList, brandList, loading, onSe
   }, [onSearch]);
 
   return (
-    <div className="row">
-      <div className="col-12 grid-margin stretch-card">
-        <div className="card">
-          <div className="card-body">
-            <form onSubmit={handleSubmit} onReset={handleReset} className="forms-sample">
-              <div className="row">
-                <div className="col-md-3">
-                  <div className="form-group">
-                    <label>브랜드</label>
-                    <select name="brandNo" defaultValue="" className="form-select">
-                      <option value="">전체</option>
-                      {brandList.map((item) => (
-                        <option key={item.brandNo} value={item.brandNo}>{item.brandNm}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="form-group">
-                    <label>상품상태</label>
-                    <select name="goodsStatCd" defaultValue="" className="form-select">
-                      <option value="">전체</option>
-                      {goodsStatList.map((item) => (
-                        <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="form-group">
-                    <label>상품분류</label>
-                    <select name="goodsDivCd" defaultValue="" className="form-select">
-                      <option value="">전체</option>
-                      {goodsDivList.map((item) => (
-                        <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="form-group">
-                    <label>노출여부</label>
-                    <select name="showYn" defaultValue="" className="form-select">
-                      <option value="">전체</option>
-                      <option value="Y">Y</option>
-                      <option value="N">N</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div className="row">
-                <div className="col-md-2">
-                  <div className="form-group">
-                    <label>검색 구분</label>
-                    <select name="searchGb" defaultValue="goodsId" className="form-select">
-                      <option value="goodsId">상품코드</option>
-                      <option value="erpStyleCd">ERP품번코드</option>
-                      <option value="goodsNm">상품명</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-10">
-                  <div className="form-group">
-                    <label>검색어</label>
-                    <input
-                      type="text"
-                      name="searchValue"
-                      className="form-control"
-                      placeholder="검색어를 입력하세요"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="d-flex justify-content-center gap-2">
-                <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? '검색중...' : '검색'}
-                </button>
-                <button type="reset" className="btn btn-dark">
-                  초기화
-                </button>
-              </div>
-            </form>
+    <AdminSearchPanel loading={loading} onSubmit={handleSubmit} onReset={handleReset}>
+      <tr>
+        <th scope="row">브랜드</th>
+        <td>
+          <select name="brandNo" defaultValue="" className="form-select admin-search-control">
+            <option value="">전체</option>
+            {brandList.map((item) => (
+              <option key={item.brandNo} value={item.brandNo}>{item.brandNm}</option>
+            ))}
+          </select>
+        </td>
+        <th scope="row">상품상태</th>
+        <td>
+          <select name="goodsStatCd" defaultValue="" className="form-select admin-search-control">
+            <option value="">전체</option>
+            {goodsStatList.map((item) => (
+              <option key={item.cd} value={item.cd}>{item.cdNm}</option>
+            ))}
+          </select>
+        </td>
+        <th scope="row">상품분류</th>
+        <td>
+          <select name="goodsDivCd" defaultValue="" className="form-select admin-search-control">
+            <option value="">전체</option>
+            {goodsDivList.map((item) => (
+              <option key={item.cd} value={item.cd}>{item.cdNm}</option>
+            ))}
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">노출여부</th>
+        <td>
+          <select name="showYn" defaultValue="" className="form-select admin-search-control">
+            <option value="">전체</option>
+            <option value="Y">Y</option>
+            <option value="N">N</option>
+          </select>
+        </td>
+        <th scope="row">검색조건</th>
+        <td colSpan={3}>
+          <div className="admin-search-inline">
+            <select name="searchGb" defaultValue="goodsId" className="form-select admin-search-gb-select">
+              <option value="goodsId">상품코드</option>
+              <option value="erpStyleCd">ERP품번코드</option>
+              <option value="goodsNm">상품명</option>
+            </select>
+            <input
+              type="text"
+              name="searchValue"
+              className="form-control admin-search-keyword"
+              placeholder="검색어를 입력하세요"
+            />
           </div>
-        </div>
-      </div>
-    </div>
+        </td>
+      </tr>
+    </AdminSearchPanel>
   );
 };
 

@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import CouponListClientPage from '@/app/(protected)/eshop/coupon/list/CouponListClientPage';
+import CouponListPageClient from '@/app/(protected)/eshop/coupon/list/CouponListPageClient';
 import { fetchGoodsLookupBundle, fetchCommonCodeList } from '@/utils/server/backOffice';
 
 /**
@@ -16,7 +16,7 @@ export default async function CouponListPage() {
     fetchGoodsLookupBundle({ includeCategoryOptions: true }),
   ]);
 
-  const props: ComponentProps<typeof CouponListClientPage> = {
+  const props: ComponentProps<typeof CouponListPageClient> = {
     cpnStatList,
     cpnGbList,
     cpnTargetList,
@@ -29,5 +29,5 @@ export default async function CouponListPage() {
     categoryOptions: lookupBundle.categoryOptions,
   };
 
-  return <CouponListClientPage {...props} />;
+  return <CouponListPageClient {...props} />;
 }

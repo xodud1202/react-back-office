@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import ExhibitionListClientPage from '@/app/(protected)/eshop/exhibition/list/ExhibitionListClientPage';
+import ExhibitionListPageClient from '@/app/(protected)/eshop/exhibition/list/ExhibitionListPageClient';
 import { fetchGoodsLookupBundle } from '@/utils/server/backOffice';
 
 /**
@@ -9,7 +9,7 @@ import { fetchGoodsLookupBundle } from '@/utils/server/backOffice';
 export default async function ExhibitionListPage() {
   const lookupBundle = await fetchGoodsLookupBundle({ categoryLevel: 3, includeCategoryOptions: true });
 
-  const props: ComponentProps<typeof ExhibitionListClientPage> = {
+  const props: ComponentProps<typeof ExhibitionListPageClient> = {
     goodsStatList: lookupBundle.goodsStatList,
     goodsDivList: lookupBundle.goodsDivList,
     goodsMerchList: lookupBundle.goodsMerchList,
@@ -17,5 +17,5 @@ export default async function ExhibitionListPage() {
     categoryOptions: lookupBundle.categoryOptions,
   };
 
-  return <ExhibitionListClientPage {...props} />;
+  return <ExhibitionListPageClient {...props} />;
 }

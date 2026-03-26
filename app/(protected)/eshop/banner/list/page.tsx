@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import BannerListClientPage from '@/app/(protected)/eshop/banner/list/BannerListClientPage';
+import BannerListPageClient from '@/app/(protected)/eshop/banner/list/BannerListPageClient';
 import { fetchGoodsLookupBundle, fetchCommonCodeList } from '@/utils/server/backOffice';
 
 /**
@@ -12,7 +12,7 @@ export default async function BannerListPage() {
     fetchGoodsLookupBundle({ categoryLevel: 3, includeCategoryOptions: true }),
   ]);
 
-  const props: ComponentProps<typeof BannerListClientPage> = {
+  const props: ComponentProps<typeof BannerListPageClient> = {
     bannerDivList,
     goodsStatList: lookupBundle.goodsStatList,
     goodsDivList: lookupBundle.goodsDivList,
@@ -21,5 +21,5 @@ export default async function BannerListPage() {
     categoryOptions: lookupBundle.categoryOptions,
   };
 
-  return <BannerListClientPage {...props} />;
+  return <BannerListPageClient {...props} />;
 }

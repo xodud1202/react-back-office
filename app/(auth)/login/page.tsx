@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import LoginPage from '@/legacy-pages/login';
+import LoginClientPage from '@/app/(auth)/login/LoginClientPage';
 import { getServerSession } from '@/utils/server/auth';
 
 /**
@@ -11,5 +11,5 @@ export default async function LoginRoutePage() {
   if (session) {
     redirect('/main');
   }
-  return <LoginPage />;
+  return <LoginClientPage />;
 }

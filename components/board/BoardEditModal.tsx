@@ -1,5 +1,6 @@
 import React from 'react';
 import LazyQuillEditor from '@/components/common/editor/LazyQuillEditor';
+import AdminFormTable from '@/components/common/AdminFormTable';
 import type { BoardEditForm, CommonCode } from '@/components/board/types';
 
 interface BoardEditModalProps {
@@ -76,42 +77,52 @@ const BoardEditModal = ({
             </div>
             <form className="modal-body" style={{ overflowY: 'auto', flex: 1 }} onSubmit={onSubmit}>
               {editError && <div className="text-danger mb-3">{editError}</div>}
-              <div className="form-group mb-3">
-                <label>게시판 상세 구분</label>
-                <select
-                  name="boardDetailDivCd"
-                  className="form-select"
-                  value={editForm.boardDetailDivCd}
-                  onChange={onEditChange}
-                >
-                  <option value="">선택</option>
-                  {detailDivList.map((code) => (
-                    <option key={code.cd} value={code.cd}>{code.cdNm}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group mb-3">
-                <label>타이틀</label>
-                <input
-                  type="text"
-                  name="title"
-                  className="form-control"
-                  value={editForm.title}
-                  onChange={onEditChange}
-                />
-              </div>
-              <div className="form-group mb-3">
-                <label>본문</label>
-                <LazyQuillEditor
-                  ref={quillRef}
-                  theme="snow"
-                  className="board-editor"
-                  value={editForm.content}
-                  onChange={onEditorChange}
-                  modules={quillModules}
-                  formats={quillFormats}
-                />
-              </div>
+              <AdminFormTable>
+                <tbody>
+                  <tr>
+                    <th scope="row">게시판 상세 구분</th>
+                    <td>
+                      <select
+                        name="boardDetailDivCd"
+                        className="form-select"
+                        value={editForm.boardDetailDivCd}
+                        onChange={onEditChange}
+                      >
+                        <option value="">선택</option>
+                        {detailDivList.map((code) => (
+                          <option key={code.cd} value={code.cd}>{code.cdNm}</option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">타이틀</th>
+                    <td>
+                      <input
+                        type="text"
+                        name="title"
+                        className="form-control"
+                        value={editForm.title}
+                        onChange={onEditChange}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">본문</th>
+                    <td>
+                      <LazyQuillEditor
+                        ref={quillRef}
+                        theme="snow"
+                        className="board-editor"
+                        value={editForm.content}
+                        onChange={onEditorChange}
+                        modules={quillModules}
+                        formats={quillFormats}
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </AdminFormTable>
               <div className="modal-footer">
                 <button type="submit" className="btn btn-primary" disabled={editSaving}>
                   {editSaving ? '저장중...' : '저장'}

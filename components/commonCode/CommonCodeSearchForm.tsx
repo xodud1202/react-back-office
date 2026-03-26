@@ -1,4 +1,5 @@
 import React from 'react';
+import AdminSearchPanel from '@/components/common/AdminSearchPanel';
 
 interface CommonCodeSearchFormProps {
   // 검색 구분 값입니다.
@@ -28,52 +29,31 @@ const CommonCodeSearchForm = ({
   onReset,
 }: CommonCodeSearchFormProps) => {
   return (
-    <div className="row">
-      <div className="col-lg-12 grid-margin stretch-card">
-        <div className="card">
-          <div className="card-body">
-            <form onSubmit={onSubmit} className="forms-sample">
-              <div className="row">
-                <div className="col-md-3">
-                  <div className="form-group">
-                    <label>검색 구분</label>
-                    <select
-                      className="form-select"
-                      value={searchGb}
-                      onChange={(event) => onChangeSearchGb(event.target.value as 'grpCd' | 'grpCdNm')}
-                    >
-                      <option value="grpCd">그룹코드</option>
-                      <option value="grpCdNm">그룹코드명</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-9">
-                  <div className="form-group">
-                    <label>검색어</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={searchValue}
-                      onChange={(event) => onChangeSearchValue(event.target.value)}
-                      maxLength={searchGb === 'grpCd' ? 20 : 50}
-                      placeholder="검색어를 입력하세요"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="d-flex justify-content-center gap-2">
-                <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? '검색중...' : '검색'}
-                </button>
-                <button type="button" className="btn btn-dark" onClick={onReset}>
-                  초기화
-                </button>
-              </div>
-            </form>
+    <AdminSearchPanel loading={loading} onSubmit={onSubmit} onReset={onReset} resetType="button">
+      <tr>
+        <th scope="row">검색조건</th>
+        <td colSpan={5}>
+          <div className="admin-search-inline">
+            <select
+              className="form-select admin-search-gb-select"
+              value={searchGb}
+              onChange={(event) => onChangeSearchGb(event.target.value as 'grpCd' | 'grpCdNm')}
+            >
+              <option value="grpCd">그룹코드</option>
+              <option value="grpCdNm">그룹코드명</option>
+            </select>
+            <input
+              type="text"
+              className="form-control admin-search-keyword"
+              value={searchValue}
+              onChange={(event) => onChangeSearchValue(event.target.value)}
+              maxLength={searchGb === 'grpCd' ? 20 : 50}
+              placeholder="검색어를 입력하세요"
+            />
           </div>
-        </div>
-      </div>
-    </div>
+        </td>
+      </tr>
+    </AdminSearchPanel>
   );
 };
 

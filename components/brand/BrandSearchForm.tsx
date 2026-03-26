@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import AdminSearchPanel from '@/components/common/AdminSearchPanel';
 
 interface BrandSearchFormProps {
   loading: boolean;
@@ -25,48 +26,28 @@ const BrandSearchForm = ({ loading, onSearch }: BrandSearchFormProps) => {
   }, [onSearch]);
 
   return (
-    <div className="row">
-      <div className="col-12 grid-margin stretch-card">
-        <div className="card">
-          <div className="card-body">
-            <form onSubmit={handleSubmit} onReset={handleReset} className="forms-sample">
-              <div className="row">
-                <div className="col-md-3">
-                  <div className="form-group">
-                    <label>브랜드번호</label>
-                    <input
-                      type="text"
-                      name="brandNo"
-                      className="form-control"
-                      placeholder="브랜드번호를 입력하세요"
-                    />
-                  </div>
-                </div>
-                <div className="col-md-9">
-                  <div className="form-group">
-                    <label>브랜드명</label>
-                    <input
-                      type="text"
-                      name="brandNm"
-                      className="form-control"
-                      placeholder="브랜드명을 입력하세요"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="d-flex justify-content-center gap-2">
-                <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? '검색중...' : '검색'}
-                </button>
-                <button type="reset" className="btn btn-dark">
-                  초기화
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AdminSearchPanel loading={loading} onSubmit={handleSubmit} onReset={handleReset}>
+      <tr>
+        <th scope="row">브랜드번호</th>
+        <td>
+          <input
+            type="text"
+            name="brandNo"
+            className="form-control"
+            placeholder="브랜드번호를 입력하세요"
+          />
+        </td>
+        <th scope="row">브랜드명</th>
+        <td colSpan={3}>
+          <input
+            type="text"
+            name="brandNm"
+            className="form-control"
+            placeholder="브랜드명을 입력하세요"
+          />
+        </td>
+      </tr>
+    </AdminSearchPanel>
   );
 };
 

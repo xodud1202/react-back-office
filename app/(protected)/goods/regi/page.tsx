@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import GoodsRegiClientPage from '@/app/(protected)/goods/regi/GoodsRegiClientPage';
+import GoodsRegiPageClient from '@/app/(protected)/goods/regi/GoodsRegiPageClient';
 import { fetchGoodsLookupBundle } from '@/utils/server/backOffice';
 
 /**
@@ -9,12 +9,12 @@ import { fetchGoodsLookupBundle } from '@/utils/server/backOffice';
 export default async function GoodsRegiPage() {
   const lookupBundle = await fetchGoodsLookupBundle();
 
-  const props: ComponentProps<typeof GoodsRegiClientPage> = {
+  const props: ComponentProps<typeof GoodsRegiPageClient> = {
     goodsStatList: lookupBundle.goodsStatList,
     goodsDivList: lookupBundle.goodsDivList,
     goodsMerchList: lookupBundle.goodsMerchList,
     brandList: lookupBundle.brandList,
   };
 
-  return <GoodsRegiClientPage {...props} />;
+  return <GoodsRegiPageClient {...props} />;
 }

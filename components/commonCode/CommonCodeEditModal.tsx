@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import Modal from '@/components/common/Modal';
+import AdminFormTable from '@/components/common/AdminFormTable';
 import type { EditFormState, EditMode } from '@/components/commonCode/types';
 
 interface CommonCodeEditModalProps {
@@ -60,70 +61,80 @@ const CommonCodeEditModal = ({
         </button>
       )}
     >
-      <div className="row g-2">
-        <div className="col-md-6">
-          <label className="form-label mb-1">GRP_CD</label>
-          <input
-            type="text"
-            className="form-control"
-            value={editForm.grpCd}
-            disabled
-            maxLength={20}
-            onChange={(event) => onChangeField('grpCd', event.target.value)}
-          />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label mb-1">CD</label>
-          <input
-            type="text"
-            className="form-control"
-            value={editForm.cd}
-            maxLength={20}
-            disabled={isCdDisabled}
-            onChange={(event) => onChangeField('cd', event.target.value)}
-          />
-        </div>
-        <div className="col-md-12">
-          <label className="form-label mb-1">코드명</label>
-          <input
-            type="text"
-            className="form-control"
-            value={editForm.cdNm}
-            maxLength={50}
-            onChange={(event) => onChangeField('cdNm', event.target.value)}
-          />
-        </div>
-        <div className="col-md-12">
-          <label className="form-label mb-1">코드 설명</label>
-          <input
-            type="text"
-            className="form-control"
-            value={editForm.cdDesc}
-            maxLength={60}
-            onChange={(event) => onChangeField('cdDesc', event.target.value)}
-          />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label mb-1">정렬순서</label>
-          <input
-            type="number"
-            className="form-control"
-            value={editForm.dispOrd}
-            onChange={(event) => onChangeField('dispOrd', event.target.value)}
-          />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label mb-1">사용여부</label>
-          <select
-            className="form-select"
-            value={editForm.useYn}
-            onChange={(event) => onChangeField('useYn', event.target.value)}
-          >
-            <option value="Y">Y</option>
-            <option value="N">N</option>
-          </select>
-        </div>
-      </div>
+      <AdminFormTable>
+        <tbody>
+          <tr>
+            <th scope="row">GRP_CD</th>
+            <td>
+              <input
+                type="text"
+                className="form-control"
+                value={editForm.grpCd}
+                disabled
+                maxLength={20}
+                onChange={(event) => onChangeField('grpCd', event.target.value)}
+              />
+            </td>
+            <th scope="row">CD</th>
+            <td>
+              <input
+                type="text"
+                className="form-control"
+                value={editForm.cd}
+                maxLength={20}
+                disabled={isCdDisabled}
+                onChange={(event) => onChangeField('cd', event.target.value)}
+              />
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">코드명</th>
+            <td colSpan={3}>
+              <input
+                type="text"
+                className="form-control"
+                value={editForm.cdNm}
+                maxLength={50}
+                onChange={(event) => onChangeField('cdNm', event.target.value)}
+              />
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">코드 설명</th>
+            <td colSpan={3}>
+              <input
+                type="text"
+                className="form-control"
+                value={editForm.cdDesc}
+                maxLength={60}
+                onChange={(event) => onChangeField('cdDesc', event.target.value)}
+              />
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">정렬순서</th>
+            <td>
+              <input
+                type="number"
+                className="form-control"
+                value={editForm.dispOrd}
+                onChange={(event) => onChangeField('dispOrd', event.target.value)}
+              />
+            </td>
+            <th scope="row">사용여부</th>
+            <td>
+              <select
+                className="form-select"
+                value={editForm.useYn}
+                onChange={(event) => onChangeField('useYn', event.target.value)}
+              >
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </AdminFormTable>
     </Modal>
   );
 };

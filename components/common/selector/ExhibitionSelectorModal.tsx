@@ -3,6 +3,7 @@ import type { ColDef, SelectionChangedEvent } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import api from '@/utils/axios/axios';
 import Modal from '@/components/common/Modal';
+import AdminSearchPanel from '@/components/common/AdminSearchPanel';
 import type { ExhibitionItem, ExhibitionListResponse } from '@/components/exhibition/types';
 import { notifyError } from '@/utils/ui/feedback';
 
@@ -78,6 +79,12 @@ const ExhibitionSelectorModal = ({ isOpen, onClose, onApply }: ExhibitionSelecto
     void fetchList();
   }, [fetchList]);
 
+  // 검색 조건을 기본값으로 초기화합니다.
+  const handleReset = useCallback(() => {
+    setSearchGb('NM');
+    setSearchValue('');
+  }, []);
+
   // 선택된 기획전 행을 갱신합니다.
   const handleSelectionChanged = useCallback((event: SelectionChangedEvent<ExhibitionItem>) => {
     setSelectedRows(event.api.getSelectedRows() || []);
@@ -124,36 +131,26 @@ const ExhibitionSelectorModal = ({ isOpen, onClose, onApply }: ExhibitionSelecto
         </button>
       )}
     >
-      <form className="forms-sample mb-3" onSubmit={handleSubmit}>
-        <div className="row">
-          <div className="col-md-2">
-            <div className="form-group">
-              <label>검색구분</label>
-              <select className="form-select" value={searchGb} onChange={(event) => setSearchGb(event.target.value as 'NO' | 'NM')}>
+      <AdminSearchPanel onSubmit={handleSubmit} onReset={handleReset} loading={loading} resetType="button">
+        <tr>
+          <th scope="row">검색조건</th>
+          <td colSpan={3}>
+            <div className="admin-search-inline">
+              <select className="form-select admin-search-gb-select" value={searchGb} onChange={(event) => setSearchGb(event.target.value as 'NO' | 'NM')}>
                 <option value="NO">기획전번호</option>
                 <option value="NM">기획전명</option>
               </select>
-            </div>
-          </div>
-          <div className="col-md-6">
-            <div className="form-group">
-              <label>검색어</label>
               <input
                 type="text"
-                className="form-control"
+                className="form-control admin-search-keyword"
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
                 placeholder="검색어를 입력하세요"
               />
             </div>
-          </div>
-          <div className="col-md-2 d-flex align-items-end">
-            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-              {loading ? '검색중...' : '검색'}
-            </button>
-          </div>
-        </div>
-      </form>
+          </td>
+        </tr>
+      </AdminSearchPanel>
 
       <div className="ag-theme-alpine-dark header-center" style={{ width: '100%', height: '480px' }}>
         <AgGridReact<ExhibitionItem>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import LazyQuillEditor from '@/components/common/editor/LazyQuillEditor';
+import AdminFormTable from '@/components/common/AdminFormTable';
 
 interface QuillEditorBinding {
   // Quill ref입니다.
@@ -115,194 +116,196 @@ const ExhibitionMasterPanel = ({
 
   return (
     <>
-      <div className="row">
-        <div className="col-md-5">
-          <div className="form-group">
-            <label>기획전명</label>
-            <input
-              type="text"
-              className="form-control"
-              value={exhibitionNm}
-              onChange={(event) => onChangeExhibitionNm(event.target.value)}
-              maxLength={50}
-            />
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>노출시작일시</label>
-            <div className="d-flex gap-2">
+      <AdminFormTable>
+        <tbody>
+          <tr>
+            <th scope="row">기획전명</th>
+            <td>
               <input
-                type="date"
+                type="text"
                 className="form-control"
-                value={dispStartDate}
-                onChange={(event) => onChangeDispStartDate(event.target.value)}
+                value={exhibitionNm}
+                onChange={(event) => onChangeExhibitionNm(event.target.value)}
+                maxLength={50}
               />
-              <select className="form-select w-auto" value={dispStartHour} onChange={(event) => onChangeDispStartHour(event.target.value)}>
-                {hourOptions.map((hour) => (
-                  <option key={hour} value={hour}>
-                    {hour}시
-                  </option>
-                ))}
+            </td>
+            <th scope="row">리스트노출여부</th>
+            <td>
+              <select className="form-select" value={listShowYn} onChange={(event) => onChangeListShowYn(event.target.value)}>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
               </select>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>노출종료일시</label>
-            <div className="d-flex gap-2">
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">노출시작일시</th>
+            <td>
+              <div className="admin-form-inline">
+                <input
+                  type="date"
+                  className="form-control"
+                  value={dispStartDate}
+                  onChange={(event) => onChangeDispStartDate(event.target.value)}
+                />
+                <select className="form-select" value={dispStartHour} onChange={(event) => onChangeDispStartHour(event.target.value)}>
+                  {hourOptions.map((hour) => (
+                    <option key={hour} value={hour}>
+                      {hour}시
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </td>
+            <th scope="row">노출종료일시</th>
+            <td>
+              <div className="admin-form-inline">
+                <input
+                  type="date"
+                  className="form-control"
+                  value={dispEndDate}
+                  onChange={(event) => onChangeDispEndDate(event.target.value)}
+                />
+                <select className="form-select" value={dispEndHour} onChange={(event) => onChangeDispEndHour(event.target.value)}>
+                  {hourOptions.map((hour) => (
+                    <option key={hour} value={hour}>
+                      {hour}시
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">노출여부</th>
+            <td>
+              <select className="form-select" value={showYn} onChange={(event) => onChangeShowYn(event.target.value)}>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
+            </td>
+            <th scope="row">기획전 썸네일<br/>(750x1024)</th>
+            <td>
               <input
-                type="date"
+                type="file"
                 className="form-control"
-                value={dispEndDate}
-                onChange={(event) => onChangeDispEndDate(event.target.value)}
+                accept="image/*"
+                onChange={onThumbnailUpload}
+                disabled={loading || thumbnailUploading || !isEditMode}
               />
-              <select className="form-select w-auto" value={dispEndHour} onChange={(event) => onChangeDispEndHour(event.target.value)}>
-                {hourOptions.map((hour) => (
-                  <option key={hour} value={hour}>
-                    {hour}시
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="row">
-        <div className="col-md-2">
-          <div className="form-group">
-            <label>리스트노출여부</label>
-            <select className="form-select" value={listShowYn} onChange={(event) => onChangeListShowYn(event.target.value)}>
-              <option value="Y">Y</option>
-              <option value="N">N</option>
-            </select>
-          </div>
-        </div>
-        <div className="col-md-2">
-          <div className="form-group">
-            <label>노출여부</label>
-            <select className="form-select" value={showYn} onChange={(event) => onChangeShowYn(event.target.value)}>
-              <option value="Y">Y</option>
-              <option value="N">N</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div className="row">
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>기획전 썸네일(750x1024)</label>
-            <input
-              type="file"
-              className="form-control"
-              accept="image/*"
-              onChange={onThumbnailUpload}
-              disabled={loading || thumbnailUploading || !isEditMode}
-            />
-            <small className="text-muted d-block mt-1">
-              {isEditMode ? '썸네일 업로드를 통해 노출 이미지를 등록해주세요.' : '기획전 등록 후 썸네일 업로드가 가능합니다.'}
-            </small>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>썸네일 미리보기</label>
-            {thumbnailUrl ? (
-              <Image
-                src={thumbnailUrl}
-                alt="기획전 썸네일"
-                width={300}
-                height={140}
-                unoptimized
-                className="border rounded"
-                style={{ width: '100%', height: 'auto', maxHeight: '140px', objectFit: 'contain', cursor: 'pointer' }}
-                onClick={onOpenThumbnailPreview}
-              />
-            ) : (
-              <div className="text-muted">등록된 썸네일이 없습니다.</div>
-            )}
-          </div>
-        </div>
-      </div>
+              <small className="admin-form-hint">
+                {isEditMode ? '썸네일 업로드를 통해 노출 이미지를 등록해주세요.' : '기획전 등록 후 썸네일 업로드가 가능합니다.'}
+              </small>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">썸네일 미리보기</th>
+            <td colSpan={3}>
+              {thumbnailUrl ? (
+                <Image
+                  src={thumbnailUrl}
+                  alt="기획전 썸네일"
+                  width={300}
+                  height={140}
+                  unoptimized
+                  className="border rounded"
+                  style={{ width: '100%', height: 'auto', maxHeight: '140px', objectFit: 'contain', cursor: 'pointer' }}
+                  onClick={onOpenThumbnailPreview}
+                />
+              ) : (
+                <div className="text-muted">등록된 썸네일이 없습니다.</div>
+              )}
+            </td>
+          </tr>
+        </tbody>
+      </AdminFormTable>
 
       <div className="mt-3">
-        <label className="d-block mb-2">PC 상세</label>
-        <div className="d-flex justify-content-end gap-2 mb-2">
-          <button
-            type="button"
-            className={`btn btn-sm ${viewMode.pc === 'editor' ? 'btn-primary' : 'btn-outline-primary'}`}
-            onClick={() => setViewMode((prev) => ({ ...prev, pc: 'editor' }))}
-          >
-            에디터
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${viewMode.pc === 'html' ? 'btn-primary' : 'btn-outline-primary'}`}
-            onClick={() => setViewMode((prev) => ({ ...prev, pc: 'html' }))}
-          >
-            HTML
-          </button>
-        </div>
-        <div className="exhibition-desc-editor">
-          {viewMode.pc === 'editor' ? (
-            <LazyQuillEditor
-              id="exhibition-pc-desc"
-              ref={pcDescEditor.quillRef}
-              theme="snow"
-              className="board-editor"
-              value={exhibitionPcDesc}
-              onChange={pcDescEditor.handleEditorChange}
-              modules={pcDescEditor.quillModules}
-              formats={pcDescEditor.quillFormats}
-            />
-          ) : (
-            <textarea
-              className="form-control exhibition-desc-html"
-              value={exhibitionPcDesc}
-              onChange={(event) => pcDescEditor.handleEditorChange(event.target.value)}
-            />
-          )}
-        </div>
-      </div>
-      <div className="mt-4">
-        <label className="d-block mb-2">MO 상세</label>
-        <div className="d-flex justify-content-end gap-2 mb-2">
-          <button
-            type="button"
-            className={`btn btn-sm ${viewMode.mo === 'editor' ? 'btn-primary' : 'btn-outline-primary'}`}
-            onClick={() => setViewMode((prev) => ({ ...prev, mo: 'editor' }))}
-          >
-            에디터
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${viewMode.mo === 'html' ? 'btn-primary' : 'btn-outline-primary'}`}
-            onClick={() => setViewMode((prev) => ({ ...prev, mo: 'html' }))}
-          >
-            HTML
-          </button>
-        </div>
-        <div className="exhibition-desc-editor">
-          {viewMode.mo === 'editor' ? (
-            <LazyQuillEditor
-              id="exhibition-mo-desc"
-              ref={moDescEditor.quillRef}
-              theme="snow"
-              className="board-editor"
-              value={exhibitionMoDesc}
-              onChange={moDescEditor.handleEditorChange}
-              modules={moDescEditor.quillModules}
-              formats={moDescEditor.quillFormats}
-            />
-          ) : (
-            <textarea
-              className="form-control exhibition-desc-html"
-              value={exhibitionMoDesc}
-              onChange={(event) => moDescEditor.handleEditorChange(event.target.value)}
-            />
-          )}
-        </div>
+        <AdminFormTable>
+          <tbody>
+            <tr>
+              <th scope="row">PC 상세</th>
+              <td>
+                <div className="d-flex justify-content-end gap-2 mb-2">
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${viewMode.pc === 'editor' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => setViewMode((prev) => ({ ...prev, pc: 'editor' }))}
+                  >
+                    에디터
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${viewMode.pc === 'html' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => setViewMode((prev) => ({ ...prev, pc: 'html' }))}
+                  >
+                    HTML
+                  </button>
+                </div>
+                <div className="exhibition-desc-editor">
+                  {viewMode.pc === 'editor' ? (
+                    <LazyQuillEditor
+                      id="exhibition-pc-desc"
+                      ref={pcDescEditor.quillRef}
+                      theme="snow"
+                      className="board-editor"
+                      value={exhibitionPcDesc}
+                      onChange={pcDescEditor.handleEditorChange}
+                      modules={pcDescEditor.quillModules}
+                      formats={pcDescEditor.quillFormats}
+                    />
+                  ) : (
+                    <textarea
+                      className="form-control exhibition-desc-html"
+                      value={exhibitionPcDesc}
+                      onChange={(event) => pcDescEditor.handleEditorChange(event.target.value)}
+                    />
+                  )}
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">MO 상세</th>
+              <td>
+                <div className="d-flex justify-content-end gap-2 mb-2">
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${viewMode.mo === 'editor' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => setViewMode((prev) => ({ ...prev, mo: 'editor' }))}
+                  >
+                    에디터
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${viewMode.mo === 'html' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => setViewMode((prev) => ({ ...prev, mo: 'html' }))}
+                  >
+                    HTML
+                  </button>
+                </div>
+                <div className="exhibition-desc-editor">
+                  {viewMode.mo === 'editor' ? (
+                    <LazyQuillEditor
+                      id="exhibition-mo-desc"
+                      ref={moDescEditor.quillRef}
+                      theme="snow"
+                      className="board-editor"
+                      value={exhibitionMoDesc}
+                      onChange={moDescEditor.handleEditorChange}
+                      modules={moDescEditor.quillModules}
+                      formats={moDescEditor.quillFormats}
+                    />
+                  ) : (
+                    <textarea
+                      className="form-control exhibition-desc-html"
+                      value={exhibitionMoDesc}
+                      onChange={(event) => moDescEditor.handleEditorChange(event.target.value)}
+                    />
+                  )}
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </AdminFormTable>
       </div>
       <div className="d-flex justify-content-end mt-4">
         <button

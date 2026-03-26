@@ -2,6 +2,185 @@ button {
   cursor: pointer;
 }
 
+.admin-search-table {
+  min-width: 960px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.admin-search-table th,
+.admin-search-table td {
+  padding: 0.85rem 1rem;
+  vertical-align: middle;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-search-table tbody tr:first-child th,
+.admin-search-table tbody tr:first-child td {
+  border-top: 0;
+}
+
+.admin-search-table tr > :first-child {
+  border-left: 0;
+}
+
+.admin-search-table th {
+  width: 112px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f6f7fb;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.admin-search-table td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.admin-search-table .form-select,
+.admin-search-table .form-control {
+  min-height: 42px;
+}
+
+.admin-search-control {
+  min-width: 140px;
+}
+
+.admin-search-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-search-inline .form-select,
+.admin-search-inline .form-control {
+  width: auto;
+  min-width: 0;
+}
+
+.admin-search-gb-select {
+  flex: 0 0 180px;
+  max-width: 180px;
+}
+
+.admin-search-keyword {
+  flex: 1 1 0;
+}
+
+.admin-search-date-select {
+  flex: 0 0 160px;
+  max-width: 160px;
+}
+
+.admin-search-date-input {
+  flex: 1 1 0;
+  min-width: 160px;
+}
+
+.admin-search-separator {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-search-table .btn {
+  white-space: nowrap;
+}
+
+.admin-search-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.admin-form-table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.admin-form-table th,
+.admin-form-table td {
+  padding: 0.9rem 1rem;
+  vertical-align: middle;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-form-table tbody tr:first-child th,
+.admin-form-table tbody tr:first-child td {
+  border-top: 0;
+}
+
+.admin-form-table tr > :first-child {
+  border-left: 0;
+}
+
+.admin-form-table th {
+  width: 140px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f6f7fb;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.admin-form-table td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.admin-form-table .form-select,
+.admin-form-table .form-control,
+.admin-form-table .form-check-input {
+  min-height: 42px;
+}
+
+.admin-form-table .form-check-input {
+  min-height: 1rem;
+}
+
+.admin-form-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-form-inline .form-select,
+.admin-form-inline .form-control {
+  width: auto;
+  min-width: 0;
+}
+
+.admin-form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.admin-form-hint {
+  display: block;
+  margin-top: 0.5rem;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.8125rem;
+}
+
 .header-center .ag-header-cell-label {
   justify-content: center;
 }
@@ -84,6 +263,30 @@ button {
 }
 
 @media screen and (max-width: 576px) {
+  .admin-search-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-search-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .admin-search-inline {
+    min-width: 320px;
+  }
+
+  .admin-form-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-form-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .admin-form-inline {
+    min-width: 320px;
+  }
+
   .ag-theme-alpine-dark .ag-paging-panel {
     flex-wrap: wrap;
     row-gap: 6px;

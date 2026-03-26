@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import api from '@/utils/axios/axios';
 import { requireLoginUsrNo } from '@/utils/auth';
+import AdminFormTable from '@/components/common/AdminFormTable';
 import type {
   CommonCode,
   GoodsDetail,
@@ -169,153 +170,129 @@ const GoodsEditBasicSection = ({
             </button>
         </div>
       <form id="goods-edit-form" onSubmit={handleEditSubmit} className="forms-sample">
-      <div className="row">
-        <div className="col-md-4">
-          <div className="form-group">
-            <label>상품코드</label>
-            <input name="goodsId" type="text" className="form-control" value={editForm.goodsId || ''} disabled />
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="form-group">
-            <label>ERP 품번코드</label>
-            <input name="erpStyleCd" type="text" className="form-control" value={editForm.erpStyleCd || ''} onChange={handleEditChange} disabled />
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="form-group">
-            <label>상품그룹코드 <span className="text-danger">*</span></label>
-            <input name="goodsGroupId" type="text" className="form-control" value={editForm.goodsGroupId || ''} onChange={handleEditChange} required />
-          </div>
-        </div>
-      </div>
-
-      <div className="row">
-        <div className="col-md-12">
-          <div className="form-group">
-            <label>상품명 <span className="text-danger">*</span></label>
-            <input name="goodsNm" type="text" className="form-control" value={editForm.goodsNm || ''} onChange={handleEditChange} required />
-          </div>
-        </div>
-      </div>
-
-      <div className="row">
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>상품분류 <span className="text-danger">*</span></label>
-            <select name="goodsMerchId" className="form-select" value={editForm.goodsMerchId || ''} onChange={handleEditChange} required>
-              <option value="">선택</option>
-              {goodsMerchList.map((item) => (
-                <option key={item.goodsMerchId} value={item.goodsMerchId}>{item.goodsMerchNm}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>상품구분 <span className="text-danger">*</span></label>
-            <select name="goodsDivCd" className="form-select" value={editForm.goodsDivCd || ''} onChange={handleEditChange} required>
-              <option value="">선택</option>
-              {goodsDivList.map((item) => (
-                <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>상품상태 <span className="text-danger">*</span></label>
-            <select name="goodsStatCd" className="form-select" value={editForm.goodsStatCd || ''} onChange={handleEditChange} required>
-              <option value="">선택</option>
-              {goodsStatList.map((item) => (
-                <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>노출여부 <span className="text-danger">*</span></label>
-            <select name="showYn" className="form-select" value={editForm.showYn || ''} onChange={handleEditChange} required>
-              <option value="">선택</option>
-              <option value="Y">Y</option>
-              <option value="N">N</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="row">
-        <div className="col-md-4">
-          <div className="form-group">
-            <label>공급가 <span className="text-danger">*</span></label>
-            <input
-              name="supplyAmt"
-              type="text"
-              className="form-control"
-              value={formatNumber(editForm.supplyAmt ?? '')}
-              onChange={handleEditNumberChange('supplyAmt')}
-              onBlur={handleEditNumberBlur('supplyAmt')}
-              required
-            />
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="form-group">
-            <label>판매가 <span className="text-danger">*</span></label>
-            <input
-              name="saleAmt"
-              type="text"
-              className="form-control"
-              value={formatNumber(editForm.saleAmt ?? '')}
-              onChange={handleEditNumberChange('saleAmt')}
-              onBlur={handleEditNumberBlur('saleAmt')}
-              required
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="row">
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>ERP 공급가</label>
-            <input
-              name="erpSupplyAmt"
-              type="text"
-              className="form-control"
-              value={formatNumber(editForm.erpSupplyAmt ?? '')}
-              onChange={handleEditNumberChange('erpSupplyAmt')}
-              disabled
-            />
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>ERP 원가</label>
-            <input
-              name="erpCostAmt"
-              type="text"
-              className="form-control"
-              value={formatNumber(editForm.erpCostAmt ?? '')}
-              onChange={handleEditNumberChange('erpCostAmt')}
-              disabled
-            />
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>ERP 컬러코드</label>
-            <input name="erpColorCd" type="text" className="form-control" value={editForm.erpColorCd || ''} onChange={handleEditChange} disabled />
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>ERP 상품구분코드</label>
-            <input name="erpMerchCd" type="text" className="form-control" value={editForm.erpMerchCd || ''} onChange={handleEditChange} disabled />
-          </div>
-        </div>
-      </div>
+      <AdminFormTable>
+        <tbody>
+          <tr>
+            <th scope="row">상품코드</th>
+            <td>
+              <input name="goodsId" type="text" className="form-control" value={editForm.goodsId || ''} disabled />
+            </td>
+            <th scope="row">ERP 품번코드</th>
+            <td>
+              <input name="erpStyleCd" type="text" className="form-control" value={editForm.erpStyleCd || ''} onChange={handleEditChange} disabled />
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">상품그룹코드 <span className="text-danger">*</span></th>
+            <td>
+              <input name="goodsGroupId" type="text" className="form-control" value={editForm.goodsGroupId || ''} onChange={handleEditChange} required />
+            </td>
+            <th scope="row">상품명 <span className="text-danger">*</span></th>
+            <td>
+              <input name="goodsNm" type="text" className="form-control" value={editForm.goodsNm || ''} onChange={handleEditChange} required />
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">상품분류 <span className="text-danger">*</span></th>
+            <td>
+              <select name="goodsMerchId" className="form-select" value={editForm.goodsMerchId || ''} onChange={handleEditChange} required>
+                <option value="">선택</option>
+                {goodsMerchList.map((item) => (
+                  <option key={item.goodsMerchId} value={item.goodsMerchId}>{item.goodsMerchNm}</option>
+                ))}
+              </select>
+            </td>
+            <th scope="row">상품구분 <span className="text-danger">*</span></th>
+            <td>
+              <select name="goodsDivCd" className="form-select" value={editForm.goodsDivCd || ''} onChange={handleEditChange} required>
+                <option value="">선택</option>
+                {goodsDivList.map((item) => (
+                  <option key={item.cd} value={item.cd}>{item.cdNm}</option>
+                ))}
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">상품상태 <span className="text-danger">*</span></th>
+            <td>
+              <select name="goodsStatCd" className="form-select" value={editForm.goodsStatCd || ''} onChange={handleEditChange} required>
+                <option value="">선택</option>
+                {goodsStatList.map((item) => (
+                  <option key={item.cd} value={item.cd}>{item.cdNm}</option>
+                ))}
+              </select>
+            </td>
+            <th scope="row">노출여부 <span className="text-danger">*</span></th>
+            <td>
+              <select name="showYn" className="form-select" value={editForm.showYn || ''} onChange={handleEditChange} required>
+                <option value="">선택</option>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">공급가 <span className="text-danger">*</span></th>
+            <td>
+              <input
+                name="supplyAmt"
+                type="text"
+                className="form-control"
+                value={formatNumber(editForm.supplyAmt ?? '')}
+                onChange={handleEditNumberChange('supplyAmt')}
+                onBlur={handleEditNumberBlur('supplyAmt')}
+                required
+              />
+            </td>
+            <th scope="row">판매가 <span className="text-danger">*</span></th>
+            <td>
+              <input
+                name="saleAmt"
+                type="text"
+                className="form-control"
+                value={formatNumber(editForm.saleAmt ?? '')}
+                onChange={handleEditNumberChange('saleAmt')}
+                onBlur={handleEditNumberBlur('saleAmt')}
+                required
+              />
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">ERP 공급가</th>
+            <td>
+              <input
+                name="erpSupplyAmt"
+                type="text"
+                className="form-control"
+                value={formatNumber(editForm.erpSupplyAmt ?? '')}
+                onChange={handleEditNumberChange('erpSupplyAmt')}
+                disabled
+              />
+            </td>
+            <th scope="row">ERP 원가</th>
+            <td>
+              <input
+                name="erpCostAmt"
+                type="text"
+                className="form-control"
+                value={formatNumber(editForm.erpCostAmt ?? '')}
+                onChange={handleEditNumberChange('erpCostAmt')}
+                disabled
+              />
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">ERP 컬러코드</th>
+            <td>
+              <input name="erpColorCd" type="text" className="form-control" value={editForm.erpColorCd || ''} onChange={handleEditChange} disabled />
+            </td>
+            <th scope="row">ERP 상품구분코드</th>
+            <td>
+              <input name="erpMerchCd" type="text" className="form-control" value={editForm.erpMerchCd || ''} onChange={handleEditChange} disabled />
+            </td>
+          </tr>
+        </tbody>
+      </AdminFormTable>
       </form>
     </>
   );

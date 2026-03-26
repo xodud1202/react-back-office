@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import GoodsListClientPage from '@/app/(protected)/goods/list/GoodsListClientPage';
+import GoodsListPageClient from '@/app/(protected)/goods/list/GoodsListPageClient';
 import type { CategoryOption } from '@/components/goods/types';
 import { fetchServerList } from '@/utils/server/auth';
 import { fetchGoodsLookupBundle } from '@/utils/server/backOffice';
@@ -12,7 +12,7 @@ export default async function GoodsListPage() {
   const lookupBundle = await fetchGoodsLookupBundle();
   const categoryLevel1Options = await fetchServerList<CategoryOption>('/api/admin/category/list?categoryLevel=1');
 
-  const props: ComponentProps<typeof GoodsListClientPage> = {
+  const props: ComponentProps<typeof GoodsListPageClient> = {
     goodsStatList: lookupBundle.goodsStatList,
     goodsDivList: lookupBundle.goodsDivList,
     goodsMerchList: lookupBundle.goodsMerchList,
@@ -20,5 +20,5 @@ export default async function GoodsListPage() {
     categoryLevel1Options,
   };
 
-  return <GoodsListClientPage {...props} />;
+  return <GoodsListPageClient {...props} />;
 }

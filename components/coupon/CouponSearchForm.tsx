@@ -1,6 +1,8 @@
 import React, { useCallback } from 'react';
+import AdminSearchPanel from '@/components/common/AdminSearchPanel';
 import type { CommonCode } from '@/components/goods/types';
 import type { CouponSearchParams } from '@/components/coupon/types';
+import { DEFAULT_COUPON_SEARCH_PARAMS } from '@/components/coupon/types';
 
 interface CouponSearchFormProps {
   // 쿠폰 상태 코드 목록입니다.
@@ -9,6 +11,8 @@ interface CouponSearchFormProps {
   cpnGbList: CommonCode[];
   // 쿠폰 타겟 코드 목록입니다.
   cpnTargetList: CommonCode[];
+  // 검색 중 여부입니다.
+  loading: boolean;
   // 검색 실행 함수입니다.
   onSearch: (params: CouponSearchParams) => void;
 }
@@ -18,6 +22,7 @@ const CouponSearchForm = ({
   cpnStatList,
   cpnGbList,
   cpnTargetList,
+  loading,
   onSearch,
 }: CouponSearchFormProps) => {
   // 검색 버튼 클릭 시 검색 조건을 상위로 전달합니다.
@@ -37,97 +42,79 @@ const CouponSearchForm = ({
     });
   }, [onSearch]);
 
+  // 검색 초기화 시 기본 조회 조건으로 되돌립니다.
+  const handleReset = useCallback(() => {
+    onSearch({ ...DEFAULT_COUPON_SEARCH_PARAMS });
+  }, [onSearch]);
+
   return (
-    <form className="forms-sample mb-3" onSubmit={handleSubmit}>
-      <div className="row">
-        <div className="col-md-2">
-          <div className="form-group">
-            <label>검색구분</label>
-            <select name="searchGb" className="form-select" defaultValue="CPN_NO">
+    <AdminSearchPanel loading={loading} onSubmit={handleSubmit} onReset={handleReset}>
+      <tr>
+        <th scope="row">검색조건</th>
+        <td colSpan={3}>
+          <div className="admin-search-inline">
+            <select name="searchGb" className="form-select admin-search-gb-select" defaultValue="CPN_NO">
               <option value="CPN_NO">쿠폰번호</option>
               <option value="CPN_NM">쿠폰명</option>
             </select>
+            <input
+              type="text"
+              name="searchValue"
+              className="form-control admin-search-keyword"
+              placeholder="검색어를 입력하세요"
+            />
           </div>
-        </div>
-        <div className="col-md-4">
-          <div className="form-group">
-            <label>검색어</label>
-            <input type="text" name="searchValue" className="form-control" placeholder="검색어를 입력하세요" />
-          </div>
-        </div>
-        <div className="col-md-2">
-          <div className="form-group">
-            <label>기간구분</label>
-            <select name="dateGb" className="form-select" defaultValue="REG_DT">
+        </td>
+        <th scope="row">기간</th>
+        <td>
+          <div className="admin-search-inline">
+            <select name="dateGb" className="form-select admin-search-date-select" defaultValue="REG_DT">
               <option value="REG_DT">등록기간</option>
               <option value="DOWN_DT">다운로드가능기간</option>
             </select>
+            <input type="date" name="searchStartDt" className="form-control admin-search-date-input" />
+            <span className="admin-search-separator">~</span>
+            <input type="date" name="searchEndDt" className="form-control admin-search-date-input" />
           </div>
-        </div>
-        <div className="col-md-2">
-          <div className="form-group">
-            <label>시작일</label>
-            <input type="date" name="searchStartDt" className="form-control" />
-          </div>
-        </div>
-        <div className="col-md-2">
-          <div className="form-group">
-            <label>종료일</label>
-            <input type="date" name="searchEndDt" className="form-control" />
-          </div>
-        </div>
-      </div>
-
-      <div className="row">
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>쿠폰 상태</label>
-            <select name="cpnStatCd" className="form-select" defaultValue="">
-              <option value="">전체</option>
-              {cpnStatList.map((item) => (
-                <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>쿠폰 종류</label>
-            <select name="cpnGbCd" className="form-select" defaultValue="">
-              <option value="">전체</option>
-              {cpnGbList.map((item) => (
-                <option key={item.cd} value={item.cd}>{item.cdNm}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>쿠폰 타겟</label>
-            <select name="cpnTargetCd" className="form-select" defaultValue="">
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">쿠폰 상태</th>
+        <td>
+          <select name="cpnStatCd" className="form-select admin-search-control" defaultValue="">
+            <option value="">전체</option>
+            {cpnStatList.map((item) => (
+              <option key={item.cd} value={item.cd}>{item.cdNm}</option>
+            ))}
+          </select>
+        </td>
+        <th scope="row">쿠폰 종류</th>
+        <td>
+          <select name="cpnGbCd" className="form-select admin-search-control" defaultValue="">
+            <option value="">전체</option>
+            {cpnGbList.map((item) => (
+              <option key={item.cd} value={item.cd}>{item.cdNm}</option>
+            ))}
+          </select>
+        </td>
+        <th scope="row">쿠폰 타겟</th>
+        <td>
+          <div className="admin-search-inline">
+            <select name="cpnTargetCd" className="form-select admin-search-control" defaultValue="">
               <option value="">전체</option>
               {cpnTargetList.map((item) => (
                 <option key={item.cd} value={item.cd}>{item.cdNm}</option>
               ))}
             </select>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="form-group">
-            <label>고객 다운로드 가능 여부</label>
-            <select name="cpnDownAbleYn" className="form-select" defaultValue="">
-              <option value="">전체</option>
-              <option value="Y">Y</option>
-              <option value="N">N</option>
+            <select name="cpnDownAbleYn" className="form-select admin-search-control" defaultValue="">
+              <option value="">다운로드 전체</option>
+              <option value="Y">다운로드 Y</option>
+              <option value="N">다운로드 N</option>
             </select>
           </div>
-        </div>
-      </div>
-
-      <div className="d-flex justify-content-center gap-2">
-        <button type="submit" className="btn btn-primary">검색</button>
-      </div>
-    </form>
+        </td>
+      </tr>
+    </AdminSearchPanel>
   );
 };
 

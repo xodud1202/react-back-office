@@ -148,6 +148,15 @@ export interface BannerSearchParams {
   searchEndDt: string;
 }
 
+// 배너 조회 기본값을 정의합니다.
+export const DEFAULT_BANNER_SEARCH_PARAMS: BannerSearchParams = {
+  bannerDivCd: '',
+  showYn: 'Y',
+  searchValue: '',
+  searchStartDt: '',
+  searchEndDt: '',
+};
+
 // 배너 저장 요청 본문을 정의합니다.
 export interface BannerSavePayload {
   // 배너 번호입니다.

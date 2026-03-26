@@ -253,6 +253,11 @@ const useBoardListPage = () => {
     setSearchParams(nextParams);
   }, []);
 
+  // 검색 조건을 초기화하고 전체 목록을 재조회합니다.
+  const handleSearchReset = useCallback(() => {
+    setSearchParams({});
+  }, []);
+
   // 게시글 등록/수정 저장을 처리합니다.
   const handleSubmitEdit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -350,6 +355,7 @@ const useBoardListPage = () => {
     quillFormats,
     handleEditorChange,
     handleSearch,
+    handleSearchReset,
     handleGridReady,
     handleOpenDetail,
     handleCloseDetail,

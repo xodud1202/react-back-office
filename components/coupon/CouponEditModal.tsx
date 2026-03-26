@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import api from '@/utils/axios/axios';
 import { requireLoginUsrNo } from '@/utils/auth';
 import Modal from '@/components/common/Modal';
+import AdminFormTable from '@/components/common/AdminFormTable';
 import GoodsSelectorModal from '@/components/common/selector/GoodsSelectorModal';
 import CouponTargetGrid from '@/components/coupon/CouponTargetGrid';
 import ExhibitionSelectorModal from '@/components/common/selector/ExhibitionSelectorModal';
@@ -110,6 +111,8 @@ interface DateHourInputProps {
   onChangeHour: (value: string) => void;
   // 입력창 최소 너비 클래스입니다.
   compact?: boolean;
+  // 라벨 숨김 여부입니다.
+  hideLabel?: boolean;
 }
 
 // 날짜/시 입력 컴포넌트를 렌더링합니다.
@@ -121,12 +124,13 @@ const DateHourInput = ({
   onChangeDate,
   onChangeHour,
   compact = false,
+  hideLabel = false,
 }: DateHourInputProps) => (
-  <div className="form-group mb-2">
-    <label className={compact ? 'mb-1' : undefined}>{label}</label>
-    <div className="d-flex gap-2">
+  <div className={hideLabel ? '' : 'form-group mb-2'}>
+    {!hideLabel ? <label className={compact ? 'mb-1' : undefined}>{label}</label> : null}
+    <div className="admin-form-inline">
       <input type="date" className={`form-control ${compact ? 'form-control-sm' : ''}`} value={dateValue} onChange={(event) => onChangeDate(event.target.value)} />
-      <select className={`form-select ${compact ? 'form-select-sm w-auto' : 'w-auto'}`} value={hourValue} onChange={(event) => onChangeHour(event.target.value)}>
+      <select className={`form-select ${compact ? 'form-select-sm' : ''}`} value={hourValue} onChange={(event) => onChangeHour(event.target.value)}>
         {hourOptions.map((item) => (
           <option key={`${label}-${item}`} value={item}>{item}시</option>
         ))}
@@ -601,132 +605,159 @@ const CouponEditModal = ({
       </ul>
 
       <div style={{ display: activeTab === 'INFO' ? 'block' : 'none' }}>
-        <div className="row">
-          <div className="col-md-4"><div className="form-group"><label>쿠폰명</label><input type="text" className="form-control" value={form.cpnNm} onChange={(event) => setForm((prev) => ({ ...prev, cpnNm: event.target.value }))} maxLength={100} /></div></div>
-          <div className="col-md-2"><div className="form-group"><label>쿠폰 상태</label><select className="form-select" value={form.cpnStatCd} onChange={(event) => setForm((prev) => ({ ...prev, cpnStatCd: event.target.value }))}>{cpnStatList.map((item) => <option key={item.cd} value={item.cd}>{item.cdNm}</option>)}</select></div></div>
-          <div className="col-md-2"><div className="form-group"><label>쿠폰 종류</label><select className="form-select" value={form.cpnGbCd} onChange={(event) => setForm((prev) => ({ ...prev, cpnGbCd: event.target.value }))}>{cpnGbList.map((item) => <option key={item.cd} value={item.cd}>{item.cdNm}</option>)}</select></div></div>
-          <div className="col-md-2"><div className="form-group"><label>쿠폰 타겟</label><select className="form-select" value={form.cpnTargetCd} onChange={(event) => handleChangeTargetCd(event.target.value)}>{cpnTargetList.map((item) => <option key={item.cd} value={item.cd}>{item.cdNm}</option>)}</select></div></div>
-          <div className="col-md-2"><div className="form-group"><label>고객 다운로드 가능</label><select className="form-select" value={form.cpnDownAbleYn} onChange={(event) => setForm((prev) => ({ ...prev, cpnDownAbleYn: event.target.value }))}><option value="Y">Y</option><option value="N">N</option></select></div></div>
-        </div>
-        <div className="row">
-          <div className="col-md-2">
-            <DateHourInput
-              label="다운로드 시작일시"
-              dateValue={form.cpnDownStartDate}
-              hourValue={form.cpnDownStartHour}
-              hourOptions={hourOptions}
-              onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnDownStartDate: value }))}
-              onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnDownStartHour: value }))}
-              compact
-            />
-          </div>
-          <div className="col-md-2">
-            <DateHourInput
-              label="다운로드 종료일시"
-              dateValue={form.cpnDownEndDate}
-              hourValue={form.cpnDownEndHour}
-              hourOptions={hourOptions}
-              onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnDownEndDate: value }))}
-              onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnDownEndHour: value }))}
-              compact
-            />
-          </div>
-          <div className="col-md-2">
-            <div className="form-group mb-2">
-              <label className="mb-1">사용 가능 기간</label>
-              <div className="d-flex flex-column gap-1">
-                {resolvedCpnUseDtOptionList.map((item) => (
-                  <label key={item.cd} className="form-check form-check-inline m-0">
-                    <input
-                      className="form-check-input"
-                      type="radio"
-                      value={item.cd}
-                      checked={form.cpnUseDtGb === item.cd}
-                      onChange={(event) => setForm((prev) => ({ ...prev, cpnUseDtGb: event.target.value }))}
-                    />
-                    <span className="ms-1">{item.cdNm}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-          {form.cpnUseDtGb === COUPON_USE_DT_GB_CODE.PERIOD ? (
-            <div className="col-md-2">
-              <div className="form-group mb-2">
-                <label className="mb-1">다운로드 후 사용일수</label>
+        <AdminFormTable>
+          <tbody>
+            <tr>
+              <th scope="row">쿠폰명</th>
+              <td>
+                <input type="text" className="form-control" value={form.cpnNm} onChange={(event) => setForm((prev) => ({ ...prev, cpnNm: event.target.value }))} maxLength={100} />
+              </td>
+              <th scope="row">쿠폰 상태</th>
+              <td>
+                <select className="form-select" value={form.cpnStatCd} onChange={(event) => setForm((prev) => ({ ...prev, cpnStatCd: event.target.value }))}>{cpnStatList.map((item) => <option key={item.cd} value={item.cd}>{item.cdNm}</option>)}</select>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">쿠폰 종류</th>
+              <td>
+                <select className="form-select" value={form.cpnGbCd} onChange={(event) => setForm((prev) => ({ ...prev, cpnGbCd: event.target.value }))}>{cpnGbList.map((item) => <option key={item.cd} value={item.cd}>{item.cdNm}</option>)}</select>
+              </td>
+              <th scope="row">쿠폰 타겟</th>
+              <td>
+                <select className="form-select" value={form.cpnTargetCd} onChange={(event) => handleChangeTargetCd(event.target.value)}>{cpnTargetList.map((item) => <option key={item.cd} value={item.cd}>{item.cdNm}</option>)}</select>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">고객 다운로드 가능</th>
+              <td>
+                <select className="form-select" value={form.cpnDownAbleYn} onChange={(event) => setForm((prev) => ({ ...prev, cpnDownAbleYn: event.target.value }))}><option value="Y">Y</option><option value="N">N</option></select>
+              </td>
+              <th scope="row">다운로드 시작일시</th>
+              <td>
+                <DateHourInput
+                  label="다운로드 시작일시"
+                  dateValue={form.cpnDownStartDate}
+                  hourValue={form.cpnDownStartHour}
+                  hourOptions={hourOptions}
+                  onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnDownStartDate: value }))}
+                  onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnDownStartHour: value }))}
+                  compact
+                  hideLabel
+                />
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">다운로드 종료일시</th>
+              <td>
+                <DateHourInput
+                  label="다운로드 종료일시"
+                  dateValue={form.cpnDownEndDate}
+                  hourValue={form.cpnDownEndHour}
+                  hourOptions={hourOptions}
+                  onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnDownEndDate: value }))}
+                  onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnDownEndHour: value }))}
+                  compact
+                  hideLabel
+                />
+              </td>
+              <th scope="row">사용 가능 기간</th>
+              <td>
+                <div className="d-flex flex-column gap-1">
+                  {resolvedCpnUseDtOptionList.map((item) => (
+                    <label key={item.cd} className="form-check form-check-inline m-0">
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        value={item.cd}
+                        checked={form.cpnUseDtGb === item.cd}
+                        onChange={(event) => setForm((prev) => ({ ...prev, cpnUseDtGb: event.target.value }))}
+                      />
+                      <span className="ms-1">{item.cdNm}</span>
+                    </label>
+                  ))}
+                </div>
+              </td>
+            </tr>
+            {form.cpnUseDtGb === COUPON_USE_DT_GB_CODE.PERIOD ? (
+              <tr>
+                <th scope="row">다운로드 후 사용일수</th>
+                <td>
+                  <input
+                    type="number"
+                    className="form-control form-control-sm"
+                    value={form.cpnUsableDt}
+                    onChange={(event) => setForm((prev) => ({ ...prev, cpnUsableDt: event.target.value }))}
+                    min={1}
+                  />
+                </td>
+                <th scope="row">사용 기간 안내</th>
+                <td>다운로드 후 지정 일수만큼 사용 가능합니다.</td>
+              </tr>
+            ) : (
+              <tr>
+                <th scope="row">사용 시작일시</th>
+                <td>
+                  <DateHourInput
+                    label="사용 시작일시"
+                    dateValue={form.cpnUseStartDate}
+                    hourValue={form.cpnUseStartHour}
+                    hourOptions={hourOptions}
+                    onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnUseStartDate: value }))}
+                    onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnUseStartHour: value }))}
+                    compact
+                    hideLabel
+                  />
+                </td>
+                <th scope="row">사용 종료일시</th>
+                <td>
+                  <DateHourInput
+                    label="사용 종료일시"
+                    dateValue={form.cpnUseEndDate}
+                    hourValue={form.cpnUseEndHour}
+                    hourOptions={hourOptions}
+                    onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnUseEndDate: value }))}
+                    onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnUseEndHour: value }))}
+                    compact
+                    hideLabel
+                  />
+                </td>
+              </tr>
+            )}
+            <tr>
+              <th scope="row">쿠폰 할인 구분</th>
+              <td>
+                <div className="d-flex flex-column gap-1">
+                  {resolvedCpnDcGbOptionList.map((item) => (
+                    <label key={item.cd} className="form-check form-check-inline m-0">
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        value={item.cd}
+                        checked={form.cpnDcGbCd === item.cd}
+                        onChange={(event) => setForm((prev) => ({ ...prev, cpnDcGbCd: event.target.value }))}
+                      />
+                      <span className="ms-1">{item.cdNm}</span>
+                    </label>
+                  ))}
+                </div>
+              </td>
+              <th scope="row">할인값</th>
+              <td>
                 <input
                   type="number"
                   className="form-control form-control-sm"
-                  value={form.cpnUsableDt}
-                  onChange={(event) => setForm((prev) => ({ ...prev, cpnUsableDt: event.target.value }))}
-                  min={1}
+                  value={form.cpnDcVal}
+                  min={0}
+                  max={form.cpnDcGbCd === COUPON_DC_GB_CODE.RATE ? 99 : undefined}
+                  onChange={(event) => setForm((prev) => ({ ...prev, cpnDcVal: event.target.value }))}
                 />
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="col-md-2">
-                <DateHourInput
-                  label="사용 시작일시"
-                  dateValue={form.cpnUseStartDate}
-                  hourValue={form.cpnUseStartHour}
-                  hourOptions={hourOptions}
-                  onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnUseStartDate: value }))}
-                  onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnUseStartHour: value }))}
-                  compact
-                />
-              </div>
-              <div className="col-md-2">
-                <DateHourInput
-                  label="사용 종료일시"
-                  dateValue={form.cpnUseEndDate}
-                  hourValue={form.cpnUseEndHour}
-                  hourOptions={hourOptions}
-                  onChangeDate={(value) => setForm((prev) => ({ ...prev, cpnUseEndDate: value }))}
-                  onChangeHour={(value) => setForm((prev) => ({ ...prev, cpnUseEndHour: value }))}
-                  compact
-                />
-              </div>
-            </>
-          )}
-        </div>
-        <div className="row">
-          <div className="col-md-2">
-            <div className="form-group mb-2">
-              <label className="mb-1">쿠폰 할인 구분</label>
-              <div className="d-flex flex-column gap-1">
-                {resolvedCpnDcGbOptionList.map((item) => (
-                  <label key={item.cd} className="form-check form-check-inline m-0">
-                    <input
-                      className="form-check-input"
-                      type="radio"
-                      value={item.cd}
-                      checked={form.cpnDcGbCd === item.cd}
-                      onChange={(event) => setForm((prev) => ({ ...prev, cpnDcGbCd: event.target.value }))}
-                    />
-                    <span className="ms-1">{item.cdNm}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="col-md-2">
-            <div className="form-group mb-2">
-              <label className="mb-1">할인값</label>
-              <input
-                type="number"
-                className="form-control form-control-sm"
-                value={form.cpnDcVal}
-                min={0}
-                max={form.cpnDcGbCd === COUPON_DC_GB_CODE.RATE ? 99 : undefined}
-                onChange={(event) => setForm((prev) => ({ ...prev, cpnDcVal: event.target.value }))}
-              />
-              <small className="text-muted">
-                {form.cpnDcGbCd === COUPON_DC_GB_CODE.RATE ? '할인율은 0~99만 입력할 수 있습니다.' : '0 이상의 값을 입력해주세요.'}
-              </small>
-            </div>
-          </div>
-        </div>
+                <small className="admin-form-hint">
+                  {form.cpnDcGbCd === COUPON_DC_GB_CODE.RATE ? '할인율은 0~99만 입력할 수 있습니다.' : '0 이상의 값을 입력해주세요.'}
+                </small>
+              </td>
+            </tr>
+          </tbody>
+        </AdminFormTable>
       </div>
 
       <div style={{ display: activeTab === 'TARGET' ? 'block' : 'none' }}>

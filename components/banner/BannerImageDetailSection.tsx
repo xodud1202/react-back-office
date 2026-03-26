@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import api from '@/utils/axios/axios';
 import { requireLoginUsrNo } from '@/utils/auth';
+import AdminFormTable from '@/components/common/AdminFormTable';
 import BannerImageGrid from '@/components/banner/BannerImageGrid';
 import type { BannerImageInfo } from '@/components/banner/types';
 
@@ -279,59 +280,99 @@ const BannerImageDetailSection = ({
         {!selectedImageRow ? (
           <div className="alert alert-secondary mb-0">이미지 그리드에서 배너 이미지명을 선택해주세요.</div>
         ) : (
-          <div className="row">
-            <div className="col-md-3"><div className="form-group"><label>배너 이미지명(ALT)</label><input className="form-control" value={selectedImageRow.bannerNm || ''} onChange={(e) => handleChangeImageField('bannerNm', e.target.value)} maxLength={100} /></div></div>
-            <div className="col-md-3"><div className="form-group"><label>배너 이미지</label><input type="file" className="form-control" accept="image/*" onChange={handleChangeImageFile} /><small className="text-muted d-block mt-1">{bannerDivCd === 'BANNER_DIV_01' ? '권장 규격: 1280x1280' : '권장 규격: 1280x200'}</small></div></div>
-            <div className="col-md-3"><div className="form-group"><label>링크 URL</label><input className="form-control" value={selectedImageRow.url || ''} onChange={(e) => handleChangeImageField('url', e.target.value)} /></div></div>
-            <div className="col-md-2"><div className="form-group"><label>오픈방식</label><select className="form-select" value={selectedImageRow.bannerOpenCd || 'S'} onChange={(e) => handleChangeImageField('bannerOpenCd', e.target.value)}><option value="S">동일창</option><option value="N">새창</option></select></div></div>
-            <div className="col-md-1 d-flex align-items-end">{selectedImagePreview && (<Image src={selectedImagePreview} alt="미리보기" width={90} height={90} unoptimized style={{ width: '100%', maxHeight: '90px', objectFit: 'contain' }} />)}</div>
-            <div className="col-md-3">
-              <div className="form-group">
-                <label>이미지 노출시작일시</label>
-                <div className="d-flex gap-2">
-                  <input
-                    className="form-control"
-                    type="date"
-                    value={imageDispStartDate}
-                    onChange={(e) => handleChangeImageDateTime('dispStartDt', e.target.value, imageDispStartHour, false)}
-                  />
-                  <select
-                    className="form-select w-auto"
-                    value={imageDispStartHour}
-                    onChange={(e) => handleChangeImageDateTime('dispStartDt', imageDispStartDate, e.target.value, false)}
-                  >
-                    {hourOptions.map((item) => (
-                      <option key={`img-disp-start-${item}`} value={item}>{item}시</option>
-                    ))}
+          <AdminFormTable>
+            <tbody>
+              <tr>
+                <th scope="row">배너 이미지명(ALT)</th>
+                <td>
+                  <input className="form-control" value={selectedImageRow.bannerNm || ''} onChange={(e) => handleChangeImageField('bannerNm', e.target.value)} maxLength={100} />
+                </td>
+                <th scope="row">링크 URL</th>
+                <td>
+                  <input className="form-control" value={selectedImageRow.url || ''} onChange={(e) => handleChangeImageField('url', e.target.value)} />
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">배너 이미지</th>
+                <td>
+                  <input type="file" className="form-control" accept="image/*" onChange={handleChangeImageFile} />
+                  <small className="admin-form-hint">{bannerDivCd === 'BANNER_DIV_01' ? '권장 규격: 1280x1280' : '권장 규격: 1280x200'}</small>
+                </td>
+                <th scope="row">오픈방식</th>
+                <td>
+                  <select className="form-select" value={selectedImageRow.bannerOpenCd || 'S'} onChange={(e) => handleChangeImageField('bannerOpenCd', e.target.value)}>
+                    <option value="S">동일창</option>
+                    <option value="N">새창</option>
                   </select>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="form-group">
-                <label>이미지 노출종료일시</label>
-                <div className="d-flex gap-2">
-                  <input
-                    className="form-control"
-                    type="date"
-                    value={imageDispEndDate}
-                    onChange={(e) => handleChangeImageDateTime('dispEndDt', e.target.value, imageDispEndHour, true)}
-                  />
-                  <select
-                    className="form-select w-auto"
-                    value={imageDispEndHour}
-                    onChange={(e) => handleChangeImageDateTime('dispEndDt', imageDispEndDate, e.target.value, true)}
-                  >
-                    {hourOptions.map((item) => (
-                      <option key={`img-disp-end-${item}`} value={item}>{item}시</option>
-                    ))}
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">이미지 노출시작일시</th>
+                <td>
+                  <div className="admin-form-inline">
+                    <input
+                      className="form-control"
+                      type="date"
+                      value={imageDispStartDate}
+                      onChange={(e) => handleChangeImageDateTime('dispStartDt', e.target.value, imageDispStartHour, false)}
+                    />
+                    <select
+                      className="form-select"
+                      value={imageDispStartHour}
+                      onChange={(e) => handleChangeImageDateTime('dispStartDt', imageDispStartDate, e.target.value, false)}
+                    >
+                      {hourOptions.map((item) => (
+                        <option key={`img-disp-start-${item}`} value={item}>{item}시</option>
+                      ))}
+                    </select>
+                  </div>
+                </td>
+                <th scope="row">이미지 노출종료일시</th>
+                <td>
+                  <div className="admin-form-inline">
+                    <input
+                      className="form-control"
+                      type="date"
+                      value={imageDispEndDate}
+                      onChange={(e) => handleChangeImageDateTime('dispEndDt', e.target.value, imageDispEndHour, true)}
+                    />
+                    <select
+                      className="form-select"
+                      value={imageDispEndHour}
+                      onChange={(e) => handleChangeImageDateTime('dispEndDt', imageDispEndDate, e.target.value, true)}
+                    >
+                      {hourOptions.map((item) => (
+                        <option key={`img-disp-end-${item}`} value={item}>{item}시</option>
+                      ))}
+                    </select>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">이미지 노출여부</th>
+                <td>
+                  <select className="form-select" value={selectedImageRow.showYn || 'Y'} onChange={(e) => handleChangeImageField('showYn', e.target.value)}>
+                    <option value="Y">Y</option>
+                    <option value="N">N</option>
                   </select>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-2"><div className="form-group"><label>이미지 노출여부</label><select className="form-select" value={selectedImageRow.showYn || 'Y'} onChange={(e) => handleChangeImageField('showYn', e.target.value)}><option value="Y">Y</option><option value="N">N</option></select></div></div>
-            <div className="col-md-4"><div className="form-group"><label>이미지 경로</label><input className="form-control" value={selectedImageRow.imgPath || ''} readOnly /></div></div>
-          </div>
+                </td>
+                <th scope="row">이미지 미리보기</th>
+                <td>
+                  {selectedImagePreview ? (
+                    <Image src={selectedImagePreview} alt="미리보기" width={90} height={90} unoptimized style={{ width: '100%', maxHeight: '90px', objectFit: 'contain' }} />
+                  ) : (
+                    <div className="text-muted">미리보기가 없습니다.</div>
+                  )}
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">이미지 경로</th>
+                <td colSpan={3}>
+                  <input className="form-control" value={selectedImageRow.imgPath || ''} readOnly />
+                </td>
+              </tr>
+            </tbody>
+          </AdminFormTable>
         )}
       </div>
     </>
