@@ -67,6 +67,6 @@ jobs:
             --delete \
             ./deploy/ ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/react-back-office/
 
-      - name: PM2 재시작
+      - name: PM2 프로세스 재생성
         run: |
-          ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "sudo -i bash -lc 'set -e; [ -x \"${{ secrets.OCI_NODE_BIN }}\" ] || { echo OCI_NODE_BIN invalid; exit 127; }; export PATH=\$(dirname \"${{ secrets.OCI_NODE_BIN }}\"):\$PATH; cd /opt/react-back-office; if pm2 describe react-backoffice >/dev/null 2>&1; then pm2 restart ecosystem.config.js --update-env; else pm2 start ecosystem.config.js --update-env; fi'"
+          ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "sudo -i bash -lc 'set -e; [ -x \"${{ secrets.OCI_NODE_BIN }}\" ] || { echo OCI_NODE_BIN invalid; exit 127; }; export PATH=\$(dirname \"${{ secrets.OCI_NODE_BIN }}\"):\$PATH; cd /opt/react-back-office; [ -f server.js ] || { echo standalone server.js not found; exit 1; }; pm2 delete react-backoffice >/dev/null 2>&1 || true; pm2 start ecosystem.config.js --update-env'"
