@@ -12,14 +12,14 @@ const STATIC_FILE_PATTERN = /\.[^/]+$/;
 const isPublicPath = (pathname: string): boolean => PUBLIC_PATHS.some((path) => pathname === path);
 
 /**
- * 관리자 라우트 접근 전 기본 인증 쿠키 존재 여부를 검사합니다.
+ * 관리자 라우트 접근 전 기본 인증 쿠키 존재 여부를 검사하는 엣지 미들웨어입니다.
  * @param request 현재 요청입니다.
  * @returns 리다이렉트 또는 다음 단계 응답입니다.
  */
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 정적 자산과 API 요청은 인증 프록시에서 제외합니다.
+  // 정적 자산과 API 요청은 인증 미들웨어에서 제외합니다.
   if (
     pathname.startsWith('/api')
     || pathname.startsWith('/_next')
@@ -43,7 +43,7 @@ export function proxy(request: NextRequest) {
 }
 
 /**
- * 프록시 적용 경로를 정의합니다.
+ * 미들웨어 적용 경로를 정의합니다.
  */
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],

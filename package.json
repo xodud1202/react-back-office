@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "lint": "eslint app components hooks proxy.ts utils store types --ext .js,.jsx,.ts,.tsx",
+    "lint": "eslint app components hooks middleware.ts utils store types --ext .js,.jsx,.ts,.tsx",
     "dev": "cross-env PORT=3011 next dev --webpack",
     "start": "cross-env PORT=3011 next start",
     "sass:build": "sass --source-map public/assets/scss/style.scss public/assets/css/style.css",
