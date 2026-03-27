@@ -240,6 +240,16 @@ button {
   height: 400px;
 }
 
+/* Quill 에디터(.ql-editor) 내부 이미지가 .table td img 전역 스타일
+   (width:30px, height:30px, border-radius:100%)에 의해 동그랗게 표시되는
+   현상을 방지합니다. 모든 Quill 에디터 인스턴스에 일괄 적용합니다. */
+.ql-editor img {
+  width: unset;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0;
+}
+
 .form-control:disabled,
 .form-control[disabled] {
   color: #000;
