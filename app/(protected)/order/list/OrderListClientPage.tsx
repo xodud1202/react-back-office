@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import type { CommonCode } from '@/components/goods/types';
 import OrderSearchForm from '@/components/order/OrderSearchForm';
 import OrderListGrid from '@/components/order/OrderListGrid';
+import OrderDetailModal from '@/components/order/OrderDetailModal';
 import type { OrderSearchParams } from '@/components/order/types';
 import { createDefaultOrderSearchParams } from '@/components/order/types';
 
@@ -18,16 +19,22 @@ export interface OrderListClientPageProps {
 const OrderListClientPage = ({ ordDtlStatList, chgDtlStatList }: OrderListClientPageProps) => {
   const [searchParams, setSearchParams] = useState<OrderSearchParams>(() => createDefaultOrderSearchParams());
   const [loading, setLoading] = useState(false);
+  // 주문 상세 레이어팝업 대상 주문번호 상태입니다.
+  const [detailOrdNo, setDetailOrdNo] = useState<string | null>(null);
 
   // 검색 조건을 갱신합니다.
   const handleSearch = (params: OrderSearchParams) => {
     setSearchParams(params);
   };
 
-  // 추후 주문 상세 레이어팝업 연동을 위한 진입점을 유지합니다.
+  // 주문번호 클릭 시 상세 레이어팝업을 오픈합니다.
   const handleOpenOrderDetail = (ordNo: string) => {
-    // 현재 단계에서는 클릭 진입점만 유지합니다.
-    console.info('주문 상세 레이어팝업 연동 예정입니다.', ordNo);
+    setDetailOrdNo(ordNo);
+  };
+
+  // 주문 상세 레이어팝업을 닫습니다.
+  const handleCloseOrderDetail = () => {
+    setDetailOrdNo(null);
   };
 
   return (
@@ -60,6 +67,13 @@ const OrderListClientPage = ({ ordDtlStatList, chgDtlStatList }: OrderListClient
           />
         </div>
       </div>
+
+      {/* 주문 상세 레이어팝업입니다. */}
+      <OrderDetailModal
+        isOpen={detailOrdNo !== null}
+        ordNo={detailOrdNo}
+        onClose={handleCloseOrderDetail}
+      />
     </>
   );
 };

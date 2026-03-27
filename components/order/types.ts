@@ -77,6 +77,70 @@ export interface OrderGridRow extends OrderListRow {
   ordNoDisplay: string;
 }
 
+// 주문 상세 마스터 정보를 정의합니다.
+export interface OrderMasterInfo {
+  // 주문번호입니다.
+  ordNo: string;
+  // 주문일시입니다.
+  orderDt: string;
+  // 결제일시입니다.
+  orderConfirmDt: string | null;
+  // 주문 고객명(주문자명)입니다.
+  custNm: string;
+  // 고객 휴대폰번호(받는사람 휴대폰번호 대체)입니다.
+  custPhoneNumber: string;
+  // 고객 이메일(받는사람 이메일 대체)입니다.
+  custEmail: string;
+  // 받는사람명입니다.
+  rcvNm: string;
+  // 받는사람 우편번호입니다.
+  rcvPostNo: string;
+  // 받는사람 배송 주소 베이스입니다.
+  rcvAddrBase: string;
+  // 받는사람 배송 상세 주소입니다.
+  rcvAddrDtl: string;
+  // 배송비 금액입니다.
+  ordDelvAmt: number;
+  // 배송비 쿠폰 할인 금액입니다.
+  delvCpnDcAmt: number;
+}
+
+// 주문 상세 행 정보를 정의합니다.
+export interface OrderDetailRow {
+  // 주문상세번호입니다.
+  ordDtlNo: number;
+  // 상품코드입니다.
+  goodsId: string;
+  // 사이즈코드입니다.
+  sizeId: string;
+  // 주문수량입니다.
+  ordQty: number;
+  // 취소수량입니다.
+  cncQty: number;
+  // 잔여수량입니다.
+  rmnQty: number;
+  // 공급가 금액입니다.
+  supplyAmt: number;
+  // 판매가(개당) 금액입니다.
+  saleAmt: number;
+  // 상품쿠폰 할인 금액입니다.
+  goodsCpnDcAmt: number;
+  // 장바구니쿠폰 할인 금액입니다.
+  cartCpnDcAmt: number;
+  // 포인트 사용 금액입니다.
+  pointUseAmt: number;
+  // 실결제금액입니다.
+  finalPayAmt: number;
+}
+
+// 주문 상세 조회 응답을 정의합니다.
+export interface OrderDetailResponse {
+  // 주문 마스터 정보입니다.
+  master: OrderMasterInfo;
+  // 주문 상세 목록입니다.
+  list: OrderDetailRow[];
+}
+
 // 날짜 입력값을 YYYY-MM-DD 형식으로 변환합니다.
 export const formatOrderSearchDate = (date: Date): string => {
   // 월과 일을 두 자리 문자열로 맞춥니다.
