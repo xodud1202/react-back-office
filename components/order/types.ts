@@ -141,6 +141,102 @@ export interface OrderDetailResponse {
   list: OrderDetailRow[];
 }
 
+// 관리자 주문취소 상품 아이템을 정의합니다.
+export interface AdminOrderCancelDetailItem {
+  // 주문번호입니다.
+  ordNo: string;
+  // 주문상세번호입니다.
+  ordDtlNo: number;
+  // 주문상세 상태코드입니다. (ORD_DTL_STAT_01/02/03)
+  ordDtlStatCd: string;
+  // 주문수량입니다.
+  ordQty: number;
+  // 취소 가능 수량(잔여수량)입니다.
+  cancelableQty: number;
+  // 공급가입니다.
+  supplyAmt: number;
+  // 판매가(개당)입니다.
+  saleAmt: number;
+  // 추가금액입니다.
+  addAmt: number;
+  // 상품쿠폰 할인 금액입니다.
+  goodsCouponDiscountAmt: number;
+  // 장바구니쿠폰 할인 금액입니다.
+  cartCouponDiscountAmt: number;
+  // 포인트 사용 금액입니다.
+  pointUseAmt: number;
+  // 상품코드입니다.
+  goodsId: string;
+  // 사이즈코드입니다.
+  sizeId: string;
+}
+
+// 관리자 주문취소 금액 요약을 정의합니다.
+export interface AdminOrderCancelAmountSummary {
+  // 배송비 금액입니다.
+  deliveryFeeAmt: number;
+  // 배송비쿠폰 할인 금액입니다.
+  deliveryCouponDiscountAmt: number;
+}
+
+// 관리자 주문취소 사이트 정보를 정의합니다.
+export interface AdminOrderCancelSiteInfo {
+  // 기본 배송비입니다.
+  deliveryFee: number;
+  // 무료배송 기준금액입니다.
+  deliveryFeeLimit: number;
+}
+
+// 관리자 주문취소 사유 아이템을 정의합니다.
+export interface AdminOrderCancelReasonItem {
+  // 사유 코드입니다.
+  cd: string;
+  // 사유 코드명입니다.
+  cdNm: string;
+}
+
+// 관리자 주문취소 신청 화면 응답을 정의합니다.
+export interface AdminOrderCancelPageResponse {
+  // 주문 정보입니다.
+  order: { ordNo: string; detailList: AdminOrderCancelDetailItem[] } | null;
+  // 금액 요약입니다.
+  amountSummary: AdminOrderCancelAmountSummary;
+  // 사이트 정보입니다.
+  siteInfo: AdminOrderCancelSiteInfo;
+  // 취소 사유 목록입니다.
+  reasonList: AdminOrderCancelReasonItem[];
+}
+
+// 관리자 주문취소 환불 예정 금액을 정의합니다.
+export interface AdminOrderCancelPreviewAmount {
+  // 취소 예정 금액입니다.
+  expectedRefundAmt: number;
+  // 실결제 상품가입니다.
+  paidGoodsAmt: number;
+  // 환급 혜택 합계입니다.
+  benefitAmt: number;
+  // 배송비 조정액입니다.
+  shippingAdjustmentAmt: number;
+  // 포인트 환급액입니다.
+  totalPointRefundAmt: number;
+  // 배송비쿠폰 환급액입니다.
+  deliveryCouponRefundAmt: number;
+}
+
+// 관리자 주문취소 요청 본문을 정의합니다.
+export interface AdminOrderCancelRequest {
+  // 주문번호입니다.
+  ordNo: string;
+  // 취소 사유 코드입니다.
+  reasonCd: string;
+  // 취소 사유 상세입니다.
+  reasonDetail: string;
+  // 취소 상품 목록입니다.
+  cancelItemList: { ordDtlNo: number; cancelQty: number }[];
+  // 화면 계산 취소 예정 금액 요약입니다.
+  previewAmount: AdminOrderCancelPreviewAmount;
+}
+
 // 날짜 입력값을 YYYY-MM-DD 형식으로 변환합니다.
 export const formatOrderSearchDate = (date: Date): string => {
   // 월과 일을 두 자리 문자열로 맞춥니다.

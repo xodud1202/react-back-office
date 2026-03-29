@@ -4,6 +4,7 @@ import type { ColDef, GridReadyEvent } from 'ag-grid-community';
 import api from '@/utils/axios/axios';
 import AdminFormTable from '@/components/common/AdminFormTable';
 import type { OrderDetailResponse, OrderDetailRow, OrderMasterInfo } from '@/components/order/types';
+import OrderCancelModal from '@/components/order/OrderCancelModal';
 
 interface OrderDetailModalProps {
   // 모달 오픈 여부입니다.
@@ -30,6 +31,13 @@ const displayValue = (value?: string | null): string => {
 
 // 주문 상세 ag-grid 컬럼을 정의합니다.
 const createDetailColumnDefs = (): ColDef<OrderDetailRow>[] => [
+  {
+    headerCheckboxSelection: true,
+    checkboxSelection: true,
+    width: 50,
+    resizable: false,
+    sortable: false,
+  },
   { headerName: '주문상세번호', field: 'ordDtlNo', width: 130 },
   { headerName: '상품코드', field: 'goodsId', width: 140 },
   { headerName: '사이즈', field: 'sizeId', width: 100 },
@@ -129,6 +137,8 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detailData, setDetailData] = useState<OrderDetailResponse | null>(null);
+  // 취소 신청 모달 오픈 여부입니다.
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   // ag-grid 컬럼 정의를 메모이제이션합니다.
   const columnDefs = useMemo(() => createDetailColumnDefs(), []);
@@ -175,12 +185,30 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
     fetchOrderDetail(ordNo);
   }, [isOpen, ordNo, fetchOrderDetail]);
 
+  // 취소 성공 시 상세 정보를 재조회합니다.
+  const handleCancelSuccess = useCallback(() => {
+    setIsCancelModalOpen(false);
+    if (ordNo) {
+      fetchOrderDetail(ordNo);
+    }
+  }, [ordNo, fetchOrderDetail]);
+
   if (!isOpen) {
     return null;
   }
 
   return (
     <>
+      {/* 취소 신청 레이어팝업입니다. */}
+      {ordNo && (
+        <OrderCancelModal
+          isOpen={isCancelModalOpen}
+          ordNo={ordNo}
+          onClose={() => setIsCancelModalOpen(false)}
+          onSuccess={handleCancelSuccess}
+        />
+      )}
+
       {/* 백드롭 영역입니다. */}
       <div
         className="modal-backdrop fade show"
@@ -226,16 +254,26 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
                   <OrderMasterTable master={detailData.master} />
 
                   {/* 주문 상세 그리드 섹션입니다. */}
-                  <h6 className="mt-4 mb-2 fw-bold">주문 상세 목록</h6>
+                  <div className="d-flex justify-content-between align-items-center mt-4 mb-2">
+                    <h6 className="fw-bold mb-0">주문 상세 목록</h6>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-danger"
+                      onClick={() => setIsCancelModalOpen(true)}
+                    >
+                      주문 취소
+                    </button>
+                  </div>
                   <div
                     className="ag-theme-alpine-dark header-center"
-                    style={{ width: '100%', height: '300px' }}
+                    style={{ width: '100%', height: '170px' }}
                   >
                     <AgGridReact<OrderDetailRow>
                       columnDefs={columnDefs}
                       defaultColDef={defaultColDef}
                       rowData={detailData.list}
                       rowHeight={42}
+                      rowSelection="multiple"
                       overlayNoRowsTemplate="주문 상세 데이터가 없습니다."
                       getRowId={(params) => String(params.data?.ordDtlNo ?? '')}
                       onGridReady={handleGridReady}
