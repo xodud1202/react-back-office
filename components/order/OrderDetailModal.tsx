@@ -3,7 +3,7 @@ import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, GridReadyEvent } from 'ag-grid-community';
 import api from '@/utils/axios/axios';
 import AdminFormTable from '@/components/common/AdminFormTable';
-import type { OrderClaimRow, OrderDetailResponse, OrderDetailRow, OrderMasterInfo } from '@/components/order/types';
+import type { OrderClaimRow, OrderDetailResponse, OrderDetailRow, OrderMasterInfo, OrderPaymentRow } from '@/components/order/types';
 import OrderCancelModal from '@/components/order/OrderCancelModal';
 
 interface OrderDetailModalProps {
@@ -144,6 +144,74 @@ const createClaimColumnDefs = (): ColDef<OrderClaimRow>[] => [
   },
 ];
 
+// 주문 결제 ag-grid 컬럼을 정의합니다.
+const createPaymentColumnDefs = (): ColDef<OrderPaymentRow>[] => [
+  { headerName: '주문번호', field: 'ordNo', width: 170 },
+  {
+    headerName: '클레임번호',
+    field: 'clmNo',
+    width: 150,
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  { headerName: '결제상태', field: 'payStatNm', width: 130 },
+  { headerName: '결제수단', field: 'payMethodNm', width: 130 },
+  {
+    headerName: '금액',
+    field: 'payAmt',
+    width: 120,
+    valueFormatter: (params) => formatAmount(params.value as number | null),
+  },
+  {
+    headerName: '거래번호',
+    field: 'tradeNo',
+    width: 180,
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  {
+    headerName: '결과',
+    field: 'rspCode',
+    width: 120,
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  {
+    headerName: '결과메세지',
+    field: 'rspMsg',
+    width: 220,
+    cellClass: 'text-start',
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  {
+    headerName: '무통장입금 계좌',
+    field: 'bankNm',
+    width: 160,
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  {
+    headerName: '무통장입금 계좌번호',
+    field: 'bankNo',
+    width: 180,
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  {
+    headerName: '환불은행',
+    field: 'refundBankCd',
+    width: 140,
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  {
+    headerName: '환불계좌번호',
+    field: 'refundBankNo',
+    width: 180,
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  {
+    headerName: '처리일시',
+    field: 'processDt',
+    width: 180,
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+];
+
 // 주문 마스터 정보 테이블을 렌더링합니다.
 const OrderMasterTable = ({ master }: { master: OrderMasterInfo }) => (
   <AdminFormTable>
@@ -205,6 +273,7 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
   // ag-grid 컬럼 정의를 메모이제이션합니다.
   const columnDefs = useMemo(() => createDetailColumnDefs(), []);
   const claimColumnDefs = useMemo(() => createClaimColumnDefs(), []);
+  const paymentColumnDefs = useMemo(() => createPaymentColumnDefs(), []);
 
   // 공통 컬럼 속성을 정의합니다.
   const defaultColDef = useMemo<ColDef>(() => ({
@@ -358,6 +427,32 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
                           rowHeight={42}
                           overlayNoRowsTemplate="주문 클레임 데이터가 없습니다."
                           getRowId={(params) => `${params.data?.clmNo ?? ''}-${params.data?.ordDtlNo ?? ''}-${params.data?.chgDtlGbCd ?? ''}`}
+                        />
+                      </div>
+                    </>
+                  )}
+                  {(detailData.paymentList?.length ?? 0) > 0 && (
+                    <>
+                      <h6 className="fw-bold mb-2 mt-4">결제 정보</h6>
+                      <div
+                        className="ag-theme-alpine-dark header-center"
+                        style={{ width: '100%', height: '220px' }}
+                      >
+                        <AgGridReact<OrderPaymentRow>
+                          columnDefs={paymentColumnDefs}
+                          defaultColDef={defaultColDef}
+                          rowData={detailData.paymentList}
+                          rowHeight={42}
+                          overlayNoRowsTemplate="결제 데이터가 없습니다."
+                          getRowId={(params) =>
+                            [
+                              params.data?.ordNo ?? '',
+                              params.data?.clmNo ?? '',
+                              params.data?.tradeNo ?? '',
+                              params.data?.payStatCd ?? '',
+                              params.data?.processDt ?? '',
+                            ].join('-')
+                          }
                         />
                       </div>
                     </>

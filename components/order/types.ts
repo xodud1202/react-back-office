@@ -175,6 +175,42 @@ export interface OrderClaimRow {
   expectedRefundAmt: number;
 }
 
+// 주문 결제 행 정보를 정의합니다.
+export interface OrderPaymentRow {
+  // 주문번호입니다.
+  ordNo: string;
+  // 클레임번호입니다.
+  clmNo: string | null;
+  // 결제상태 코드입니다.
+  payStatCd: string;
+  // 결제상태명입니다.
+  payStatNm: string;
+  // 결제수단 코드입니다.
+  payMethodCd: string;
+  // 결제수단명입니다.
+  payMethodNm: string;
+  // 금액입니다.
+  payAmt: number;
+  // 거래번호입니다.
+  tradeNo: string | null;
+  // 결과 코드입니다.
+  rspCode: string | null;
+  // 결과 메시지입니다.
+  rspMsg: string | null;
+  // 무통장입금 은행코드입니다.
+  bankCd: string | null;
+  // 무통장입금 은행명입니다.
+  bankNm: string | null;
+  // 무통장입금 계좌번호입니다.
+  bankNo: string | null;
+  // 환불은행 코드입니다.
+  refundBankCd: string | null;
+  // 환불계좌번호입니다.
+  refundBankNo: string | null;
+  // 처리일시입니다.
+  processDt: string | null;
+}
+
 // 주문 상세 조회 응답을 정의합니다.
 export interface OrderDetailResponse {
   // 주문 마스터 정보입니다.
@@ -183,6 +219,8 @@ export interface OrderDetailResponse {
   list: OrderDetailRow[];
   // 주문 클레임 목록입니다.
   claimList: OrderClaimRow[];
+  // 주문 결제 목록입니다.
+  paymentList: OrderPaymentRow[];
 }
 
 // 관리자 주문취소 상품 아이템을 정의합니다.
