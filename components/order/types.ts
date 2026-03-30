@@ -133,12 +133,56 @@ export interface OrderDetailRow {
   finalPayAmt: number;
 }
 
+// 주문 클레임 행 정보를 정의합니다.
+export interface OrderClaimRow {
+  // 클레임번호입니다.
+  clmNo: string;
+  // 클레임 상세 구분 코드입니다.
+  chgDtlGbCd: string;
+  // 클레임 상세 구분명입니다.
+  chgDtlGbNm: string;
+  // 주문번호입니다.
+  ordNo: string;
+  // 주문상세번호입니다.
+  ordDtlNo: number;
+  // 클레임 상세 상태 코드입니다.
+  chgDtlStatCd: string;
+  // 클레임 상세 상태명입니다.
+  chgDtlStatNm: string;
+  // 상품코드입니다.
+  goodsId: string;
+  // 사이즈코드입니다.
+  sizeId: string;
+  // 클레임 사유 코드입니다.
+  chgReasonCd: string | null;
+  // 클레임 사유명입니다.
+  chgReasonNm: string | null;
+  // 클레임 사유 상세입니다.
+  chgReasonDtl: string | null;
+  // 상품명입니다.
+  goodsNm: string;
+  // 클레임수량입니다.
+  qty: number;
+  // 판매가(개당) 금액입니다.
+  saleAmt: number;
+  // 상품쿠폰 환불 금액입니다.
+  goodsCpnDcAmt: number;
+  // 장바구니쿠폰 환불 금액입니다.
+  cartCpnDcAmt: number;
+  // 포인트 환불 금액입니다.
+  pointDcAmt: number;
+  // 환불예정금액입니다.
+  expectedRefundAmt: number;
+}
+
 // 주문 상세 조회 응답을 정의합니다.
 export interface OrderDetailResponse {
   // 주문 마스터 정보입니다.
   master: OrderMasterInfo;
   // 주문 상세 목록입니다.
   list: OrderDetailRow[];
+  // 주문 클레임 목록입니다.
+  claimList: OrderClaimRow[];
 }
 
 // 관리자 주문취소 상품 아이템을 정의합니다.

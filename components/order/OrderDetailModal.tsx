@@ -3,7 +3,7 @@ import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, GridReadyEvent } from 'ag-grid-community';
 import api from '@/utils/axios/axios';
 import AdminFormTable from '@/components/common/AdminFormTable';
-import type { OrderDetailResponse, OrderDetailRow, OrderMasterInfo } from '@/components/order/types';
+import type { OrderClaimRow, OrderDetailResponse, OrderDetailRow, OrderMasterInfo } from '@/components/order/types';
 import OrderCancelModal from '@/components/order/OrderCancelModal';
 
 interface OrderDetailModalProps {
@@ -82,6 +82,68 @@ const createDetailColumnDefs = (): ColDef<OrderDetailRow>[] => [
   },
 ];
 
+// 주문 클레임 ag-grid 컬럼을 정의합니다.
+const createClaimColumnDefs = (): ColDef<OrderClaimRow>[] => [
+  { headerName: '클레임번호', field: 'clmNo', width: 160 },
+  { headerName: '클레임 상세 구분', field: 'chgDtlGbNm', width: 130 },
+  { headerName: '주문번호', field: 'ordNo', width: 170 },
+  { headerName: '주문상세번호', field: 'ordDtlNo', width: 130 },
+  { headerName: '클레임 상세 상태', field: 'chgDtlStatNm', width: 130 },
+  { headerName: '상품코드', field: 'goodsId', width: 140 },
+  { headerName: '사이즈', field: 'sizeId', width: 100 },
+  {
+    headerName: '클레임 사유',
+    field: 'chgReasonNm',
+    width: 140,
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  {
+    headerName: '클레임 사유 상세',
+    field: 'chgReasonDtl',
+    width: 180,
+    cellClass: 'text-start',
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  {
+    headerName: '상품명',
+    field: 'goodsNm',
+    width: 220,
+    cellClass: 'text-start',
+    valueFormatter: (params) => displayValue(params.value as string | null),
+  },
+  { headerName: '클레임수량', field: 'qty', width: 100 },
+  {
+    headerName: '판매가(개당)',
+    field: 'saleAmt',
+    width: 120,
+    valueFormatter: (params) => formatAmount(params.value as number | null),
+  },
+  {
+    headerName: '상품쿠폰환불',
+    field: 'goodsCpnDcAmt',
+    width: 130,
+    valueFormatter: (params) => formatAmount(params.value as number | null),
+  },
+  {
+    headerName: '장바구니쿠폰환불',
+    field: 'cartCpnDcAmt',
+    width: 150,
+    valueFormatter: (params) => formatAmount(params.value as number | null),
+  },
+  {
+    headerName: '포인트환불',
+    field: 'pointDcAmt',
+    width: 120,
+    valueFormatter: (params) => formatAmount(params.value as number | null),
+  },
+  {
+    headerName: '환불예정금액',
+    field: 'expectedRefundAmt',
+    width: 130,
+    valueFormatter: (params) => formatAmount(params.value as number | null),
+  },
+];
+
 // 주문 마스터 정보 테이블을 렌더링합니다.
 const OrderMasterTable = ({ master }: { master: OrderMasterInfo }) => (
   <AdminFormTable>
@@ -142,9 +204,10 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
 
   // ag-grid 컬럼 정의를 메모이제이션합니다.
   const columnDefs = useMemo(() => createDetailColumnDefs(), []);
+  const claimColumnDefs = useMemo(() => createClaimColumnDefs(), []);
 
   // 공통 컬럼 속성을 정의합니다.
-  const defaultColDef = useMemo<ColDef<OrderDetailRow>>(() => ({
+  const defaultColDef = useMemo<ColDef>(() => ({
     resizable: true,
     sortable: false,
     editable: false,
@@ -279,6 +342,26 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
                       onGridReady={handleGridReady}
                     />
                   </div>
+
+                  {/* 주문 클레임 목록은 데이터가 있는 경우에만 노출합니다. */}
+                  {(detailData.claimList?.length ?? 0) > 0 && (
+                    <>
+                      <h6 className="fw-bold mb-2 mt-4">주문 클레임 목록</h6>
+                      <div
+                        className="ag-theme-alpine-dark header-center"
+                        style={{ width: '100%', height: '240px' }}
+                      >
+                        <AgGridReact<OrderClaimRow>
+                          columnDefs={claimColumnDefs}
+                          defaultColDef={defaultColDef}
+                          rowData={detailData.claimList}
+                          rowHeight={42}
+                          overlayNoRowsTemplate="주문 클레임 데이터가 없습니다."
+                          getRowId={(params) => `${params.data?.clmNo ?? ''}-${params.data?.ordDtlNo ?? ''}-${params.data?.chgDtlGbCd ?? ''}`}
+                        />
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </div>
