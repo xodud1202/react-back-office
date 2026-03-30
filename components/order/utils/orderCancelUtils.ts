@@ -149,30 +149,23 @@ interface SliceAmount {
 }
 
 // 취소 수량 기준 행 금액/할인 배분값을 계산합니다.
+// DB의 쿠폰/포인트 할인금액은 이전 취소분이 이미 차감된 현재 잔여 금액이므로, RMN_QTY(현재 잔여 수량) 기준으로 비례 계산합니다.
 function buildSliceAmount(
   item: AdminOrderCancelDetailItem,
   quantity: number,
-  canceledBeforeQty: number,
+  currentRemainingQty: number,
 ): SliceAmount {
-  const originalQty = normalizeNonNegativeInt(item.ordQty);
-  const safeCanceledBefore = Math.max(Math.min(canceledBeforeQty, originalQty), 0);
-  const remainingQty = Math.max(originalQty - safeCanceledBefore, 0);
-  const resolvedQty = Math.min(Math.max(quantity, 0), remainingQty);
+  const safeRemainingQty = normalizeNonNegativeInt(currentRemainingQty);
+  const resolvedQty = Math.min(Math.max(quantity, 0), safeRemainingQty);
   const unitOrderAmt = normalizeNonNegativeInt(item.saleAmt) + normalizeNonNegativeInt(item.addAmt);
   const supplyAmt = normalizeNonNegativeInt(item.supplyAmt) * resolvedQty;
   const orderAmt = unitOrderAmt * resolvedQty;
   const goodsDiscountAmt = Math.max(supplyAmt - orderAmt, 0);
 
-  // 누적 취소 전/후 배분 차이만큼 쿠폰/포인트 환급 금액을 계산합니다.
-  const goodsCouponDiscountAmt =
-    resolveCumulativeAllocatedAmt(item.goodsCouponDiscountAmt, originalQty, safeCanceledBefore + resolvedQty)
-    - resolveCumulativeAllocatedAmt(item.goodsCouponDiscountAmt, originalQty, safeCanceledBefore);
-  const cartCouponDiscountAmt =
-    resolveCumulativeAllocatedAmt(item.cartCouponDiscountAmt, originalQty, safeCanceledBefore + resolvedQty)
-    - resolveCumulativeAllocatedAmt(item.cartCouponDiscountAmt, originalQty, safeCanceledBefore);
-  const pointUseAmt =
-    resolveCumulativeAllocatedAmt(item.pointUseAmt, originalQty, safeCanceledBefore + resolvedQty)
-    - resolveCumulativeAllocatedAmt(item.pointUseAmt, originalQty, safeCanceledBefore);
+  // 현재 잔여 수량 대비 취소 수량 비율로 쿠폰/포인트 환급 금액을 계산합니다.
+  const goodsCouponDiscountAmt = resolveCumulativeAllocatedAmt(item.goodsCouponDiscountAmt, safeRemainingQty, resolvedQty);
+  const cartCouponDiscountAmt = resolveCumulativeAllocatedAmt(item.cartCouponDiscountAmt, safeRemainingQty, resolvedQty);
+  const pointUseAmt = resolveCumulativeAllocatedAmt(item.pointUseAmt, safeRemainingQty, resolvedQty);
 
   return { supplyAmt, orderAmt, goodsDiscountAmt, goodsCouponDiscountAmt, cartCouponDiscountAmt, pointUseAmt };
 }
@@ -224,14 +217,12 @@ export function buildAdminOrderCancelPreviewResult(
 
   // 각 행을 취소/잔여 수량으로 분리하여 금액 요약을 계산합니다.
   for (const item of order.detailList) {
-    const originalQty = normalizeNonNegativeInt(item.ordQty);
     const currentRemainingQty = normalizeNonNegativeInt(item.cancelableQty);
     if (currentRemainingQty < 1) continue;
 
     activeItemCount += 1;
     const unitOrderAmt = normalizeNonNegativeInt(item.saleAmt) + normalizeNonNegativeInt(item.addAmt);
     activeOrderAmt += unitOrderAmt * currentRemainingQty;
-    const canceledBeforeQty = Math.max(originalQty - currentRemainingQty, 0);
 
     const selectionItem = resolveAdminOrderCancelSelectionItem(selectionMap, item);
     const cancelQty = selectionItem.selected ? selectionItem.cancelQty : 0;
@@ -241,8 +232,8 @@ export function buildAdminOrderCancelPreviewResult(
     if (cancelQty > 0) {
       selectedItemCount += 1;
       selectedQtyCount += cancelQty;
-      // 취소 수량 기준 금액을 누적합니다.
-      const slice = buildSliceAmount(item, cancelQty, canceledBeforeQty);
+      // 취소 수량 기준 금액을 누적합니다. currentRemainingQty를 기준으로 쿠폰/포인트 비례 계산합니다.
+      const slice = buildSliceAmount(item, cancelQty, currentRemainingQty);
       cancelPreviewSummary.totalSupplyAmt += slice.supplyAmt;
       cancelPreviewSummary.totalOrderAmt += slice.orderAmt;
       cancelPreviewSummary.totalGoodsDiscountAmt += slice.goodsDiscountAmt;

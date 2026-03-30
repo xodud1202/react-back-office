@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import api from '@/utils/axios/axios';
 import type {
   AdminOrderCancelDetailItem,
@@ -31,14 +31,12 @@ interface OrderCancelModalProps {
 // 금액을 천 단위 구분 문자열로 변환합니다.
 const formatAmount = (value: number): string => value.toLocaleString('ko-KR');
 
-// 취소 사유 기타 코드입니다.
-const REASON_ETC_CD = 'C_03';
-
 // 선택 상태 리듀서 액션 타입입니다.
 type SelectionAction =
   | { type: 'INIT'; payload: AdminOrderCancelSelectionMap }
   | { type: 'TOGGLE'; ordDtlNo: number; item: AdminOrderCancelDetailItem }
-  | { type: 'SET_QTY'; ordDtlNo: number; item: AdminOrderCancelDetailItem; qty: number };
+  | { type: 'SET_QTY'; ordDtlNo: number; item: AdminOrderCancelDetailItem; qty: number }
+  | { type: 'TOGGLE_ALL'; items: AdminOrderCancelDetailItem[]; selectAll: boolean };
 
 // 선택 상태 리듀서입니다.
 function selectionReducer(
@@ -51,9 +49,10 @@ function selectionReducer(
     case 'TOGGLE': {
       const current = state[action.ordDtlNo];
       const selected = !current?.selected;
-      const cancelQty = selected
-        ? clampAdminOrderCancelQty(action.item, current?.cancelQty ?? 1)
-        : 0;
+      // 체크박스 선택 시 기본 수량을 취소 가능 수량 전체로 설정합니다.
+      // cancelQty가 0이면 초기 미선택 상태이므로 취소 가능 수량 전체를 기본값으로 사용합니다.
+      const defaultQty = (current?.cancelQty ?? 0) > 0 ? current!.cancelQty : action.item.cancelableQty;
+      const cancelQty = selected ? clampAdminOrderCancelQty(action.item, defaultQty) : 0;
       return { ...state, [action.ordDtlNo]: { selected, cancelQty } };
     }
     case 'SET_QTY': {
@@ -63,6 +62,19 @@ function selectionReducer(
         ...state,
         [action.ordDtlNo]: { selected: current?.selected ?? false, cancelQty: clamped },
       };
+    }
+    case 'TOGGLE_ALL': {
+      // 전체 선택/해제 시 각 항목의 cancelQty를 취소 가능 수량 전체로 설정합니다.
+      const newState = { ...state };
+      for (const item of action.items) {
+        const prevQty = (newState[item.ordDtlNo]?.cancelQty ?? 0);
+        const defaultQty = prevQty > 0 ? prevQty : item.cancelableQty;
+        newState[item.ordDtlNo] = {
+          selected: action.selectAll,
+          cancelQty: action.selectAll ? clampAdminOrderCancelQty(item, defaultQty) : 0,
+        };
+      }
+      return newState;
     }
     default:
       return state;
@@ -88,6 +100,32 @@ const OrderCancelModal = ({ isOpen, ordNo, onClose, onSuccess }: OrderCancelModa
     if (!pageData?.order) return false;
     return pageData.order.detailList.some(isAdminOrderFullCancelOnly);
   }, [pageData]);
+
+  // 부분취소 가능한 활성 상품 목록입니다.
+  const partialCancelableItems = useMemo(() => {
+    if (!pageData?.order) return [];
+    return pageData.order.detailList.filter(isAdminOrderActiveDetail).filter(isAdminOrderPartialCancelable);
+  }, [pageData]);
+
+  // 헤더 전체선택 체크박스의 전체선택/부분선택 상태를 계산합니다.
+  const { allPartialSelected, somePartialSelected } = useMemo(() => {
+    if (partialCancelableItems.length === 0) return { allPartialSelected: false, somePartialSelected: false };
+    const selectedCount = partialCancelableItems.filter(
+      (item) => resolveAdminOrderCancelSelectionItem(selectionMap, item).selected,
+    ).length;
+    return {
+      allPartialSelected: selectedCount === partialCancelableItems.length,
+      somePartialSelected: selectedCount > 0 && selectedCount < partialCancelableItems.length,
+    };
+  }, [partialCancelableItems, selectionMap]);
+
+  // 헤더 전체선택 체크박스의 indeterminate 상태를 DOM에 직접 반영합니다.
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = somePartialSelected;
+    }
+  }, [somePartialSelected]);
 
   // 취소 미리보기 결과를 실시간으로 계산합니다.
   const previewResult = useMemo(() => {
@@ -163,7 +201,8 @@ const OrderCancelModal = ({ isOpen, ordNo, onClose, onSuccess }: OrderCancelModa
     const body: AdminOrderCancelRequest = {
       ordNo: pageData.order.ordNo,
       reasonCd,
-      reasonDetail: reasonCd === REASON_ETC_CD ? reasonDetail : '',
+      // 사유 상세는 항상 전송합니다.
+      reasonDetail,
       cancelItemList,
       previewAmount: toAdminOrderCancelPreviewAmount(previewResult.cancelPreviewSummary),
     };
@@ -226,46 +265,6 @@ const OrderCancelModal = ({ isOpen, ordNo, onClose, onSuccess }: OrderCancelModa
 
               {pageData && !loading && (
                 <>
-                  {/* 취소 사유 선택 섹션입니다. */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold" htmlFor="cancelReasonCd">
-                      취소 사유
-                    </label>
-                    <select
-                      id="cancelReasonCd"
-                      className="form-select"
-                      value={reasonCd}
-                      onChange={(e) => {
-                        setReasonCd(e.target.value);
-                        setReasonDetail('');
-                      }}
-                    >
-                      {pageData.reasonList.map((reason) => (
-                        <option key={reason.cd} value={reason.cd}>
-                          {reason.cdNm}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* 기타 사유 상세 입력 섹션입니다. */}
-                  {reasonCd === REASON_ETC_CD && (
-                    <div className="mb-3">
-                      <label className="form-label fw-bold" htmlFor="cancelReasonDetail">
-                        사유 상세
-                      </label>
-                      <textarea
-                        id="cancelReasonDetail"
-                        className="form-control"
-                        rows={3}
-                        maxLength={500}
-                        placeholder="사유를 입력해주세요."
-                        value={reasonDetail}
-                        onChange={(e) => setReasonDetail(e.target.value)}
-                      />
-                    </div>
-                  )}
-
                   {/* 취소 상품 목록 섹션입니다. */}
                   <div className="mb-3">
                     <h6 className="fw-bold mb-2">취소 상품 목록</h6>
@@ -275,7 +274,23 @@ const OrderCancelModal = ({ isOpen, ordNo, onClose, onSuccess }: OrderCancelModa
                       <table className="table table-sm table-bordered align-middle mb-0">
                         <thead className="table-secondary text-center">
                           <tr>
-                            {!isFullCancelMode && <th style={{ width: 50 }}>선택</th>}
+                            {!isFullCancelMode && (
+                              <th style={{ width: 50 }}>
+                                {/* 전체 선택/해제 체크박스입니다. */}
+                                <input
+                                  ref={headerCheckboxRef}
+                                  type="checkbox"
+                                  checked={allPartialSelected}
+                                  onChange={(e) =>
+                                    dispatch({
+                                      type: 'TOGGLE_ALL',
+                                      items: partialCancelableItems,
+                                      selectAll: e.target.checked,
+                                    })
+                                  }
+                                />
+                              </th>
+                            )}
                             <th>주문상세번호</th>
                             <th>상품코드</th>
                             <th>사이즈</th>
@@ -311,15 +326,12 @@ const OrderCancelModal = ({ isOpen, ordNo, onClose, onSuccess }: OrderCancelModa
                                 <td>{item.goodsId}</td>
                                 <td>{item.sizeId}</td>
                                 <td>{item.cancelableQty}</td>
-                                {/* 부분취소 모드일 때만 수량 입력을 표시합니다. */}
+                                {/* 부분취소 모드일 때만 수량 selectBox를 표시합니다. */}
                                 {!isFullCancelMode && (
                                   <td>
                                     {isPartial && sel.selected ? (
-                                      <input
-                                        type="number"
-                                        className="form-control form-control-sm text-center"
-                                        min={1}
-                                        max={item.cancelableQty}
+                                      <select
+                                        className="form-select form-select-sm text-center"
                                         value={sel.cancelQty}
                                         onChange={(e) =>
                                           dispatch({
@@ -329,7 +341,12 @@ const OrderCancelModal = ({ isOpen, ordNo, onClose, onSuccess }: OrderCancelModa
                                             qty: Number(e.target.value),
                                           })
                                         }
-                                      />
+                                      >
+                                        {/* 1부터 취소 가능 수량까지 옵션을 생성합니다. */}
+                                        {Array.from({ length: item.cancelableQty }, (_, i) => i + 1).map((qty) => (
+                                          <option key={qty} value={qty}>{qty}</option>
+                                        ))}
+                                      </select>
                                     ) : (
                                       <span className="text-muted">-</span>
                                     )}
@@ -343,34 +360,85 @@ const OrderCancelModal = ({ isOpen, ordNo, onClose, onSuccess }: OrderCancelModa
                     )}
                   </div>
 
+                  {/* 취소 사유 선택 섹션입니다. */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold" htmlFor="cancelReasonCd">
+                      취소 사유
+                    </label>
+                    <select
+                      id="cancelReasonCd"
+                      className="form-select mb-2"
+                      value={reasonCd}
+                      onChange={(e) => {
+                        setReasonCd(e.target.value);
+                        setReasonDetail('');
+                      }}
+                    >
+                      {pageData.reasonList.map((reason) => (
+                        <option key={reason.cd} value={reason.cd}>
+                          {reason.cdNm}
+                        </option>
+                      ))}
+                    </select>
+                    {/* 사유 상세는 항상 노출합니다. */}
+                    <textarea
+                      id="cancelReasonDetail"
+                      className="form-control"
+                      rows={3}
+                      maxLength={500}
+                      placeholder="사유를 입력해주세요."
+                      value={reasonDetail}
+                      onChange={(e) => setReasonDetail(e.target.value)}
+                    />
+                  </div>
+
                   {/* 환불 예정 금액 섹션입니다. */}
                   {previewResult && (
                     <div className="mb-3">
                       <h6 className="fw-bold mb-2">환불 예정 금액</h6>
-                      <table className="table table-sm table-bordered mb-0">
+                      {/*
+                        레이아웃: 4컬럼(구분1 | 금액1 | 구분2 | 금액2)
+                        1행: 실결제 상품가 (colspan 4)
+                        2행: 상품쿠폰 | 장바구니쿠폰
+                        3행: 포인트환급 | 배송비 조정
+                        4행: 취소 예정 금액 (colspan 4)
+                      */}
+                      <table className="table table-sm table-bordered mb-0 text-center">
                         <tbody>
+                          {/* 실결제 상품가 - 전체 너비 1행 */}
                           <tr>
-                            <th className="table-secondary" style={{ width: '40%' }}>실결제 상품가</th>
-                            <td className="text-end">
+                            <td className="table-secondary fw-semibold" style={{ width: '30%' }}>실결제 상품가</td>
+                            <td colSpan={3} className="text-end">
                               {formatAmount(previewResult.cancelPreviewSummary.paidGoodsAmt)}원
                             </td>
                           </tr>
+                          {/* 상품쿠폰 / 장바구니쿠폰 - 2열 배치 */}
                           <tr>
-                            <th className="table-secondary">쿠폰/포인트 환급</th>
-                            <td className="text-end">
-                              -{formatAmount(previewResult.cancelPreviewSummary.benefitAmt)}원
+                            <td className="table-secondary fw-semibold">상품쿠폰 환급</td>
+                            <td className="text-end" style={{ width: '20%' }}>
+                              -{formatAmount(previewResult.cancelPreviewSummary.totalGoodsCouponDiscountAmt)}원
+                            </td>
+                            <td className="table-secondary fw-semibold" style={{ width: '30%' }}>장바구니쿠폰 환급</td>
+                            <td className="text-end" style={{ width: '20%' }}>
+                              -{formatAmount(previewResult.cancelPreviewSummary.totalCartCouponDiscountAmt)}원
                             </td>
                           </tr>
+                          {/* 포인트환급 / 배송비 조정 - 2열 배치 */}
                           <tr>
-                            <th className="table-secondary">배송비 조정</th>
+                            <td className="table-secondary fw-semibold">포인트 환급</td>
+                            <td className="text-end">
+                              -{formatAmount(previewResult.cancelPreviewSummary.totalPointRefundAmt)}원
+                            </td>
+                            <td className="table-secondary fw-semibold">배송비 조정</td>
                             <td className="text-end">
                               {previewResult.cancelPreviewSummary.shippingAdjustmentAmt >= 0 ? '+' : ''}
                               {formatAmount(previewResult.cancelPreviewSummary.shippingAdjustmentAmt)}원
                             </td>
                           </tr>
+                          {/* 취소 예정 금액 - 전체 너비 합계 행 */}
                           <tr className="table-warning fw-bold">
-                            <th>취소 예정 금액</th>
-                            <td className="text-end">
+                            <td className="fw-bold">취소 예정 금액</td>
+                            <td colSpan={3} className="text-end">
                               {formatAmount(previewResult.cashRefundAmt)}원
                             </td>
                           </tr>
