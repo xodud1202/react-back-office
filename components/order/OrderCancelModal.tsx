@@ -22,6 +22,8 @@ interface OrderCancelModalProps {
   isOpen: boolean;
   // 취소 대상 주문번호입니다.
   ordNo: string;
+  // 상세 팝업에서 선택한 기본 주문상세번호 목록입니다.
+  selectedOrdDtlNoList?: number[];
   // 모달 닫기 콜백입니다.
   onClose: () => void;
   // 취소 성공 콜백입니다.
@@ -82,7 +84,13 @@ function selectionReducer(
 }
 
 // 관리자 주문 취소 신청 레이어팝업을 렌더링합니다.
-const OrderCancelModal = ({ isOpen, ordNo, onClose, onSuccess }: OrderCancelModalProps) => {
+const OrderCancelModal = ({
+  isOpen,
+  ordNo,
+  selectedOrdDtlNoList = [],
+  onClose,
+  onSuccess,
+}: OrderCancelModalProps) => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -163,6 +171,7 @@ const OrderCancelModal = ({ isOpen, ordNo, onClose, onSuccess }: OrderCancelModa
       const initialMap = createInitialAdminOrderCancelSelectionMap(
         data.order?.detailList ?? [],
         fullMode,
+        selectedOrdDtlNoList,
       );
       dispatch({ type: 'INIT', payload: initialMap });
     } catch {
@@ -170,7 +179,7 @@ const OrderCancelModal = ({ isOpen, ordNo, onClose, onSuccess }: OrderCancelModa
     } finally {
       setLoading(false);
     }
-  }, [ordNo]);
+  }, [ordNo, selectedOrdDtlNoList]);
 
   // 모달 오픈 시 데이터를 조회합니다.
   useEffect(() => {

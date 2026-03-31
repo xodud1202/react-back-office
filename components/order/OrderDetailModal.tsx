@@ -3,8 +3,20 @@ import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, GridReadyEvent } from 'ag-grid-community';
 import api from '@/utils/axios/axios';
 import AdminFormTable from '@/components/common/AdminFormTable';
-import type { OrderClaimRow, OrderDetailResponse, OrderDetailRow, OrderMasterInfo, OrderPaymentRow } from '@/components/order/types';
+import type {
+  AdminOrderDetailStatusUpdateRequest,
+  AdminOrderDetailStatusUpdateResponse,
+  OrderClaimRow,
+  OrderDetailResponse,
+  OrderDetailRow,
+  OrderMasterInfo,
+  OrderPaymentRow,
+} from '@/components/order/types';
 import OrderCancelModal from '@/components/order/OrderCancelModal';
+import {
+  isAdminOrderCancelableStatus,
+  isAdminOrderPreparingAvailableStatus,
+} from '@/components/order/utils/orderDetailStatusUtils';
 
 interface OrderDetailModalProps {
   // 모달 오픈 여부입니다.
@@ -29,6 +41,16 @@ const displayValue = (value?: string | null): string => {
   return value;
 };
 
+// 주문 상세 액션 API 오류 메시지를 안전하게 추출합니다.
+const resolveOrderDetailActionErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  const errorResponse = error as { response?: { data?: { message?: string } } };
+  const message = errorResponse.response?.data?.message;
+  if (typeof message === 'string' && message.trim()) {
+    return message;
+  }
+  return fallbackMessage;
+};
+
 // 주문 상세 ag-grid 컬럼을 정의합니다.
 const createDetailColumnDefs = (): ColDef<OrderDetailRow>[] => [
   {
@@ -39,6 +61,7 @@ const createDetailColumnDefs = (): ColDef<OrderDetailRow>[] => [
     sortable: false,
   },
   { headerName: '주문상세번호', field: 'ordDtlNo', width: 130 },
+  { headerName: '주문상세상태', field: 'ordDtlStatNm', width: 140 },
   { headerName: '상품코드', field: 'goodsId', width: 140 },
   { headerName: '사이즈', field: 'sizeId', width: 100 },
   { headerName: '주문수량', field: 'ordQty', width: 100 },
@@ -269,6 +292,10 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
   const [detailData, setDetailData] = useState<OrderDetailResponse | null>(null);
   // 취소 신청 모달 오픈 여부입니다.
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  // 취소 모달에 넘길 기본 선택 주문상세번호 목록입니다.
+  const [selectedCancelOrdDtlNoList, setSelectedCancelOrdDtlNoList] = useState<number[]>([]);
+  // 상품 준비중 처리 진행 여부입니다.
+  const [preparing, setPreparing] = useState(false);
 
   // ag-grid 컬럼 정의를 메모이제이션합니다.
   const columnDefs = useMemo(() => createDetailColumnDefs(), []);
@@ -289,6 +316,11 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
   // 그리드 준비 시 인스턴스를 저장합니다.
   const handleGridReady = useCallback((event: GridReadyEvent<OrderDetailRow>) => {
     gridApiRef.current = event.api;
+  }, []);
+
+  // 현재 그리드에서 선택된 주문상세 행 목록을 반환합니다.
+  const getSelectedDetailRows = useCallback((): OrderDetailRow[] => {
+    return gridApiRef.current?.getSelectedRows() ?? [];
   }, []);
 
   // 주문 상세 정보를 조회합니다.
@@ -320,10 +352,59 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
   // 취소 성공 시 상세 정보를 재조회합니다.
   const handleCancelSuccess = useCallback(() => {
     setIsCancelModalOpen(false);
+    setSelectedCancelOrdDtlNoList([]);
     if (ordNo) {
       fetchOrderDetail(ordNo);
     }
   }, [ordNo, fetchOrderDetail]);
+
+  // 취소 신청 모달을 닫고 기본 선택 상태를 초기화합니다.
+  const handleCloseCancelModal = useCallback(() => {
+    setIsCancelModalOpen(false);
+    setSelectedCancelOrdDtlNoList([]);
+  }, []);
+
+  // 선택한 결제완료/상품준비중 주문만 대상으로 취소 신청 모달을 엽니다.
+  const handleOpenCancelModal = useCallback(() => {
+    const selectedRows = getSelectedDetailRows();
+    if (selectedRows.length < 1 || selectedRows.some((row) => !isAdminOrderCancelableStatus(row.ordDtlStatCd))) {
+      alert('취소 가능한 주문이 없습니다.');
+      return;
+    }
+
+    setSelectedCancelOrdDtlNoList(selectedRows.map((row) => row.ordDtlNo));
+    setIsCancelModalOpen(true);
+  }, [getSelectedDetailRows]);
+
+  // 선택한 결제완료 주문을 상품 준비중 상태로 변경합니다.
+  const handlePrepareSelected = useCallback(async () => {
+    if (!ordNo) {
+      return;
+    }
+
+    const selectedRows = getSelectedDetailRows();
+    if (selectedRows.length < 1 || selectedRows.some((row) => !isAdminOrderPreparingAvailableStatus(row.ordDtlStatCd))) {
+      alert('결제 완료 주문건만 선택해주세요.');
+      return;
+    }
+
+    const requestBody: AdminOrderDetailStatusUpdateRequest = {
+      ordNo,
+      ordDtlNoList: selectedRows.map((row) => row.ordDtlNo),
+    };
+
+    setPreparing(true);
+    try {
+      await api.post<AdminOrderDetailStatusUpdateResponse>('/api/admin/order/detail/prepare', requestBody);
+      gridApiRef.current?.deselectAll();
+      await fetchOrderDetail(ordNo);
+      alert('상품 준비중으로 변경되었습니다.');
+    } catch (actionError) {
+      alert(resolveOrderDetailActionErrorMessage(actionError, '상품 준비중 처리 중 오류가 발생했습니다.'));
+    } finally {
+      setPreparing(false);
+    }
+  }, [ordNo, getSelectedDetailRows, fetchOrderDetail]);
 
   if (!isOpen) {
     return null;
@@ -336,7 +417,8 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
         <OrderCancelModal
           isOpen={isCancelModalOpen}
           ordNo={ordNo}
-          onClose={() => setIsCancelModalOpen(false)}
+          selectedOrdDtlNoList={selectedCancelOrdDtlNoList}
+          onClose={handleCloseCancelModal}
           onSuccess={handleCancelSuccess}
         />
       )}
@@ -388,13 +470,24 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
                   {/* 주문 상세 그리드 섹션입니다. */}
                   <div className="d-flex justify-content-between align-items-center mt-4 mb-2">
                     <h6 className="fw-bold mb-0">주문 상세 목록</h6>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger"
-                      onClick={() => setIsCancelModalOpen(true)}
-                    >
-                      주문 취소
-                    </button>
+                    <div className="d-flex gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        onClick={handlePrepareSelected}
+                        disabled={loading || preparing}
+                      >
+                        {preparing ? '처리 중...' : '상품 준비중'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-danger"
+                        onClick={handleOpenCancelModal}
+                        disabled={loading || preparing}
+                      >
+                        주문 취소
+                      </button>
+                    </div>
                   </div>
                   <div
                     className="ag-theme-alpine-dark header-center"

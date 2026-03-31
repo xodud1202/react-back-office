@@ -4,13 +4,11 @@ import type {
   AdminOrderCancelPreviewAmount,
   AdminOrderCancelSiteInfo,
 } from '@/components/order/types';
-
-// 무통장입금대기 상태 코드입니다.
-const WAITING_DEPOSIT_STATUS = 'ORD_DTL_STAT_01';
-// 결제완료 상태 코드입니다.
-const PAYMENT_DONE_STATUS = 'ORD_DTL_STAT_02';
-// 상품준비중 상태 코드입니다.
-const PREPARING_STATUS = 'ORD_DTL_STAT_03';
+import {
+  ADMIN_ORDER_DETAIL_PAYMENT_DONE_STATUS,
+  ADMIN_ORDER_DETAIL_PREPARING_STATUS,
+  ADMIN_ORDER_DETAIL_WAITING_DEPOSIT_STATUS,
+} from '@/components/order/utils/orderDetailStatusUtils';
 
 // 취소 상품별 선택 상태를 정의합니다.
 export interface AdminOrderCancelSelectionItem {
@@ -64,12 +62,12 @@ function normalizeNonNegativeInt(value: number): number {
 
 // 상품이 전체취소 전용 상태인지 반환합니다.
 export function isAdminOrderFullCancelOnly(item: AdminOrderCancelDetailItem): boolean {
-  return item.ordDtlStatCd === WAITING_DEPOSIT_STATUS && normalizeNonNegativeInt(item.cancelableQty) > 0;
+  return item.ordDtlStatCd === ADMIN_ORDER_DETAIL_WAITING_DEPOSIT_STATUS && normalizeNonNegativeInt(item.cancelableQty) > 0;
 }
 
 // 상품이 부분취소 선택 가능한 상태인지 반환합니다.
 export function isAdminOrderPartialCancelable(item: AdminOrderCancelDetailItem): boolean {
-  return (item.ordDtlStatCd === PAYMENT_DONE_STATUS || item.ordDtlStatCd === PREPARING_STATUS)
+  return (item.ordDtlStatCd === ADMIN_ORDER_DETAIL_PAYMENT_DONE_STATUS || item.ordDtlStatCd === ADMIN_ORDER_DETAIL_PREPARING_STATUS)
     && normalizeNonNegativeInt(item.cancelableQty) > 0;
 }
 
@@ -110,10 +108,19 @@ function createFullCancelSelectionMap(detailList: AdminOrderCancelDetailItem[]):
 }
 
 // 부분취소 모드의 초기 선택 맵을 생성합니다.
-function createPartialCancelSelectionMap(detailList: AdminOrderCancelDetailItem[]): AdminOrderCancelSelectionMap {
+function createPartialCancelSelectionMap(
+  detailList: AdminOrderCancelDetailItem[],
+  selectedOrdDtlNoList: number[],
+): AdminOrderCancelSelectionMap {
   const map: AdminOrderCancelSelectionMap = {};
+  const selectedOrdDtlNoSet = new Set(selectedOrdDtlNoList);
   for (const item of detailList) {
-    map[item.ordDtlNo] = { selected: false, cancelQty: 0 };
+    // 상세 팝업에서 선택한 주문상세번호가 있으면 해당 부분취소 가능 항목만 기본 선택합니다.
+    const selected = selectedOrdDtlNoSet.has(item.ordDtlNo) && isAdminOrderPartialCancelable(item);
+    map[item.ordDtlNo] = {
+      selected,
+      cancelQty: selected ? clampAdminOrderCancelQty(item, item.cancelableQty) : 0,
+    };
   }
   return map;
 }
@@ -122,11 +129,12 @@ function createPartialCancelSelectionMap(detailList: AdminOrderCancelDetailItem[
 export function createInitialAdminOrderCancelSelectionMap(
   detailList: AdminOrderCancelDetailItem[],
   isFullCancel: boolean,
+  selectedOrdDtlNoList: number[] = [],
 ): AdminOrderCancelSelectionMap {
   // 취소 모드에 따라 전체/부분취소 초기 선택 상태를 생성합니다.
   return isFullCancel
     ? createFullCancelSelectionMap(detailList)
-    : createPartialCancelSelectionMap(detailList);
+    : createPartialCancelSelectionMap(detailList, selectedOrdDtlNoList);
 }
 
 // 누적 배분 금액을 원주문 수량 기준으로 계산합니다.

@@ -109,6 +109,10 @@ export interface OrderMasterInfo {
 export interface OrderDetailRow {
   // 주문상세번호입니다.
   ordDtlNo: number;
+  // 주문상세 상태 코드입니다.
+  ordDtlStatCd: string;
+  // 주문상세 상태명입니다.
+  ordDtlStatNm: string;
   // 상품코드입니다.
   goodsId: string;
   // 사이즈코드입니다.
@@ -221,6 +225,20 @@ export interface OrderDetailResponse {
   claimList: OrderClaimRow[];
   // 주문 결제 목록입니다.
   paymentList: OrderPaymentRow[];
+}
+
+// 관리자 주문상세 상태 변경 요청을 정의합니다.
+export interface AdminOrderDetailStatusUpdateRequest {
+  // 주문번호입니다.
+  ordNo: string;
+  // 상태 변경 대상 주문상세번호 목록입니다.
+  ordDtlNoList: number[];
+}
+
+// 관리자 주문상세 상태 변경 응답을 정의합니다.
+export interface AdminOrderDetailStatusUpdateResponse {
+  // 변경된 주문상세 건수입니다.
+  updatedCount: number;
 }
 
 // 관리자 주문취소 상품 아이템을 정의합니다.
