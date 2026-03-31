@@ -211,6 +211,23 @@ button {
   --ag-odd-row-background-color: #222628;
 }
 
+.order-start-delivery-grid-theme .ag-cell-wrapper {
+  height: 100%;
+  align-items: center;
+}
+
+.order-start-delivery-grid-theme .ag-cell-value {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.order-start-delivery-grid-theme .ag-cell .form-select,
+.order-start-delivery-grid-theme .ag-cell .form-control {
+  align-self: center;
+}
+
 .header-center .order-no-merged-cell {
   display: flex;
   align-items: center;
