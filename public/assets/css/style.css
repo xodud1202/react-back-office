@@ -23095,7 +23095,6 @@ dl li {
   font-size: 0.875rem;
   line-height: 1;
   white-space: nowrap;
-  padding: 0.9375rem;
 }
 .table th img,
 .table td img {
@@ -23207,7 +23206,7 @@ dl li {
 }
 .tooltip-static-demo .bs-tooltip-right-demo .arrow:before,
 .tooltip-static-demo .bs-tooltip-left-demo .arrow:before {
-  top: calc((100% - 0.8rem) / 2);
+  top: calc((100% -0.8rem) / 2);
 }
 
 .tooltip {

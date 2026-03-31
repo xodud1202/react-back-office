@@ -103,6 +103,27 @@ button {
   margin-top: 1rem;
 }
 
+.order-search-half-cell {
+  width: auto;
+}
+
+.order-search-quarter-cell {
+  width: auto;
+}
+
+.order-search-wide-inline {
+  width: 100%;
+}
+
+.order-search-narrow-control {
+  width: 100%;
+  min-width: 0;
+}
+
+.order-search-empty-cell {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
 .admin-form-table {
   table-layout: fixed;
   border-collapse: separate;

@@ -358,12 +358,12 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
             {/* 모달 헤더입니다. */}
             <div className="modal-header">
               <h5 className="modal-title">주문 상세</h5>
-              <button
-                type="button"
-                className="btn-close"
-                aria-label="닫기"
-                onClick={onClose}
-              />
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  aria-label="닫기"
+                  onClick={onClose}
+                />
             </div>
 
             {/* 모달 본문입니다. */}

@@ -48,31 +48,17 @@ const OrderSearchForm = ({
   };
 
   return (
-    <AdminSearchPanel loading={loading} onSubmit={handleSubmit} onReset={handleReset} resetType="button">
+    <AdminSearchPanel
+      loading={loading}
+      onSubmit={handleSubmit}
+      onReset={handleReset}
+      resetType="button"
+    >
       <tr>
-        <th scope="row">검색조건</th>
-        <td colSpan={3}>
-          <div className="admin-search-inline">
-            <select
-              className="form-select admin-search-gb-select"
-              value={formState.searchGb}
-              onChange={(event) => updateField('searchGb', event.target.value as OrderSearchParams['searchGb'])}
-            >
-              <option value="ordNo">주문번호</option>
-              <option value="goodsId">상품코드</option>
-            </select>
-            <input
-              type="text"
-              className="form-control admin-search-keyword"
-              value={formState.searchValue}
-              placeholder={formState.searchGb === 'ordNo' ? '주문번호를 입력하세요' : '상품코드를 입력하세요'}
-              onChange={(event) => updateField('searchValue', event.target.value)}
-            />
-          </div>
-        </td>
-        <th scope="row">기간</th>
-        <td>
-          <div className="admin-search-inline">
+        <th scope="row">기간검색</th>
+        <td colSpan={3} className="order-search-half-cell">
+          {/* 기간 조건은 좌측 절반 영역에서 한 번에 조정할 수 있도록 배치합니다. */}
+          <div className="admin-search-inline order-search-wide-inline">
             <select
               className="form-select admin-search-date-select"
               value={formState.dateGb}
@@ -96,12 +82,34 @@ const OrderSearchForm = ({
             />
           </div>
         </td>
+        <th scope="row">검색조건</th>
+        <td colSpan={3} className="order-search-half-cell">
+          {/* 검색 구분과 입력어를 우측 절반 영역에 배치해 주문번호와 상품코드를 함께 지원합니다. */}
+          <div className="admin-search-inline order-search-wide-inline">
+            <select
+              className="form-select admin-search-gb-select"
+              value={formState.searchGb}
+              onChange={(event) => updateField('searchGb', event.target.value as OrderSearchParams['searchGb'])}
+            >
+              <option value="ordNo">주문번호</option>
+              <option value="goodsId">상품코드</option>
+            </select>
+            <input
+              type="text"
+              className="form-control admin-search-keyword"
+              value={formState.searchValue}
+              placeholder={formState.searchGb === 'ordNo' ? '주문번호를 입력하세요' : '상품코드를 입력하세요'}
+              onChange={(event) => updateField('searchValue', event.target.value)}
+            />
+          </div>
+        </td>
       </tr>
       <tr>
         <th scope="row">주문상세상태</th>
-        <td>
+        <td className="order-search-quarter-cell">
+          {/* 주문 상세 상태는 하단 좌측 25% 영역에서 단일 선택으로 제공합니다. */}
           <select
-            className="form-select admin-search-control"
+            className="form-select admin-search-control order-search-narrow-control"
             value={formState.ordDtlStatCd}
             onChange={(event) => updateField('ordDtlStatCd', event.target.value)}
           >
@@ -112,9 +120,10 @@ const OrderSearchForm = ({
           </select>
         </td>
         <th scope="row">클레임상세상태</th>
-        <td>
+        <td className="order-search-quarter-cell">
+          {/* 클레임 상세 상태는 하단 중앙 25% 영역에서 바로 선택할 수 있도록 유지합니다. */}
           <select
-            className="form-select admin-search-control"
+            className="form-select admin-search-control order-search-narrow-control"
             value={formState.chgDtlStatCd}
             onChange={(event) => updateField('chgDtlStatCd', event.target.value)}
           >
@@ -124,7 +133,7 @@ const OrderSearchForm = ({
             ))}
           </select>
         </td>
-        <td colSpan={2} />
+        <td colSpan={4} className="order-search-empty-cell" aria-hidden="true" />
       </tr>
     </AdminSearchPanel>
   );
