@@ -6,6 +6,8 @@ export const ADMIN_ORDER_DETAIL_WAITING_DEPOSIT_STATUS = 'ORD_DTL_STAT_01';
 export const ADMIN_ORDER_DETAIL_PAYMENT_DONE_STATUS = 'ORD_DTL_STAT_02';
 // 상품 준비중 상태 코드입니다.
 export const ADMIN_ORDER_DETAIL_PREPARING_STATUS = 'ORD_DTL_STAT_03';
+// 배송완료 상태 코드입니다.
+export const ADMIN_ORDER_DETAIL_DELIVERY_COMPLETED_STATUS = 'ORD_DTL_STAT_06';
 // 주문 취소 상태 코드입니다.
 export const ADMIN_ORDER_DETAIL_CANCEL_STATUS = 'ORD_DTL_STAT_99';
 
@@ -18,4 +20,9 @@ export function isAdminOrderCancelableStatus(ordDtlStatCd?: string | null): bool
 // 상품 준비중 변경 가능 상태인지 반환합니다.
 export function isAdminOrderPreparingAvailableStatus(ordDtlStatCd?: string | null): boolean {
   return ordDtlStatCd === ADMIN_ORDER_DETAIL_PAYMENT_DONE_STATUS;
+}
+
+// 반품 팝업 오픈 가능한 배송완료 상태인지 반환합니다.
+export function isAdminOrderReturnApplicableStatus(ordDtlStatCd?: string | null): boolean {
+  return ordDtlStatCd === ADMIN_ORDER_DETAIL_DELIVERY_COMPLETED_STATUS;
 }

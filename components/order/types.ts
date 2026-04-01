@@ -113,6 +113,8 @@ export interface OrderDetailRow {
   ordDtlStatCd: string;
   // 주문상세 상태명입니다.
   ordDtlStatNm: string;
+  // 반품신청 가능 여부입니다.
+  returnApplyableYn: boolean;
   // 상품코드입니다.
   goodsId: string;
   // 사이즈코드입니다.
@@ -335,6 +337,190 @@ export interface AdminOrderCancelRequest {
   cancelItemList: { ordDtlNo: number; cancelQty: number }[];
   // 화면 계산 취소 예정 금액 요약입니다.
   previewAmount: AdminOrderCancelPreviewAmount;
+}
+
+// 관리자 주문반품 사유 아이템을 정의합니다.
+export interface AdminOrderReturnReasonItem {
+  // 사유 코드입니다.
+  cd: string;
+  // 사유 코드명입니다.
+  cdNm: string;
+}
+
+// 관리자 주문반품 사이트 정보를 정의합니다.
+export interface AdminOrderReturnSiteInfo {
+  // 사이트 아이디입니다.
+  siteId: string;
+  // 기본 배송비입니다.
+  deliveryFee: number;
+  // 무료배송 기준금액입니다.
+  deliveryFeeLimit: number;
+}
+
+// 관리자 주문반품 배송비 계산 컨텍스트를 정의합니다.
+export interface AdminOrderReturnFeeContext {
+  // 원주문 실결제 배송비입니다.
+  originalPaidDeliveryAmt: number;
+  // 원주문 무료배송 여부입니다.
+  originalFreeDeliveryYn: boolean;
+  // 과거 회사 귀책 반품/교환 이력 여부입니다.
+  hasPriorCompanyFaultReturnOrExchange: boolean;
+  // 과거 고객 귀책 배송비 차감 이력 여부입니다.
+  hasPriorCustomerFaultReturnDeduction: boolean;
+  // 현재 잔여 결제금액입니다.
+  currentRemainingFinalPayAmt: number;
+}
+
+// 관리자 주문반품 회수지 정보를 정의합니다.
+export interface AdminOrderReturnPickupAddress {
+  // 고객번호입니다.
+  custNo: number;
+  // 주소명입니다.
+  addressNm: string;
+  // 우편번호입니다.
+  postNo: string;
+  // 기본주소입니다.
+  baseAddress: string;
+  // 상세주소입니다.
+  detailAddress: string;
+  // 연락처입니다.
+  phoneNumber: string;
+  // 받는 사람명입니다.
+  rsvNm: string;
+  // 기본 주소 여부입니다.
+  defaultYn: string;
+}
+
+// 관리자 주문반품 상품 행 정보를 정의합니다.
+export interface AdminOrderReturnDetailItem {
+  // 주문번호입니다.
+  ordNo: string;
+  // 주문상세번호입니다.
+  ordDtlNo: number;
+  // 주문상세 상태 코드입니다.
+  ordDtlStatCd: string;
+  // 주문상세 상태명입니다.
+  ordDtlStatNm: string;
+  // 반품신청 가능 여부입니다.
+  returnApplyableYn: boolean;
+  // 상품코드입니다.
+  goodsId: string;
+  // 상품명입니다.
+  goodsNm: string;
+  // 사이즈코드입니다.
+  sizeId: string;
+  // 주문수량입니다.
+  ordQty: number;
+  // 반품 가능 잔여수량입니다.
+  cancelableQty: number;
+  // 공급가 금액입니다.
+  supplyAmt: number;
+  // 판매가 금액입니다.
+  saleAmt: number;
+  // 추가금액입니다.
+  addAmt: number;
+  // 상품쿠폰 할인 금액입니다.
+  goodsCouponDiscountAmt: number;
+  // 장바구니쿠폰 할인 금액입니다.
+  cartCouponDiscountAmt: number;
+  // 포인트 사용 금액입니다.
+  pointUseAmt: number;
+  // 이미지 경로입니다.
+  imgPath: string;
+  // 이미지 전체 URL입니다.
+  imgUrl: string;
+}
+
+// 관리자 주문반품 주문 그룹 정보를 정의합니다.
+export interface AdminOrderReturnOrderGroup {
+  // 주문번호입니다.
+  ordNo: string;
+  // 주문일시입니다.
+  orderDt: string;
+  // 주문상세 목록입니다.
+  detailList: AdminOrderReturnDetailItem[];
+}
+
+// 관리자 주문반품 현재 주문 금액 요약을 정의합니다.
+export interface AdminOrderReturnAmountSummary {
+  // 총 공급가입니다.
+  totalSupplyAmt: number;
+  // 총 주문금액입니다.
+  totalOrderAmt: number;
+  // 총 상품할인 금액입니다.
+  totalGoodsDiscountAmt: number;
+  // 총 상품쿠폰 할인 금액입니다.
+  totalGoodsCouponDiscountAmt: number;
+  // 총 장바구니쿠폰 할인 금액입니다.
+  totalCartCouponDiscountAmt: number;
+  // 총 쿠폰 할인 금액입니다.
+  totalCouponDiscountAmt: number;
+  // 총 포인트 사용 금액입니다.
+  totalPointUseAmt: number;
+  // 배송비 금액입니다.
+  deliveryFeeAmt: number;
+  // 배송비쿠폰 할인 금액입니다.
+  deliveryCouponDiscountAmt: number;
+  // 현재 결제금액입니다.
+  finalPayAmt: number;
+}
+
+// 관리자 주문반품 신청 화면 응답을 정의합니다.
+export interface AdminOrderReturnPageResponse {
+  // 주문 그룹 정보입니다.
+  order: AdminOrderReturnOrderGroup | null;
+  // 현재 주문 금액 요약입니다.
+  amountSummary: AdminOrderReturnAmountSummary;
+  // 반품 사유 목록입니다.
+  reasonList: AdminOrderReturnReasonItem[];
+  // 사이트 배송 기준 정보입니다.
+  siteInfo: AdminOrderReturnSiteInfo;
+  // 반품 배송비 계산 컨텍스트입니다.
+  returnFeeContext: AdminOrderReturnFeeContext;
+  // 기본 회수지 정보입니다.
+  pickupAddress: AdminOrderReturnPickupAddress | null;
+}
+
+// 관리자 주문 주소 검색 공통 응답을 정의합니다.
+export interface AdminOrderAddressSearchCommon {
+  // 오류 코드입니다.
+  errorCode: string;
+  // 오류 메시지입니다.
+  errorMessage: string;
+  // 전체 건수입니다.
+  totalCount: number;
+  // 현재 페이지입니다.
+  currentPage: number;
+  // 페이지당 건수입니다.
+  countPerPage: number;
+}
+
+// 관리자 주문 주소 검색 결과 단건을 정의합니다.
+export interface AdminOrderAddressSearchItem {
+  // 도로명 주소입니다.
+  roadAddr: string;
+  // 도로명 주소 파트1입니다.
+  roadAddrPart1: string;
+  // 도로명 주소 파트2입니다.
+  roadAddrPart2: string;
+  // 지번 주소입니다.
+  jibunAddr: string;
+  // 우편번호입니다.
+  zipNo: string;
+  // 행정구역 코드입니다.
+  admCd: string;
+  // 도로명 관리번호입니다.
+  rnMgtSn: string;
+  // 건물 관리번호입니다.
+  bdMgtSn: string;
+}
+
+// 관리자 주문 주소 검색 응답을 정의합니다.
+export interface AdminOrderAddressSearchResponse {
+  // 공통 응답 정보입니다.
+  common: AdminOrderAddressSearchCommon;
+  // 주소 검색 결과 목록입니다.
+  jusoList: AdminOrderAddressSearchItem[];
 }
 
 // 날짜 입력값을 YYYY-MM-DD 형식으로 변환합니다.

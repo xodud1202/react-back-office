@@ -13,9 +13,11 @@ import type {
   OrderPaymentRow,
 } from '@/components/order/types';
 import OrderCancelModal from '@/components/order/OrderCancelModal';
+import OrderReturnModal from '@/components/order/OrderReturnModal';
 import {
   isAdminOrderCancelableStatus,
   isAdminOrderPreparingAvailableStatus,
+  isAdminOrderReturnApplicableStatus,
 } from '@/components/order/utils/orderDetailStatusUtils';
 
 interface OrderDetailModalProps {
@@ -294,6 +296,10 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   // 취소 모달에 넘길 기본 선택 주문상세번호 목록입니다.
   const [selectedCancelOrdDtlNoList, setSelectedCancelOrdDtlNoList] = useState<number[]>([]);
+  // 반품 신청 모달 오픈 여부입니다.
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  // 반품 모달에 넘길 기본 선택 주문상세번호 목록입니다.
+  const [selectedReturnOrdDtlNoList, setSelectedReturnOrdDtlNoList] = useState<number[]>([]);
   // 상품 준비중 처리 진행 여부입니다.
   const [preparing, setPreparing] = useState(false);
 
@@ -364,6 +370,12 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
     setSelectedCancelOrdDtlNoList([]);
   }, []);
 
+  // 반품 신청 모달을 닫고 기본 선택 상태를 초기화합니다.
+  const handleCloseReturnModal = useCallback(() => {
+    setIsReturnModalOpen(false);
+    setSelectedReturnOrdDtlNoList([]);
+  }, []);
+
   // 선택한 결제완료/상품준비중 주문만 대상으로 취소 신청 모달을 엽니다.
   const handleOpenCancelModal = useCallback(() => {
     const selectedRows = getSelectedDetailRows();
@@ -374,6 +386,23 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
 
     setSelectedCancelOrdDtlNoList(selectedRows.map((row) => row.ordDtlNo));
     setIsCancelModalOpen(true);
+  }, [getSelectedDetailRows]);
+
+  // 선택한 배송완료 주문만 대상으로 반품 신청 모달을 엽니다.
+  const handleOpenReturnModal = useCallback(() => {
+    const selectedRows = getSelectedDetailRows();
+    if (
+      selectedRows.length < 1 ||
+      selectedRows.some(
+        (row) => !isAdminOrderReturnApplicableStatus(row.ordDtlStatCd) || row.returnApplyableYn !== true,
+      )
+    ) {
+      alert('반품 신청 가능한 주문이 없습니다.');
+      return;
+    }
+
+    setSelectedReturnOrdDtlNoList(selectedRows.map((row) => row.ordDtlNo));
+    setIsReturnModalOpen(true);
   }, [getSelectedDetailRows]);
 
   // 선택한 결제완료 주문을 상품 준비중 상태로 변경합니다.
@@ -420,6 +449,16 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
           selectedOrdDtlNoList={selectedCancelOrdDtlNoList}
           onClose={handleCloseCancelModal}
           onSuccess={handleCancelSuccess}
+        />
+      )}
+      {/* 반품 신청 레이어팝업입니다. */}
+      {ordNo && (
+        <OrderReturnModal
+          isOpen={isReturnModalOpen}
+          ordNo={ordNo}
+          customerPhoneNumber={detailData?.master.custPhoneNumber ?? ''}
+          selectedOrdDtlNoList={selectedReturnOrdDtlNoList}
+          onClose={handleCloseReturnModal}
         />
       )}
 
@@ -471,6 +510,14 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
                   <div className="d-flex justify-content-between align-items-center mt-4 mb-2">
                     <h6 className="fw-bold mb-0">주문 상세 목록</h6>
                     <div className="d-flex gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        onClick={handleOpenReturnModal}
+                        disabled={loading || preparing}
+                      >
+                        반품 신청
+                      </button>
                       <button
                         type="button"
                         className="btn btn-sm btn-primary"

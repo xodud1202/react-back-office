@@ -63,6 +63,7 @@ const OrderStartDeliveryHeaderCheckbox = ({ api }: OrderStartDeliveryHeaderCheck
   const checkboxRef = useRef<HTMLInputElement | null>(null);
   const [checked, setChecked] = useState(false);
   const [disabled, setDisabled] = useState(false);
+  const [indeterminate, setIndeterminate] = useState(false);
 
   // 현재 페이지 기준 전체 선택 상태를 다시 계산합니다.
   const syncHeaderCheckboxState = useCallback(() => {
@@ -82,10 +83,18 @@ const OrderStartDeliveryHeaderCheckbox = ({ api }: OrderStartDeliveryHeaderCheck
       }
     }
 
-    setDisabled(selectableRowCount < 1);
-    setChecked(selectableRowCount > 0 && selectedRowCount === selectableRowCount);
+    const hasSelectableRow = selectableRowCount > 0;
+    const isChecked = hasSelectableRow && selectedRowCount === selectableRowCount;
+    const isIndeterminate = selectedRowCount > 0 && selectedRowCount < selectableRowCount;
+
+    // 계산된 체크/비활성/부분선택 상태를 React 상태에 반영합니다.
+    setDisabled(!hasSelectableRow);
+    setChecked(isChecked);
+    setIndeterminate(isIndeterminate);
+
+    // 실제 input indeterminate 속성도 함께 동기화합니다.
     if (checkboxRef.current) {
-      checkboxRef.current.indeterminate = selectedRowCount > 0 && selectedRowCount < selectableRowCount;
+      checkboxRef.current.indeterminate = isIndeterminate;
     }
   }, [api]);
 
@@ -121,17 +130,35 @@ const OrderStartDeliveryHeaderCheckbox = ({ api }: OrderStartDeliveryHeaderCheck
     syncHeaderCheckboxState();
   };
 
+  // ag-grid 기본 행 체크박스와 동일한 클래스 조합을 계산합니다.
+  const checkboxWrapperClassName = [
+    'ag-wrapper',
+    'ag-input-wrapper',
+    'ag-checkbox-input-wrapper',
+    checked ? 'ag-checked' : '',
+    indeterminate ? 'ag-indeterminate' : '',
+    disabled ? 'ag-disabled' : '',
+  ].filter(Boolean).join(' ');
+
   return (
     <div className="d-flex justify-content-center align-items-center w-100 h-100">
-      <input
-        ref={checkboxRef}
-        type="checkbox"
-        className="form-check-input m-0"
-        checked={checked}
-        disabled={disabled}
-        onChange={handleChange}
-        aria-label="현재 페이지 전체 선택"
-      />
+      <div className="ag-selection-checkbox m-0" role="presentation">
+        <div className="ag-checkbox ag-input-field" role="presentation">
+          <div className={checkboxWrapperClassName} role="presentation">
+            <input
+              ref={checkboxRef}
+              type="checkbox"
+              className="ag-input-field-input ag-checkbox-input"
+              checked={checked}
+              disabled={disabled}
+              tabIndex={-1}
+              aria-checked={indeterminate ? 'mixed' : checked}
+              onChange={handleChange}
+              aria-label="현재 페이지 전체 선택"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
