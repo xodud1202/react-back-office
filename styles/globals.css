@@ -2,6 +2,11 @@ button {
   cursor: pointer;
 }
 
+/* Bootstrap scrollable 레이어팝업의 최대 높이를 공통으로 제한합니다. */
+.modal.show .modal-dialog.modal-dialog-scrollable .modal-content {
+  max-height: 80vh;
+}
+
 .admin-search-table {
   min-width: 960px;
   table-layout: fixed;

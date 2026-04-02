@@ -481,6 +481,58 @@ export interface AdminOrderReturnPageResponse {
   pickupAddress: AdminOrderReturnPickupAddress | null;
 }
 
+// 관리자 주문반품 환불 예정 금액을 정의합니다.
+export interface AdminOrderReturnPreviewAmount {
+  // 반품 예정 금액입니다.
+  expectedRefundAmt: number;
+  // 실결제 상품가입니다.
+  paidGoodsAmt: number;
+  // 환급 혜택 합계입니다.
+  benefitAmt: number;
+  // 배송비 조정액입니다.
+  shippingAdjustmentAmt: number;
+  // 포인트 환급액입니다.
+  totalPointRefundAmt: number;
+  // 배송비쿠폰 환급액입니다.
+  deliveryCouponRefundAmt: number;
+}
+
+// 관리자 주문반품 제출용 회수지 타입을 정의합니다.
+export interface AdminOrderReturnSubmitPickupAddress {
+  // 받는사람명입니다.
+  rsvNm: string;
+  // 우편번호입니다.
+  postNo: string;
+  // 기본주소입니다.
+  baseAddress: string;
+  // 상세주소입니다.
+  detailAddress: string;
+}
+
+// 관리자 주문반품 요청 본문을 정의합니다.
+export interface AdminOrderReturnRequest {
+  // 주문번호입니다.
+  ordNo: string;
+  // 공통 반품 사유 코드입니다.
+  reasonCd: string;
+  // 공통 반품 사유 상세입니다.
+  reasonDetail: string;
+  // 반품 상품 목록입니다.
+  returnItemList: { ordDtlNo: number; returnQty: number }[];
+  // 화면 계산 반품 예정 금액 요약입니다.
+  previewAmount: AdminOrderReturnPreviewAmount;
+  // 회수지 정보입니다.
+  pickupAddress: AdminOrderReturnSubmitPickupAddress;
+}
+
+// 관리자 주문반품 저장 응답을 정의합니다.
+export interface AdminOrderReturnResponse {
+  // 클레임번호입니다.
+  clmNo: string;
+  // 주문번호입니다.
+  ordNo: string;
+}
+
 // 관리자 주문 주소 검색 공통 응답을 정의합니다.
 export interface AdminOrderAddressSearchCommon {
   // 오류 코드입니다.

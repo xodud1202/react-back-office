@@ -9,6 +9,8 @@ import type {
   AdminOrderReturnDetailItem,
   AdminOrderReturnPageResponse,
   AdminOrderReturnPickupAddress,
+  AdminOrderReturnRequest,
+  AdminOrderReturnResponse,
 } from '@/components/order/types';
 import {
   buildAdminOrderReturnPreviewResult,
@@ -30,10 +32,20 @@ interface OrderReturnModalProps {
   selectedOrdDtlNoList?: number[];
   // 모달 닫기 콜백입니다.
   onClose: () => void;
+  // 저장 성공 콜백입니다.
+  onSuccess: () => void;
 }
 
 // 주소 검색 목록 페이지 크기입니다.
 const ADDRESS_SEARCH_PAGE_SIZE = 5;
+// 클레임 주소명 최대 길이입니다.
+const ORDER_CHANGE_ADDRESS_NAME_MAX_LENGTH = 20;
+// 클레임 우편번호 최대 길이입니다.
+const ORDER_CHANGE_ADDRESS_POST_NO_MAX_LENGTH = 10;
+// 클레임 기본주소 최대 길이입니다.
+const ORDER_CHANGE_ADDRESS_BASE_MAX_LENGTH = 100;
+// 클레임 상세주소 최대 길이입니다.
+const ORDER_CHANGE_ADDRESS_DETAIL_MAX_LENGTH = 100;
 
 // 금액을 천 단위 구분 문자열로 변환합니다.
 const formatAmount = (value: number): string => value.toLocaleString('ko-KR');
@@ -67,6 +79,16 @@ const displayValue = (value?: string | null): string => {
     return '-';
   }
   return value;
+};
+
+// 반품 저장 API 오류 메시지를 안전하게 추출합니다.
+const resolveOrderReturnActionErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  const errorResponse = error as { response?: { data?: { message?: string } } };
+  const message = errorResponse.response?.data?.message;
+  if (typeof message === 'string' && message.trim()) {
+    return message;
+  }
+  return fallbackMessage;
 };
 
 interface AdminOrderReturnAmountItem {
@@ -231,6 +253,44 @@ const createEmptyPickupAddress = (): AdminOrderReturnPickupAddress => ({
   defaultYn: 'N',
 });
 
+// 반품 저장용 회수지 정보를 생성합니다.
+const buildAdminOrderReturnSubmitPickupAddress = (
+  pickupAddress: AdminOrderReturnPickupAddress,
+): AdminOrderReturnRequest['pickupAddress'] => ({
+  rsvNm: pickupAddress.rsvNm.trim(),
+  postNo: pickupAddress.postNo.trim(),
+  baseAddress: pickupAddress.baseAddress.trim(),
+  detailAddress: pickupAddress.detailAddress.trim(),
+});
+
+// 반품 회수지 입력값의 클라이언트 유효성을 확인합니다.
+const resolveAdminOrderReturnPickupAddressValidationMessage = (
+  pickupAddress: AdminOrderReturnPickupAddress,
+): string => {
+  const submitPickupAddress = buildAdminOrderReturnSubmitPickupAddress(pickupAddress);
+  if (
+    submitPickupAddress.rsvNm === '' ||
+    submitPickupAddress.postNo === '' ||
+    submitPickupAddress.baseAddress === '' ||
+    submitPickupAddress.detailAddress === ''
+  ) {
+    return '회수지 정보를 확인해주세요.';
+  }
+  if (submitPickupAddress.rsvNm.length > ORDER_CHANGE_ADDRESS_NAME_MAX_LENGTH) {
+    return '회수지 정보를 확인해주세요.';
+  }
+  if (submitPickupAddress.postNo.length > ORDER_CHANGE_ADDRESS_POST_NO_MAX_LENGTH) {
+    return '회수지 정보를 확인해주세요.';
+  }
+  if (submitPickupAddress.baseAddress.length > ORDER_CHANGE_ADDRESS_BASE_MAX_LENGTH) {
+    return '회수지 정보를 확인해주세요.';
+  }
+  if (submitPickupAddress.detailAddress.length > ORDER_CHANGE_ADDRESS_DETAIL_MAX_LENGTH) {
+    return '회수지 정보를 확인해주세요.';
+  }
+  return '';
+};
+
 // 주소 검색 결과를 회수지 정보에 반영합니다.
 const applySearchItemToPickupAddress = (
   pickupAddress: AdminOrderReturnPickupAddress,
@@ -364,6 +424,7 @@ const OrderReturnModal = ({
   customerPhoneNumber = '',
   selectedOrdDtlNoList = [],
   onClose,
+  onSuccess,
 }: OrderReturnModalProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -376,6 +437,8 @@ const OrderReturnModal = ({
   const [selectionMap, dispatch] = useReducer(selectionReducer, {});
   // 회수지 수정 상태입니다.
   const [pickupAddress, setPickupAddress] = useState<AdminOrderReturnPickupAddress>(createEmptyPickupAddress());
+  // 저장 진행 상태입니다.
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // 주소 검색 UI 상태입니다.
   const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [addressKeyword, setAddressKeyword] = useState('');
@@ -598,6 +661,11 @@ const OrderReturnModal = ({
       pageData.reasonList,
     );
   }, [pageData, reasonCd, reasonDetail, selectionMap]);
+  const pickupAddressValidationMessage = useMemo(
+    () => resolveAdminOrderReturnPickupAddressValidationMessage(pickupAddress),
+    [pickupAddress],
+  );
+  const submitDisabled = loading || isSubmitting || pickupAddressValidationMessage !== '' || !previewResult?.canSubmit;
 
   // 반품 신청 화면 데이터를 조회합니다.
   const fetchPageData = useCallback(async () => {
@@ -608,6 +676,7 @@ const OrderReturnModal = ({
     setReasonDetail('');
     dispatch({ type: 'INIT', payload: {} });
     setPickupAddress(createEmptyPickupAddress());
+    setIsSubmitting(false);
     setShowAddressSearch(false);
     setAddressKeyword('');
     setAddressSearchError(null);
@@ -675,17 +744,74 @@ const OrderReturnModal = ({
   }, []);
 
   // 반품 신청 버튼 클릭을 처리합니다.
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!previewResult) {
       window.alert('반품 신청 정보를 확인해주세요.');
+      return;
+    }
+    if (pickupAddressValidationMessage !== '') {
+      window.alert(pickupAddressValidationMessage);
       return;
     }
     if (!previewResult.canSubmit) {
       window.alert(previewResult.submitBlockMessage || '반품 신청 정보를 확인해주세요.');
       return;
     }
-    window.alert('반품 신청 기능은 추후 오픈 예정입니다.');
-  }, [previewResult]);
+
+    const selectedItemList = targetDetailList.flatMap((detailItem) => {
+      const selectionItem = resolveAdminOrderReturnSelectionItem(selectionMap, detailItem);
+      if (!selectionItem.selected || selectionItem.returnQty < 1) {
+        return [];
+      }
+      return [
+        {
+          ordDtlNo: detailItem.ordDtlNo,
+          returnQty: selectionItem.returnQty,
+        },
+      ];
+    });
+    if (selectedItemList.length < 1) {
+      window.alert('반품할 상품을 선택해주세요.');
+      return;
+    }
+    if (!pageData?.order) {
+      window.alert('반품 신청 정보를 확인해주세요.');
+      return;
+    }
+
+    const requestBody: AdminOrderReturnRequest = {
+      ordNo: pageData.order.ordNo,
+      reasonCd: reasonCd.trim(),
+      reasonDetail: reasonDetail.trim(),
+      returnItemList: selectedItemList,
+      previewAmount: {
+        ...previewResult.returnPreviewSummary,
+      },
+      pickupAddress: buildAdminOrderReturnSubmitPickupAddress(pickupAddress),
+    };
+
+    // 현재 화면 계산값을 포함해 주문반품 API를 호출하고 실패 메시지는 alert로 노출합니다.
+    setIsSubmitting(true);
+    try {
+      await api.post<AdminOrderReturnResponse>('/api/admin/order/return', requestBody);
+      window.alert('반품 신청이 완료되었습니다.');
+      onSuccess();
+    } catch (actionError) {
+      window.alert(resolveOrderReturnActionErrorMessage(actionError, '반품 신청 처리 중 오류가 발생했습니다.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    onSuccess,
+    pageData?.order,
+    pickupAddress,
+    pickupAddressValidationMessage,
+    previewResult,
+    reasonCd,
+    reasonDetail,
+    selectionMap,
+    targetDetailList,
+  ]);
 
   if (!isOpen) {
     return null;
@@ -837,7 +963,7 @@ const OrderReturnModal = ({
                                 onChange={(event) =>
                                   setPickupAddress((previous) => ({
                                     ...previous,
-                                    rsvNm: event.target.value.slice(0, 30),
+                                    rsvNm: event.target.value.slice(0, 20),
                                   }))
                                 }
                               />
@@ -889,6 +1015,10 @@ const OrderReturnModal = ({
                           </tr>
                         </tbody>
                       </AdminFormTable>
+
+                      {pickupAddressValidationMessage !== '' ? (
+                        <div className="alert alert-danger mt-3 mb-0">{pickupAddressValidationMessage}</div>
+                      ) : null}
 
                       {showAddressSearch && (
                         <div className="border rounded p-3 mt-3" style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)' }}>
@@ -988,10 +1118,10 @@ const OrderReturnModal = ({
               )}
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-primary" onClick={handleSubmit}>
-                반품 신청
+              <button type="button" className="btn btn-primary" onClick={handleSubmit} disabled={submitDisabled}>
+                {isSubmitting ? '처리 중...' : '반품 신청'}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={onClose}>
+              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSubmitting}>
                 닫기
               </button>
             </div>

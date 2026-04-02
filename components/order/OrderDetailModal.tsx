@@ -376,6 +376,15 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
     setSelectedReturnOrdDtlNoList([]);
   }, []);
 
+  // 반품 신청 성공 시 상세 정보를 재조회합니다.
+  const handleReturnSuccess = useCallback(() => {
+    setIsReturnModalOpen(false);
+    setSelectedReturnOrdDtlNoList([]);
+    if (ordNo) {
+      fetchOrderDetail(ordNo);
+    }
+  }, [ordNo, fetchOrderDetail]);
+
   // 선택한 결제완료/상품준비중 주문만 대상으로 취소 신청 모달을 엽니다.
   const handleOpenCancelModal = useCallback(() => {
     const selectedRows = getSelectedDetailRows();
@@ -459,6 +468,7 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
           customerPhoneNumber={detailData?.master.custPhoneNumber ?? ''}
           selectedOrdDtlNoList={selectedReturnOrdDtlNoList}
           onClose={handleCloseReturnModal}
+          onSuccess={handleReturnSuccess}
         />
       )}
 
