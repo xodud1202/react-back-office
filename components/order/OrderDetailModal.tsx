@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import type { ColDef, GridReadyEvent } from 'ag-grid-community';
+import type { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
 import api from '@/utils/axios/axios';
 import AdminFormTable from '@/components/common/AdminFormTable';
 import type {
+  AdminOrderReturnWithdrawRequest,
+  AdminOrderReturnWithdrawResponse,
   AdminOrderDetailStatusUpdateRequest,
   AdminOrderDetailStatusUpdateResponse,
   OrderClaimRow,
@@ -51,6 +53,11 @@ const resolveOrderDetailActionErrorMessage = (error: unknown, fallbackMessage: s
     return message;
   }
   return fallbackMessage;
+};
+
+// 주문 클레임 행이 관리자 반품 철회 가능한 상태인지 반환합니다.
+const isAdminOrderReturnWithdrawableClaimRow = (claimRow: OrderClaimRow): boolean => {
+  return claimRow.chgDtlGbCd === 'CHG_DTL_GB_02' && claimRow.chgDtlStatCd === 'CHG_DTL_STAT_11';
 };
 
 // 주문 상세 ag-grid 컬럼을 정의합니다.
@@ -109,6 +116,13 @@ const createDetailColumnDefs = (): ColDef<OrderDetailRow>[] => [
 
 // 주문 클레임 ag-grid 컬럼을 정의합니다.
 const createClaimColumnDefs = (): ColDef<OrderClaimRow>[] => [
+  {
+    headerCheckboxSelection: true,
+    checkboxSelection: true,
+    width: 50,
+    resizable: false,
+    sortable: false,
+  },
   { headerName: '클레임번호', field: 'clmNo', width: 160 },
   { headerName: '클레임 상세 구분', field: 'chgDtlGbNm', width: 130 },
   { headerName: '주문번호', field: 'ordNo', width: 170 },
@@ -302,6 +316,8 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
   const [selectedReturnOrdDtlNoList, setSelectedReturnOrdDtlNoList] = useState<number[]>([]);
   // 상품 준비중 처리 진행 여부입니다.
   const [preparing, setPreparing] = useState(false);
+  // 반품 철회 처리 진행 여부입니다.
+  const [withdrawingReturn, setWithdrawingReturn] = useState(false);
 
   // ag-grid 컬럼 정의를 메모이제이션합니다.
   const columnDefs = useMemo(() => createDetailColumnDefs(), []);
@@ -317,16 +333,28 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
   }), []);
 
   // ag-grid 인스턴스 참조입니다.
-  const gridApiRef = useRef<import('ag-grid-community').GridApi<OrderDetailRow> | null>(null);
+  const gridApiRef = useRef<GridApi<OrderDetailRow> | null>(null);
+  // 주문 클레임 grid 인스턴스 참조입니다.
+  const claimGridApiRef = useRef<GridApi<OrderClaimRow> | null>(null);
 
   // 그리드 준비 시 인스턴스를 저장합니다.
   const handleGridReady = useCallback((event: GridReadyEvent<OrderDetailRow>) => {
     gridApiRef.current = event.api;
   }, []);
 
+  // 주문 클레임 grid 준비 시 인스턴스를 저장합니다.
+  const handleClaimGridReady = useCallback((event: GridReadyEvent<OrderClaimRow>) => {
+    claimGridApiRef.current = event.api;
+  }, []);
+
   // 현재 그리드에서 선택된 주문상세 행 목록을 반환합니다.
   const getSelectedDetailRows = useCallback((): OrderDetailRow[] => {
     return gridApiRef.current?.getSelectedRows() ?? [];
+  }, []);
+
+  // 현재 주문 클레임 grid에서 선택된 행 목록을 반환합니다.
+  const getSelectedClaimRows = useCallback((): OrderClaimRow[] => {
+    return claimGridApiRef.current?.getSelectedRows() ?? [];
   }, []);
 
   // 주문 상세 정보를 조회합니다.
@@ -413,6 +441,44 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
     setSelectedReturnOrdDtlNoList(selectedRows.map((row) => row.ordDtlNo));
     setIsReturnModalOpen(true);
   }, [getSelectedDetailRows]);
+
+  // 선택한 반품 신청 클레임만 대상으로 반품 철회를 수행합니다.
+  const handleWithdrawSelectedClaim = useCallback(async () => {
+    if (!ordNo) {
+      return;
+    }
+
+    const selectedClaimRows = getSelectedClaimRows();
+    if (selectedClaimRows.length < 1) {
+      alert('철회할 반품건을 선택해주세요.');
+      return;
+    }
+    if (selectedClaimRows.some((claimRow) => !isAdminOrderReturnWithdrawableClaimRow(claimRow))) {
+      alert('반품 신청건만 철회가 가능합니다.');
+      return;
+    }
+
+    // 선택된 클레임 행만 관리자 반품 철회 요청 본문으로 변환합니다.
+    const requestBody: AdminOrderReturnWithdrawRequest = {
+      ordNo,
+      claimItemList: selectedClaimRows.map((claimRow) => ({
+        clmNo: claimRow.clmNo,
+        ordDtlNo: claimRow.ordDtlNo,
+      })),
+    };
+
+    setWithdrawingReturn(true);
+    try {
+      await api.post<AdminOrderReturnWithdrawResponse>('/api/admin/order/return/withdraw', requestBody);
+      claimGridApiRef.current?.deselectAll();
+      await fetchOrderDetail(ordNo);
+      alert('반품 철회가 완료되었습니다.');
+    } catch (actionError) {
+      alert(resolveOrderDetailActionErrorMessage(actionError, '반품 철회 처리 중 오류가 발생했습니다.'));
+    } finally {
+      setWithdrawingReturn(false);
+    }
+  }, [ordNo, getSelectedClaimRows, fetchOrderDetail]);
 
   // 선택한 결제완료 주문을 상품 준비중 상태로 변경합니다.
   const handlePrepareSelected = useCallback(async () => {
@@ -565,7 +631,17 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
                   {/* 주문 클레임 목록은 데이터가 있는 경우에만 노출합니다. */}
                   {(detailData.claimList?.length ?? 0) > 0 && (
                     <>
-                      <h6 className="fw-bold mb-2 mt-4">주문 클레임 목록</h6>
+                      <div className="d-flex justify-content-between align-items-center mt-4 mb-2">
+                        <h6 className="fw-bold mb-0">주문 클레임 목록</h6>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-warning"
+                          onClick={handleWithdrawSelectedClaim}
+                          disabled={loading || withdrawingReturn}
+                        >
+                          {withdrawingReturn ? '처리 중...' : '반품 철회'}
+                        </button>
+                      </div>
                       <div
                         className="ag-theme-alpine-dark header-center"
                         style={{ width: '100%', height: '240px' }}
@@ -575,8 +651,10 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
                           defaultColDef={defaultColDef}
                           rowData={detailData.claimList}
                           rowHeight={42}
+                          rowSelection="multiple"
                           overlayNoRowsTemplate="주문 클레임 데이터가 없습니다."
                           getRowId={(params) => `${params.data?.clmNo ?? ''}-${params.data?.ordDtlNo ?? ''}-${params.data?.chgDtlGbCd ?? ''}`}
+                          onGridReady={handleClaimGridReady}
                         />
                       </div>
                     </>
