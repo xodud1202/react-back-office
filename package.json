@@ -16,7 +16,7 @@
     "ace-builds": "^1.31.2",
     "ag-grid-community": "^32.3.5",
     "ag-grid-react": "^32.3.9",
-    "axios": "^1.13.1",
+    "axios": "^1.13.6",
     "bootstrap": "^5.3.2",
     "bootstrap-datepicker": "^1.10.0",
     "bootstrap-maxlength": "^1.10.1",
