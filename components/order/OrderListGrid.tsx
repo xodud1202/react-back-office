@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type {
   ColDef,
   GridApi,

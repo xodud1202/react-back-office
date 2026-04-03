@@ -1,5 +1,5 @@
 import React from 'react';
-import { AgGridReact, AgGridReactProps } from 'ag-grid-react';
+import { AgGridReact, AgGridReactProps } from '@/components/common/agGrid/AgGridReact';
 
 /*interface CommonGridProps extends AgGridReactProps {
   // 추가적인 공통 props가 필요하다면 여기에 정의할 수 있습니다.

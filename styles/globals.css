@@ -537,6 +537,75 @@ button {
   background-color: rgba(0, 144, 231, 0.14);
 }
 
+/* ag-grid 공통 wrapper가 부모 영역을 그대로 채우도록 설정합니다. */
+.ag-grid-copy-wrapper {
+  width: 100%;
+}
+
+/* 고정 높이 grid에서는 wrapper도 동일하게 높이를 채웁니다. */
+.ag-grid-copy-wrapper-fill {
+  height: 100%;
+}
+
+/* 범위 선택된 셀의 기본 배경을 정의합니다. */
+.ag-theme-alpine .ag-cell.ag-grid-copy-selected-cell,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-selected-cell {
+  background-color: rgba(0, 144, 231, 0.18);
+}
+
+/* 범위 상단 경계선을 강조합니다. */
+.ag-theme-alpine .ag-cell.ag-grid-copy-edge-top,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-edge-top {
+  box-shadow: inset 0 2px 0 #32b3ff;
+}
+
+/* 범위 하단 경계선을 강조합니다. */
+.ag-theme-alpine .ag-cell.ag-grid-copy-edge-bottom,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-edge-bottom {
+  box-shadow: inset 0 -2px 0 #32b3ff;
+}
+
+/* 범위 좌측 경계선을 강조합니다. */
+.ag-theme-alpine .ag-cell.ag-grid-copy-edge-left,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-edge-left {
+  box-shadow: inset 2px 0 0 #32b3ff;
+}
+
+/* 범위 우측 경계선을 강조합니다. */
+.ag-theme-alpine .ag-cell.ag-grid-copy-edge-right,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-edge-right {
+  box-shadow: inset -2px 0 0 #32b3ff;
+}
+
+/* 여러 경계선이 겹치는 셀은 복합 box-shadow로 다시 그립니다. */
+.ag-theme-alpine .ag-cell.ag-grid-copy-edge-top.ag-grid-copy-edge-left,
+.ag-theme-alpine .ag-cell.ag-grid-copy-edge-top.ag-grid-copy-edge-right,
+.ag-theme-alpine .ag-cell.ag-grid-copy-edge-bottom.ag-grid-copy-edge-left,
+.ag-theme-alpine .ag-cell.ag-grid-copy-edge-bottom.ag-grid-copy-edge-right,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-edge-top.ag-grid-copy-edge-left,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-edge-top.ag-grid-copy-edge-right,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-edge-bottom.ag-grid-copy-edge-left,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-edge-bottom.ag-grid-copy-edge-right {
+  box-shadow:
+    inset 0 2px 0 #32b3ff,
+    inset 0 -2px 0 #32b3ff,
+    inset 2px 0 0 #32b3ff,
+    inset -2px 0 0 #32b3ff;
+}
+
+/* 시작 셀은 더 진한 테두리로 표시합니다. */
+.ag-theme-alpine .ag-cell.ag-grid-copy-range-start,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-range-start {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: -2px;
+}
+
+/* 종료 셀은 점선 테두리로 표시합니다. */
+.ag-theme-alpine .ag-cell.ag-grid-copy-range-end,
+.ag-theme-alpine-dark .ag-cell.ag-grid-copy-range-end {
+  border-style: dashed;
+}
+
 /* 모바일에서 상단 1차 메뉴 버튼 높이/간격을 최적화합니다. */
 @media (max-width: 991.98px) {
   .top-primary-menu {

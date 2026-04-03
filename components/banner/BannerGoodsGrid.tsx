@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { ColDef, RowDragEndEvent, SelectionChangedEvent } from 'ag-grid-community';
 import type { BannerGoodsItem } from '@/components/banner/types';
 

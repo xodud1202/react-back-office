@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import Image from 'next/image';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { ColDef, RowDragEndEvent, SelectionChangedEvent } from 'ag-grid-community';
 import type { CategoryGoodsItem } from '@/components/categoryGoods/types';
 

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { ColDef } from 'ag-grid-community';
 import type { ExhibitionItem } from '@/components/exhibition/types';
 import NewsImagePreviewModal from '@/components/common/NewsImagePreviewModal';

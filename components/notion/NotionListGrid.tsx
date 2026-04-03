@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { ColDef, GridReadyEvent, ICellRendererParams } from 'ag-grid-community';
 import type { NotionListRow } from '@/components/notion/types';
 

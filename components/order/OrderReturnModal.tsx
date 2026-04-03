@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { ColDef, IHeaderParams } from 'ag-grid-community';
 import api from '@/utils/axios/axios';
 import AdminFormTable from '@/components/common/AdminFormTable';

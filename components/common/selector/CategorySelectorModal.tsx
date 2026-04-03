@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type { ColDef, SelectionChangedEvent } from 'ag-grid-community';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import Modal from '@/components/common/Modal';
 import AdminSearchPanel from '@/components/common/AdminSearchPanel';
 import type { CategoryOption } from '@/components/goods/types';

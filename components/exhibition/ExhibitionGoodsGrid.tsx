@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import type { ColDef, RowDragEndEvent } from 'ag-grid-community';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { ExhibitionGoodsItem } from '@/components/exhibition/types';
 
 interface ExhibitionGoodsGridProps {

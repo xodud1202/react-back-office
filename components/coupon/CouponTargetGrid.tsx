@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import type { ColDef, SelectionChangedEvent } from 'ag-grid-community';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { CouponTargetRow } from '@/components/coupon/types';
 
 interface CouponTargetGridProps {

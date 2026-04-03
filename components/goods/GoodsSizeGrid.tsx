@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { CellEditingStoppedEvent, CellFocusedEvent, CellValueChangedEvent, ColDef, RowDragEndEvent } from 'ag-grid-community';
 import type { GoodsSizeRow } from '@/components/goods/types';
 

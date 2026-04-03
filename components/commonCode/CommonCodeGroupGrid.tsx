@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import type { ColDef, ICellRendererParams, SelectionChangedEvent } from 'ag-grid-community';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { CommonCodeRow } from '@/components/commonCode/types';
 
 interface CommonCodeGroupGridProps {

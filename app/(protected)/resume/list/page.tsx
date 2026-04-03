@@ -10,7 +10,7 @@ import ResumeExperience from '@/components/resume/ResumeExperience';
 import ResumeEducation from '@/components/resume/ResumeEducation';
 import ResumeOtherExperience from '@/components/resume/ResumeOtherExperience';
 import api from '@/utils/axios/axios';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { ColDef, GridApi, GridReadyEvent, ICellRendererParams, IDatasource, IGetRowsParams } from 'ag-grid-community';
 
 // 이력서 데이터 타입 정의

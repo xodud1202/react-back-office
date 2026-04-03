@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import type { ColDef, CellValueChangedEvent, ICellRendererParams, RowClickedEvent, RowDragEndEvent } from 'ag-grid-community';
-import { AgGridReact } from 'ag-grid-react';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { ExhibitionTabItem } from '@/components/exhibition/types';
 
 interface ExhibitionTabGridProps {
