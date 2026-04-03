@@ -878,7 +878,6 @@ const OrderReturnModal = ({
                             domLayout="autoHeight"
                             rowHeight={52}
                             headerHeight={42}
-                            suppressRowClickSelection
                             suppressCellFocus
                             overlayNoRowsTemplate="반품 신청 가능한 선택 상품이 없습니다."
                             getRowId={(params) => String(params.data?.ordDtlNo ?? '')}

@@ -214,6 +214,12 @@ const ExhibitionTabGrid = ({
     cellClass: 'text-center',
   }), []);
 
+  // AG Grid v32.2+ 단일 선택 옵션을 정의합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'singleRow' as const,
+    enableClickSelection: true,
+  }), []);
+
   // 행 순서가 변경되면 노출순서를 재계산합니다.
   const handleRowDragEnd = useCallback((event: RowDragEndEvent<ExhibitionTabItem>) => {
     if (!isEditable) {
@@ -267,10 +273,9 @@ const ExhibitionTabGrid = ({
         columnDefs={columnDefs}
         defaultColDef={defaultColDef}
         rowData={rows}
-        rowSelection="single"
+        rowSelection={rowSelection}
         rowDragManaged
         animateRows
-        suppressRowClickSelection={false}
         overlayNoRowsTemplate="탭이 없습니다."
         getRowId={(params) => String(params.data.rowKey || '')}
         onRowDragEnd={handleRowDragEnd}

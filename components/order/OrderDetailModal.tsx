@@ -62,13 +62,6 @@ const isAdminOrderReturnWithdrawableClaimRow = (claimRow: OrderClaimRow): boolea
 
 // 주문 상세 ag-grid 컬럼을 정의합니다.
 const createDetailColumnDefs = (): ColDef<OrderDetailRow>[] => [
-  {
-    headerCheckboxSelection: true,
-    checkboxSelection: true,
-    width: 50,
-    resizable: false,
-    sortable: false,
-  },
   { headerName: '주문상세번호', field: 'ordDtlNo', width: 130 },
   { headerName: '주문상세상태', field: 'ordDtlStatNm', width: 140 },
   { headerName: '상품코드', field: 'goodsId', width: 140 },
@@ -116,13 +109,6 @@ const createDetailColumnDefs = (): ColDef<OrderDetailRow>[] => [
 
 // 주문 클레임 ag-grid 컬럼을 정의합니다.
 const createClaimColumnDefs = (): ColDef<OrderClaimRow>[] => [
-  {
-    headerCheckboxSelection: true,
-    checkboxSelection: true,
-    width: 50,
-    resizable: false,
-    sortable: false,
-  },
   { headerName: '클레임번호', field: 'clmNo', width: 160 },
   { headerName: '클레임 상세 구분', field: 'chgDtlGbNm', width: 130 },
   { headerName: '주문번호', field: 'ordNo', width: 170 },
@@ -330,6 +316,14 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
     sortable: false,
     editable: false,
     cellClass: 'text-center',
+  }), []);
+
+  // AG Grid v32.2+ 다중 선택 옵션을 정의합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'multiRow' as const,
+    checkboxes: true,
+    headerCheckbox: true,
+    enableClickSelection: true,
   }), []);
 
   // ag-grid 인스턴스 참조입니다.
@@ -621,7 +615,8 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
                       defaultColDef={defaultColDef}
                       rowData={detailData.list}
                       rowHeight={42}
-                      rowSelection="multiple"
+                      rowSelection={rowSelection}
+                      selectionColumnDef={{ width: 50, resizable: false, sortable: false }}
                       overlayNoRowsTemplate="주문 상세 데이터가 없습니다."
                       getRowId={(params) => String(params.data?.ordDtlNo ?? '')}
                       onGridReady={handleGridReady}
@@ -651,7 +646,8 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
                           defaultColDef={defaultColDef}
                           rowData={detailData.claimList}
                           rowHeight={42}
-                          rowSelection="multiple"
+                          rowSelection={rowSelection}
+                          selectionColumnDef={{ width: 50, resizable: false, sortable: false }}
                           overlayNoRowsTemplate="주문 클레임 데이터가 없습니다."
                           getRowId={(params) => `${params.data?.clmNo ?? ''}-${params.data?.ordDtlNo ?? ''}-${params.data?.chgDtlGbCd ?? ''}`}
                           onGridReady={handleClaimGridReady}

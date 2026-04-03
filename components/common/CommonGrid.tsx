@@ -6,6 +6,12 @@ import { AgGridReact, AgGridReactProps } from '@/components/common/agGrid/AgGrid
 }*/
 type CommonGridProps = AgGridReactProps
 
+// AG Grid v32.2+ 공통 다중 선택 옵션입니다.
+const commonRowSelection = {
+  mode: 'multiRow' as const,
+  enableClickSelection: 'enableDeselection' as const,
+};
+
 const CommonGrid: React.FC<CommonGridProps> = (props) => {
   return (
     <div className="ag-theme-alpine" style={{ height: 500, width: '100%' }}>
@@ -13,8 +19,7 @@ const CommonGrid: React.FC<CommonGridProps> = (props) => {
         // 기본 공통 옵션 설정
         pagination={true}
         paginationPageSize={20}
-        suppressRowClickSelection={true}
-        rowSelection={'multiple'}
+        rowSelection={commonRowSelection}
         defaultColDef={{
           sortable: true,
           resizable: true,

@@ -21,11 +21,6 @@ const CategoryGoodsGrid = ({
   // 그리드 컬럼 정보를 구성합니다.
   const columnDefs = useMemo<ColDef<CategoryGoodsItem>[]>(() => ([
     {
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 70,
-    },
-    {
       headerName: '이동',
       width: 70,
       rowDrag: true,
@@ -72,6 +67,14 @@ const CategoryGoodsGrid = ({
     cellClass: 'text-center',
   }), []);
 
+  // AG Grid v32.2+ 다중 선택 옵션을 정의합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'multiRow' as const,
+    checkboxes: true,
+    headerCheckbox: true,
+    enableClickSelection: true,
+  }), []);
+
   // 드래그 종료 시 정렬 순서를 갱신합니다.
   const handleRowDragEnd = useCallback((event: RowDragEndEvent<CategoryGoodsItem>) => {
     const api = event.api;
@@ -104,7 +107,8 @@ const CategoryGoodsGrid = ({
             columnDefs={columnDefs}
             defaultColDef={defaultColDef}
             rowData={rows}
-            rowSelection="multiple"
+            rowSelection={rowSelection}
+            selectionColumnDef={{ width: 70, resizable: false, sortable: false }}
             rowDragManaged
             animateRows
             overlayNoRowsTemplate="데이터가 없습니다."

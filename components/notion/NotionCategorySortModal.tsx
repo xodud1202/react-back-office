@@ -65,6 +65,12 @@ const NotionCategorySortModal = ({
     cellClass: 'text-center',
   }), []);
 
+  // AG Grid v32.2+ 단일 선택 옵션을 정의합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'singleRow' as const,
+    enableClickSelection: true,
+  }), []);
+
   if (!isOpen) {
     return null;
   }
@@ -92,7 +98,7 @@ const NotionCategorySortModal = ({
                   rowData={sortRows}
                   columnDefs={columnDefs}
                   defaultColDef={defaultColDef}
-                  rowSelection="single"
+                  rowSelection={rowSelection}
                   rowDragManaged
                   animateRows
                   overlayNoRowsTemplate="데이터가 없습니다."

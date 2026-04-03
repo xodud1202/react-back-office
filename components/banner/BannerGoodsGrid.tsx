@@ -16,7 +16,6 @@ interface BannerGoodsGridProps {
 const BannerGoodsGrid = ({ rows, onOrderChange, onSelectionChange }: BannerGoodsGridProps) => {
   // 컬럼 정보를 정의합니다.
   const columnDefs = useMemo<ColDef<BannerGoodsItem>[]>(() => ([
-    { checkboxSelection: true, headerCheckboxSelection: true, width: 70 },
     { headerName: '이동', rowDrag: true, width: 70 },
     { headerName: '상품코드', field: 'goodsId', width: 130 },
     { headerName: 'ERP품번코드', field: 'erpStyleCd', width: 130 },
@@ -32,6 +31,14 @@ const BannerGoodsGrid = ({ rows, onOrderChange, onSelectionChange }: BannerGoods
     sortable: false,
     editable: false,
     cellClass: 'text-center',
+  }), []);
+
+  // AG Grid v32.2+ 다중 선택 옵션을 정의합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'multiRow' as const,
+    checkboxes: true,
+    headerCheckbox: true,
+    enableClickSelection: true,
   }), []);
 
   // 드래그 종료 시 노출 순서를 재계산합니다.
@@ -60,7 +67,8 @@ const BannerGoodsGrid = ({ rows, onOrderChange, onSelectionChange }: BannerGoods
         columnDefs={columnDefs}
         defaultColDef={defaultColDef}
         rowData={rows}
-        rowSelection="multiple"
+        rowSelection={rowSelection}
+        selectionColumnDef={{ width: 70, resizable: false, sortable: false }}
         rowDragManaged
         animateRows
         overlayNoRowsTemplate="데이터가 없습니다."

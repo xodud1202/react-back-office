@@ -4,7 +4,6 @@ import type {
   ColDef,
   GridApi,
   GridReadyEvent,
-  IHeaderParams,
   ICellRendererParams,
   IDatasource,
   IGetRowsParams,
@@ -56,113 +55,6 @@ const resolveOrderStartDeliveryActionErrorMessage = (error: unknown, fallbackMes
   return fallbackMessage;
 };
 
-type OrderStartDeliveryHeaderCheckboxProps = IHeaderParams<OrderStartDeliveryRow>;
-
-// 배송 시작 관리 현재 페이지 전체 선택 체크박스를 렌더링합니다.
-const OrderStartDeliveryHeaderCheckbox = ({ api }: OrderStartDeliveryHeaderCheckboxProps) => {
-  const checkboxRef = useRef<HTMLInputElement | null>(null);
-  const [checked, setChecked] = useState(false);
-  const [disabled, setDisabled] = useState(false);
-  const [indeterminate, setIndeterminate] = useState(false);
-
-  // 현재 페이지 기준 전체 선택 상태를 다시 계산합니다.
-  const syncHeaderCheckboxState = useCallback(() => {
-    let selectableRowCount = 0;
-    let selectedRowCount = 0;
-    const displayedRowCount = api.getDisplayedRowCount();
-
-    // 현재 페이지에 표시된 행만 순회해 선택 상태를 집계합니다.
-    for (let rowIndex = 0; rowIndex < displayedRowCount; rowIndex += 1) {
-      const rowNode = api.getDisplayedRowAtIndex(rowIndex);
-      if (!rowNode?.data) {
-        continue;
-      }
-      selectableRowCount += 1;
-      if (rowNode.isSelected()) {
-        selectedRowCount += 1;
-      }
-    }
-
-    const hasSelectableRow = selectableRowCount > 0;
-    const isChecked = hasSelectableRow && selectedRowCount === selectableRowCount;
-    const isIndeterminate = selectedRowCount > 0 && selectedRowCount < selectableRowCount;
-
-    // 계산된 체크/비활성/부분선택 상태를 React 상태에 반영합니다.
-    setDisabled(!hasSelectableRow);
-    setChecked(isChecked);
-    setIndeterminate(isIndeterminate);
-
-    // 실제 input indeterminate 속성도 함께 동기화합니다.
-    if (checkboxRef.current) {
-      checkboxRef.current.indeterminate = isIndeterminate;
-    }
-  }, [api]);
-
-  // 그리드 선택/페이지/모델 변경 시 헤더 체크박스 상태를 동기화합니다.
-  useEffect(() => {
-    syncHeaderCheckboxState();
-
-    // 현재 페이지 데이터 상태가 바뀌는 이벤트에 맞춰 체크 상태를 다시 계산합니다.
-    api.addEventListener('selectionChanged', syncHeaderCheckboxState);
-    api.addEventListener('modelUpdated', syncHeaderCheckboxState);
-    api.addEventListener('paginationChanged', syncHeaderCheckboxState);
-
-    return () => {
-      api.removeEventListener('selectionChanged', syncHeaderCheckboxState);
-      api.removeEventListener('modelUpdated', syncHeaderCheckboxState);
-      api.removeEventListener('paginationChanged', syncHeaderCheckboxState);
-    };
-  }, [api, syncHeaderCheckboxState]);
-
-  // 헤더 체크박스 클릭 시 현재 페이지 행을 전체 선택/해제합니다.
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const shouldSelect = event.target.checked;
-    const displayedRowCount = api.getDisplayedRowCount();
-
-    // 보이는 페이지의 각 행을 순회하며 선택 상태를 일괄 반영합니다.
-    for (let rowIndex = 0; rowIndex < displayedRowCount; rowIndex += 1) {
-      const rowNode = api.getDisplayedRowAtIndex(rowIndex);
-      if (!rowNode?.data) {
-        continue;
-      }
-      rowNode.setSelected(shouldSelect);
-    }
-    syncHeaderCheckboxState();
-  };
-
-  // ag-grid 기본 행 체크박스와 동일한 클래스 조합을 계산합니다.
-  const checkboxWrapperClassName = [
-    'ag-wrapper',
-    'ag-input-wrapper',
-    'ag-checkbox-input-wrapper',
-    checked ? 'ag-checked' : '',
-    indeterminate ? 'ag-indeterminate' : '',
-    disabled ? 'ag-disabled' : '',
-  ].filter(Boolean).join(' ');
-
-  return (
-    <div className="d-flex justify-content-center align-items-center w-100 h-100">
-      <div className="ag-selection-checkbox m-0" role="presentation">
-        <div className="ag-checkbox ag-input-field" role="presentation">
-          <div className={checkboxWrapperClassName} role="presentation">
-            <input
-              ref={checkboxRef}
-              type="checkbox"
-              className="ag-input-field-input ag-checkbox-input"
-              checked={checked}
-              disabled={disabled}
-              tabIndex={-1}
-              aria-checked={indeterminate ? 'mixed' : checked}
-              onChange={handleChange}
-              aria-label="현재 페이지 전체 선택"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // 배송 시작 관리 그리드를 렌더링합니다.
 const OrderStartDeliveryGrid = ({
   searchParams,
@@ -196,6 +88,15 @@ const OrderStartDeliveryGrid = ({
     () => getOrderStartDeliveryActionSuccessMessage(searchParams.ordDtlStatCd),
     [searchParams.ordDtlStatCd],
   );
+
+  // AG Grid v32.2+ 다중 선택 옵션을 정의합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'multiRow' as const,
+    checkboxes: true,
+    headerCheckbox: true,
+    enableClickSelection: 'enableDeselection' as const,
+    selectAll: 'currentPage' as const,
+  }), []);
 
   // 상위 컴포넌트에 로딩 상태를 전달합니다.
   const notifyLoading = useCallback((loading: boolean) => {
@@ -265,14 +166,6 @@ const OrderStartDeliveryGrid = ({
 
   // 배송 시작 관리 컬럼을 정의합니다.
   const columnDefs = useMemo<ColDef<OrderStartDeliveryRow>[]>(() => ([
-    {
-      headerName: '',
-      headerComponent: OrderStartDeliveryHeaderCheckbox,
-      checkboxSelection: true,
-      width: 60,
-      resizable: false,
-      sortable: false,
-    },
     { headerName: '주문번호', field: 'ordNo', width: 180 },
     { headerName: '주문상세번호', field: 'ordDtlNo', width: 130 },
     { headerName: '상품명', field: 'goodsNm', width: 260, cellClass: 'text-start' },
@@ -473,9 +366,9 @@ const OrderStartDeliveryGrid = ({
           cacheBlockSize={ORDER_START_DELIVERY_PAGE_SIZE}
           pagination
           paginationPageSize={ORDER_START_DELIVERY_PAGE_SIZE}
-          rowSelection="multiple"
+          rowSelection={rowSelection}
+          selectionColumnDef={{ width: 60, resizable: false, sortable: false }}
           rowHeight={48}
-          suppressRowClickSelection
           overlayNoRowsTemplate="데이터가 없습니다."
           getRowId={(params) => `${params.data?.ordNo ?? ''}-${params.data?.ordDtlNo ?? ''}`}
           onGridReady={handleGridReady}

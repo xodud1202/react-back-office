@@ -520,6 +520,10 @@ export const AgGridReact = <TData,>(props: AgGridReactProps<TData>) => {
     api.addEventListener('filterChanged', clearSelectionHandler);
 
     return () => {
+      // 이미 파기된 grid API에는 정리 호출을 보내지 않습니다.
+      if (api.isDestroyed()) {
+        return;
+      }
       api.removeEventListener('modelUpdated', clearSelectionHandler);
       api.removeEventListener('paginationChanged', clearSelectionHandler);
       api.removeEventListener('columnMoved', clearSelectionHandler);
@@ -532,6 +536,7 @@ export const AgGridReact = <TData,>(props: AgGridReactProps<TData>) => {
   // grid 준비 완료 시 공통 복사 이벤트를 연결합니다.
   const handleGridReady = useCallback((event: GridReadyEvent<TData>) => {
     gridCleanupRef.current?.();
+    gridCleanupRef.current = null;
     gridApiRef.current = event.api;
     syncRangeMetadata();
     gridCleanupRef.current = bindGridLifecycleEvents(event.api);

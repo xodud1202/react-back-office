@@ -63,6 +63,12 @@ const CommonCodeGroupGrid = ({
     cellClass: 'text-center',
   }), []);
 
+  // AG Grid v32.2+ 단일 선택 옵션을 정의합니다.
+  const rowSelection = useMemo(() => ({
+    mode: 'singleRow' as const,
+    enableClickSelection: true,
+  }), []);
+
   return (
     <div className="col-lg-6 grid-margin stretch-card">
       <div className="card">
@@ -81,7 +87,7 @@ const CommonCodeGroupGrid = ({
               rowData={rows}
               columnDefs={columnDefs}
               defaultColDef={defaultColDef}
-              rowSelection="single"
+              rowSelection={rowSelection}
               onSelectionChanged={onSelectionChanged}
               overlayNoRowsTemplate="데이터가 없습니다."
               getRowId={(params) => `${params.data?.grpCd || ''}__${params.data?.cd || ''}`}
