@@ -1,0 +1,64 @@
+'use client';
+
+import React, { useMemo } from 'react';
+import type { CommonCode } from '@/components/goods/types';
+import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
+import {
+  createCompanyWorkColumnDefs,
+  createCompanyWorkDefaultColDef,
+} from '@/components/companyWork/companyWorkGridColumns';
+import type { CompanyWorkListRow } from '@/components/companyWork/types';
+
+interface CompanyWorkSectionGridProps {
+  // 상태 영역 제목입니다.
+  title: string;
+  // 상태 영역 행 목록입니다.
+  rowData: CompanyWorkListRow[];
+  // 우선순위 공통코드 목록입니다.
+  workPriorList: CommonCode[];
+}
+
+// 회사 업무 상태 영역 그리드를 렌더링합니다.
+const CompanyWorkSectionGrid = ({
+  title,
+  rowData,
+  workPriorList,
+}: CompanyWorkSectionGridProps) => {
+  // 우선순위 공통코드 기준 컬럼 정의를 구성합니다.
+  const columnDefs = useMemo(() => createCompanyWorkColumnDefs(workPriorList), [workPriorList]);
+
+  // 공통 기본 컬럼 옵션을 구성합니다.
+  const defaultColDef = useMemo(() => createCompanyWorkDefaultColDef(), []);
+
+  // 목록이 없으면 렌더링하지 않습니다.
+  if (rowData.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="row">
+      <div className="col-lg-12 grid-margin stretch-card">
+        <div className="card">
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="mb-0">{title}</h5>
+              <span className="text-muted small">총 {rowData.length}건</span>
+            </div>
+            <div className="ag-theme-alpine-dark header-center" style={{ width: '100%' }}>
+              <AgGridReact<CompanyWorkListRow>
+                columnDefs={columnDefs}
+                defaultColDef={defaultColDef}
+                rowData={rowData}
+                domLayout="autoHeight"
+                overlayNoRowsTemplate="조회 결과가 없습니다."
+                getRowId={(params) => String(params.data?.workSeq ?? '')}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CompanyWorkSectionGrid;

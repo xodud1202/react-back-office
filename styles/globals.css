@@ -211,6 +211,12 @@ button {
   justify-content: center;
 }
 
+.company-work-title-cell .ag-cell-wrapper,
+.company-work-title-cell .ag-cell-value {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
 .order-list-grid-theme {
   --ag-background-color: #222628;
   --ag-odd-row-background-color: #222628;
