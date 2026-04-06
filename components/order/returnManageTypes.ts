@@ -153,6 +153,22 @@ export interface OrderReturnManagePickupCompletePreviewAmount {
   benefitAmt: number;
 }
 
+// 회수완료 저장 요청에 포함할 반품 예정 금액 요약입니다.
+export interface OrderReturnManagePickupCompleteSavePreviewAmount {
+  // 실환불 기준 반품 예정 금액입니다.
+  expectedRefundAmt: number;
+  // 실결제 상품가입니다.
+  paidGoodsAmt: number;
+  // 환급 혜택 합계입니다.
+  benefitAmt: number;
+  // 배송비 조정 금액입니다.
+  shippingAdjustmentAmt: number;
+  // 포인트 환급 금액입니다.
+  totalPointRefundAmt: number;
+  // 배송비쿠폰 환급 금액입니다.
+  deliveryCouponRefundAmt: number;
+}
+
 // 회수완료 검수 팝업 화면 응답을 정의합니다.
 export interface OrderReturnManagePickupCompletePageResponse {
   // 클레임 기본 정보입니다.
@@ -173,4 +189,32 @@ export interface OrderReturnManagePickupCompletePageResponse {
   companyFaultShippingAdjustmentAmt: number;
   // 고객 귀책 선택 시 배송비 조정 금액입니다.
   customerFaultShippingAdjustmentAmt: number;
+}
+
+// 회수완료 저장 요청을 정의합니다.
+export interface OrderReturnManagePickupCompleteSaveRequest {
+  // 클레임번호입니다.
+  clmNo: string;
+  // 공통 반품 사유 코드입니다.
+  reasonCd: string;
+  // 공통 반품 사유 상세입니다.
+  reasonDetail: string;
+  // 화면에서 계산한 반품 예정 금액 요약입니다.
+  previewAmount: OrderReturnManagePickupCompleteSavePreviewAmount;
+}
+
+// 회수완료 저장 응답을 정의합니다.
+export interface OrderReturnManagePickupCompleteSaveResponse {
+  // 클레임번호입니다.
+  clmNo: string;
+  // 주문번호입니다.
+  ordNo: string;
+  // 환불 결제번호입니다.
+  refundPayNo: number | null;
+  // 환불된 현금 금액입니다.
+  refundedCashAmt: number;
+  // 복구된 포인트 금액입니다.
+  restoredPointAmt: number;
+  // 재지급된 포인트 금액입니다.
+  reissuedPointAmt: number;
 }

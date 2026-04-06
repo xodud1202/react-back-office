@@ -10,6 +10,8 @@ import OrderReturnAmountTable, {
 import type {
   OrderReturnManagePickupCompleteDetail,
   OrderReturnManagePickupCompletePageResponse,
+  OrderReturnManagePickupCompleteSaveRequest,
+  OrderReturnManagePickupCompleteSaveResponse,
 } from '@/components/order/returnManageTypes';
 import { buildOrderReturnManagePickupCompletePreviewResult } from '@/components/order/utils/orderReturnPickupCompleteUtils';
 import api from '@/utils/axios/axios';
@@ -21,6 +23,8 @@ interface OrderReturnPickupCompleteModalProps {
   clmNo: string | null;
   // 모달 닫기 함수입니다.
   onClose: () => void;
+  // 회수완료 저장 성공 후 호출할 함수입니다.
+  onCompleted?: (response: OrderReturnManagePickupCompleteSaveResponse) => void;
 }
 
 // 가운데 정렬 셀 스타일입니다.
@@ -45,6 +49,16 @@ const displayValue = (value?: string | null): string => {
     return '-';
   }
   return value;
+};
+
+// 회수완료 저장 API 오류 메시지를 안전하게 추출합니다.
+const resolveOrderReturnPickupCompleteErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  const errorResponse = error as { response?: { data?: { message?: string } } };
+  const message = errorResponse.response?.data?.message;
+  if (typeof message === 'string' && message.trim() !== '') {
+    return message;
+  }
+  return fallbackMessage;
 };
 
 // 회수완료 검수 팝업의 금액 컬럼 목록을 생성합니다.
@@ -90,8 +104,10 @@ const OrderReturnPickupCompleteModal = ({
   isOpen,
   clmNo,
   onClose,
+  onCompleted,
 }: OrderReturnPickupCompleteModalProps) => {
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pageData, setPageData] = useState<OrderReturnManagePickupCompletePageResponse | null>(null);
   const [reasonCd, setReasonCd] = useState('');
@@ -100,6 +116,7 @@ const OrderReturnPickupCompleteModal = ({
   // 모달 내부 상태를 기본값으로 초기화합니다.
   const resetModalState = useCallback(() => {
     setLoading(false);
+    setSubmitting(false);
     setError(null);
     setPageData(null);
     setReasonCd('');
@@ -258,17 +275,55 @@ const OrderReturnPickupCompleteModal = ({
 
   // 닫기 버튼과 백드롭 클릭 시 모달을 닫습니다.
   const handleClose = useCallback(() => {
+    if (submitting) {
+      return;
+    }
     resetModalState();
     onClose();
-  }, [onClose, resetModalState]);
+  }, [onClose, resetModalState, submitting]);
 
-  // 반품완료 버튼은 우선 개발 예정 안내만 제공합니다.
-  const handleComplete = useCallback(() => {
+  // 반품완료 버튼 클릭 시 저장 API를 호출합니다.
+  const handleComplete = useCallback(async () => {
     if (!pageData) {
       return;
     }
-    alert('회수완료 기능은 추후 개발 예정입니다.');
-  }, [pageData]);
+
+    if (!previewResult.previewVisible || !previewResult.canSubmit) {
+      alert(previewResult.submitBlockMessage || '반품 정보를 확인해주세요.');
+      return;
+    }
+
+    const requestBody: OrderReturnManagePickupCompleteSaveRequest = {
+      clmNo: pageData.claim.clmNo,
+      reasonCd: reasonCd.trim(),
+      reasonDetail: reasonDetail.trim(),
+      previewAmount: {
+        expectedRefundAmt: previewResult.expectedRefundAmt,
+        paidGoodsAmt: pageData.previewAmount.paidGoodsAmt,
+        benefitAmt: pageData.previewAmount.benefitAmt,
+        shippingAdjustmentAmt: previewResult.shippingAdjustmentAmt,
+        totalPointRefundAmt: pageData.previewAmount.totalPointRefundAmt,
+        deliveryCouponRefundAmt: pageData.previewAmount.deliveryCouponRefundAmt,
+      },
+    };
+
+    setSubmitting(true);
+    try {
+      const response = await api.post<OrderReturnManagePickupCompleteSaveResponse>(
+        '/api/admin/order/return/manage/pickup/complete',
+        requestBody,
+      );
+      alert('반품완료 처리되었습니다.');
+      if (onCompleted) {
+        onCompleted(response.data);
+      }
+      handleClose();
+    } catch (requestError) {
+      alert(resolveOrderReturnPickupCompleteErrorMessage(requestError, '반품완료 처리 중 오류가 발생했습니다.'));
+    } finally {
+      setSubmitting(false);
+    }
+  }, [handleClose, onCompleted, pageData, previewResult.canSubmit, previewResult.expectedRefundAmt, previewResult.previewVisible, previewResult.shippingAdjustmentAmt, previewResult.submitBlockMessage, reasonCd, reasonDetail]);
 
   if (!isOpen) {
     return null;
@@ -288,7 +343,7 @@ const OrderReturnPickupCompleteModal = ({
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">반품 회수완료 검수</h5>
-              <button type="button" className="btn-close btn-close-white" aria-label="닫기" onClick={handleClose} />
+              <button type="button" className="btn-close btn-close-white" aria-label="닫기" onClick={handleClose} disabled={submitting} />
             </div>
 
             <div className="modal-body">
@@ -318,67 +373,57 @@ const OrderReturnPickupCompleteModal = ({
                     </AdminFormTable>
                   </div>
 
-                  <div className="card">
-                    <div className="card-body">
-                      <h6 className="mb-3 text-white">반품 신청 상품</h6>
-                      <div className="ag-theme-alpine-dark header-center admin-order-return-grid-theme" style={{ width: '100%', height: '320px' }}>
-                        <AgGridReact<OrderReturnManagePickupCompleteDetail>
-                          columnDefs={columnDefs}
-                          defaultColDef={defaultColDef}
-                          rowData={pageData.detailList}
-                          rowHeight={48}
-                          suppressCellFocus
-                          overlayNoRowsTemplate="반품 상품 데이터가 없습니다."
-                          getRowId={(params) => String(params.data?.ordDtlNo ?? '')}
-                        />
-                      </div>
-                    </div>
+                  <div className="ag-theme-alpine-dark header-center admin-order-return-grid-theme" style={{ width: '100%', height: '250px' }}>
+                    <AgGridReact<OrderReturnManagePickupCompleteDetail>
+                      columnDefs={columnDefs}
+                      defaultColDef={defaultColDef}
+                      rowData={pageData.detailList}
+                      suppressCellFocus
+                      overlayNoRowsTemplate="반품 상품 데이터가 없습니다."
+                      getRowId={(params) => String(params.data?.ordDtlNo ?? '')}
+                    />
                   </div>
 
-                  <div className="card">
-                    <div className="card-body">
-                      <h6 className="mb-3 text-white">반품 사유 변경</h6>
+                  <div>
+                    {pageData.mixedReasonYn ? (
+                      <div className="alert alert-warning">
+                        기존 반품 사유가 상품별로 달라 공통 반품 사유를 다시 선택해주세요.
+                      </div>
+                    ) : null}
 
-                      {pageData.mixedReasonYn ? (
-                        <div className="alert alert-warning">
-                          기존 반품 사유가 상품별로 달라 공통 반품 사유를 다시 선택해주세요.
-                        </div>
-                      ) : null}
-
-                      <AdminFormTable>
-                        <tbody>
-                          <tr>
-                            <th>반품 사유</th>
-                            <td>
-                              <select
-                                className="form-select"
-                                value={reasonCd}
-                                onChange={(event) => setReasonCd(event.target.value)}
-                              >
-                                <option value="">반품 사유를 선택해주세요.</option>
-                                {pageData.reasonList.map((reasonItem) => (
-                                  <option key={reasonItem.cd} value={reasonItem.cd}>
-                                    {reasonItem.cdNm}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                          </tr>
-                          <tr>
-                            <th>상세 사유</th>
-                            <td>
-                              <textarea
-                                className="form-control"
-                                rows={4}
-                                placeholder="추가로 전달할 반품 사유가 있다면 입력해주세요."
-                                value={reasonDetail}
-                                onChange={(event) => setReasonDetail(event.target.value)}
-                              />
-                            </td>
-                          </tr>
-                        </tbody>
-                      </AdminFormTable>
-                    </div>
+                    <AdminFormTable>
+                      <tbody>
+                        <tr>
+                          <th>반품 사유</th>
+                          <td>
+                            <select
+                              className="form-select"
+                              value={reasonCd}
+                              onChange={(event) => setReasonCd(event.target.value)}
+                            >
+                              <option value="">반품 사유를 선택해주세요.</option>
+                              {pageData.reasonList.map((reasonItem) => (
+                                <option key={reasonItem.cd} value={reasonItem.cd}>
+                                  {reasonItem.cdNm}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        </tr>
+                        <tr>
+                          <th>상세 사유</th>
+                          <td>
+                            <textarea
+                              className="form-control"
+                              rows={4}
+                              placeholder="추가로 전달할 반품 사유가 있다면 입력해주세요."
+                              value={reasonDetail}
+                              onChange={(event) => setReasonDetail(event.target.value)}
+                            />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </AdminFormTable>
                   </div>
 
                   <div>
@@ -399,10 +444,10 @@ const OrderReturnPickupCompleteModal = ({
             </div>
 
             <div className="modal-footer">
-              <button type="button" className="btn btn-primary" onClick={handleComplete} disabled={loading || !!error || !pageData}>
-                반품완료
+              <button type="button" className="btn btn-primary" onClick={handleComplete} disabled={loading || submitting || !!error || !pageData}>
+                {submitting ? '반품완료 처리중..' : '반품완료'}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={handleClose} disabled={loading}>
+              <button type="button" className="btn btn-secondary" onClick={handleClose} disabled={loading || submitting}>
                 닫기
               </button>
             </div>

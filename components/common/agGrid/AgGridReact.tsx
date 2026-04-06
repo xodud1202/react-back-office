@@ -49,6 +49,9 @@ interface ClipboardPayload {
 
 type SupportedColDef<TData> = ColDef<TData> | ColGroupDef<TData>;
 
+const DEFAULT_AG_GRID_HEADER_HEIGHT = 35;
+const DEFAULT_AG_GRID_ROW_HEIGHT = 35;
+
 const INTERACTIVE_TARGET_SELECTOR = [
   'button',
   'a',
@@ -437,9 +440,11 @@ export const AgGridReact = <TData,>(props: AgGridReactProps<TData>) => {
     columnDefs,
     defaultColDef,
     domLayout,
+    headerHeight = DEFAULT_AG_GRID_HEADER_HEIGHT,
     onCellMouseDown,
     onCellMouseOver,
     onGridReady,
+    rowHeight = DEFAULT_AG_GRID_ROW_HEIGHT,
     ...restProps
   } = props;
 
@@ -688,9 +693,11 @@ export const AgGridReact = <TData,>(props: AgGridReactProps<TData>) => {
         columnDefs={decoratedColumnDefs}
         defaultColDef={decoratedDefaultColDef}
         domLayout={domLayout}
+        headerHeight={headerHeight}
         onGridReady={handleGridReady}
         onCellMouseDown={handleCellMouseDown}
         onCellMouseOver={handleCellMouseOver}
+        rowHeight={rowHeight}
       />
     </div>
   );

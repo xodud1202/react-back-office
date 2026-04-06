@@ -720,6 +720,12 @@ const OrderReturnManageGrid = ({
     setPickupCompleteClaimNo(null);
   }, []);
 
+  // 회수완료 저장 성공 후 팝업을 닫고 목록을 다시 조회합니다.
+  const handleCompletedPickupCompleteModal = useCallback(() => {
+    setPickupCompleteClaimNo(null);
+    void refreshGrid();
+  }, [refreshGrid]);
+
   // 회수완료 버튼 클릭 시 단건 검수 팝업을 엽니다.
   const handlePickupCompletePending = useCallback(() => {
     if (!isPickupCompletePendingMode) {
@@ -741,6 +747,7 @@ const OrderReturnManageGrid = ({
         isOpen={pickupCompleteClaimNo !== null}
         clmNo={pickupCompleteClaimNo}
         onClose={handleClosePickupCompleteModal}
+        onCompleted={handleCompletedPickupCompleteModal}
       />
 
       <div className="d-flex justify-content-end gap-2 mb-3">
@@ -776,7 +783,6 @@ const OrderReturnManageGrid = ({
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
           rowSelection={rowSelection}
-          rowHeight={48}
           suppressRowTransform
           overlayNoRowsTemplate="데이터가 없습니다."
           getRowId={(params) => `${params.data?.clmNo ?? ''}-${params.data?.ordDtlNo ?? ''}`}

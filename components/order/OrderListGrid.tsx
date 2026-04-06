@@ -190,7 +190,6 @@ const OrderListGrid = ({ searchParams, onOrderClick, onLoadingChange }: OrderLis
         cacheBlockSize={ORDER_LIST_PAGE_SIZE}
         pagination
         paginationPageSize={ORDER_LIST_PAGE_SIZE}
-        rowHeight={42}
         suppressRowTransform
         overlayNoRowsTemplate="데이터가 없습니다."
         getRowId={(params) => `${params.data?.ordNo ?? ''}-${params.data?.ordDtlNo ?? ''}`}
