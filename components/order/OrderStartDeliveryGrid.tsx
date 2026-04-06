@@ -5,6 +5,7 @@ import type {
   GridApi,
   GridReadyEvent,
   ICellRendererParams,
+  IHeaderParams,
   IDatasource,
   IGetRowsParams,
 } from 'ag-grid-community';
@@ -37,6 +38,49 @@ interface OrderStartDeliveryGridProps {
   onLoadingChange?: (loading: boolean) => void;
 }
 
+interface OrderStartDeliverySelectionHeaderProps extends IHeaderParams<OrderStartDeliveryRow> {
+  // 현재 페이지 전체 선택 여부입니다.
+  checked: boolean;
+  // 현재 페이지 일부 선택 여부입니다.
+  indeterminate: boolean;
+  // 헤더 체크박스 비활성 여부입니다.
+  disabled: boolean;
+  // 현재 페이지 전체 선택 토글 함수입니다.
+  onToggle: (checked: boolean) => void;
+}
+
+// 배송 시작 관리 헤더 전체 선택 체크박스를 렌더링합니다.
+const OrderStartDeliverySelectionHeader = ({
+  checked,
+  indeterminate,
+  disabled,
+  onToggle,
+}: OrderStartDeliverySelectionHeaderProps) => {
+  const checkboxRef = useRef<HTMLInputElement | null>(null);
+
+  // 헤더 체크박스의 부분 선택 상태를 input 요소에 반영합니다.
+  useEffect(() => {
+    if (!checkboxRef.current) {
+      return;
+    }
+    checkboxRef.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+
+  return (
+    <div className="d-flex align-items-center justify-content-center w-100 h-100">
+      <input
+        ref={checkboxRef}
+        type="checkbox"
+        className="form-check-input m-0"
+        checked={checked}
+        disabled={disabled}
+        aria-label="배송 시작 관리 전체 선택"
+        onChange={(event) => onToggle(event.target.checked)}
+      />
+    </div>
+  );
+};
+
 // 값이 없을 때 '-'로 표시합니다.
 const displayValue = (value?: string | null): string => {
   if (!value) {
@@ -63,6 +107,8 @@ const OrderStartDeliveryGrid = ({
 }: OrderStartDeliveryGridProps) => {
   const gridApiRef = useRef<GridApi<OrderStartDeliveryRow> | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [currentPageRowCount, setCurrentPageRowCount] = useState(0);
+  const [selectedCurrentPageRowCount, setSelectedCurrentPageRowCount] = useState(0);
 
   // 배송업체 코드를 이름으로 빠르게 변환하기 위한 맵입니다.
   const deliveryCompanyNameMap = useMemo(() => (
@@ -89,13 +135,22 @@ const OrderStartDeliveryGrid = ({
     [searchParams.ordDtlStatCd],
   );
 
+  // 현재 페이지 전체 선택 체크박스의 checked 상태를 계산합니다.
+  const isAllCurrentPageSelected = useMemo(() => (
+    currentPageRowCount > 0 && selectedCurrentPageRowCount === currentPageRowCount
+  ), [currentPageRowCount, selectedCurrentPageRowCount]);
+
+  // 현재 페이지 전체 선택 체크박스의 indeterminate 상태를 계산합니다.
+  const isCurrentPageSelectionIndeterminate = useMemo(() => (
+    selectedCurrentPageRowCount > 0 && selectedCurrentPageRowCount < currentPageRowCount
+  ), [currentPageRowCount, selectedCurrentPageRowCount]);
+
   // AG Grid v32.2+ 다중 선택 옵션을 정의합니다.
   const rowSelection = useMemo(() => ({
     mode: 'multiRow' as const,
     checkboxes: true,
-    headerCheckbox: true,
+    headerCheckbox: false,
     enableClickSelection: 'enableDeselection' as const,
-    selectAll: 'currentPage' as const,
   }), []);
 
   // 상위 컴포넌트에 로딩 상태를 전달합니다.
@@ -238,11 +293,102 @@ const OrderStartDeliveryGrid = ({
     }
   }, []);
 
+  // 현재 페이지 기준 선택 상태를 헤더 체크박스 계산용으로 동기화합니다.
+  const syncCurrentPageSelectionState = useCallback(() => {
+    if (!gridApiRef.current) {
+      setCurrentPageRowCount(0);
+      setSelectedCurrentPageRowCount(0);
+      return;
+    }
+
+    let nextCurrentPageRowCount = 0;
+    let nextSelectedCurrentPageRowCount = 0;
+    const displayedRowCount = gridApiRef.current.getDisplayedRowCount();
+    for (let rowIndex = 0; rowIndex < displayedRowCount; rowIndex += 1) {
+      const rowNode = gridApiRef.current.getDisplayedRowAtIndex(rowIndex);
+      if (!rowNode?.data) {
+        continue;
+      }
+
+      nextCurrentPageRowCount += 1;
+      if (rowNode.isSelected()) {
+        nextSelectedCurrentPageRowCount += 1;
+      }
+    }
+
+    setCurrentPageRowCount(nextCurrentPageRowCount);
+    setSelectedCurrentPageRowCount(nextSelectedCurrentPageRowCount);
+  }, []);
+
+  // 현재 페이지 행을 한 번에 전체 선택 또는 해제합니다.
+  const toggleSelectAllCurrentPage = useCallback((checked: boolean) => {
+    if (!gridApiRef.current) {
+      return;
+    }
+
+    const displayedRowCount = gridApiRef.current.getDisplayedRowCount();
+    for (let rowIndex = 0; rowIndex < displayedRowCount; rowIndex += 1) {
+      const rowNode = gridApiRef.current.getDisplayedRowAtIndex(rowIndex);
+      if (!rowNode?.data || rowNode.isSelected() === checked) {
+        continue;
+      }
+      rowNode.setSelected(checked);
+    }
+
+    syncCurrentPageSelectionState();
+  }, [syncCurrentPageSelectionState]);
+
+  // 선택 컬럼 헤더 속성을 정의합니다.
+  const selectionColumnDef = useMemo(() => ({
+    width: 60,
+    resizable: false,
+    sortable: false,
+    headerComponent: OrderStartDeliverySelectionHeader,
+    headerComponentParams: {
+      checked: isAllCurrentPageSelected,
+      indeterminate: isCurrentPageSelectionIndeterminate,
+      disabled: processing || currentPageRowCount < 1,
+      onToggle: toggleSelectAllCurrentPage,
+    },
+  }), [
+    currentPageRowCount,
+    isAllCurrentPageSelected,
+    isCurrentPageSelectionIndeterminate,
+    processing,
+    toggleSelectAllCurrentPage,
+  ]);
+
   // 그리드 준비 시 초기 데이터소스를 연결합니다.
   const handleGridReady = useCallback((event: GridReadyEvent<OrderStartDeliveryRow>) => {
     gridApiRef.current = event.api;
     applyDatasource(event.api, createDataSource());
-  }, [applyDatasource, createDataSource]);
+    syncCurrentPageSelectionState();
+  }, [applyDatasource, createDataSource, syncCurrentPageSelectionState]);
+
+  // 현재 페이지 선택 상태가 바뀌면 헤더 체크박스를 새로 그립니다.
+  useEffect(() => {
+    gridApiRef.current?.refreshHeader();
+  }, [
+    currentPageRowCount,
+    isAllCurrentPageSelected,
+    isCurrentPageSelectionIndeterminate,
+    processing,
+  ]);
+
+  // 행 선택 변경 시 헤더 전체 선택 상태를 갱신합니다.
+  const handleSelectionChanged = useCallback(() => {
+    syncCurrentPageSelectionState();
+  }, [syncCurrentPageSelectionState]);
+
+  // 페이지 이동 시 현재 페이지 전체 선택 상태를 다시 계산합니다.
+  const handlePaginationChanged = useCallback(() => {
+    syncCurrentPageSelectionState();
+  }, [syncCurrentPageSelectionState]);
+
+  // 데이터 모델이 갱신되면 현재 페이지 전체 선택 상태를 다시 계산합니다.
+  const handleModelUpdated = useCallback(() => {
+    syncCurrentPageSelectionState();
+  }, [syncCurrentPageSelectionState]);
 
   // 현재 그리드에서 선택된 행 목록을 반환합니다.
   const getSelectedRows = useCallback((): OrderStartDeliveryRow[] => {
@@ -343,7 +489,8 @@ const OrderStartDeliveryGrid = ({
     // 조회 상태 변경 시 기존 선택을 해제하고 최신 데이터소스를 다시 바인딩합니다.
     gridApiRef.current.deselectAll();
     applyDatasource(gridApiRef.current, createDataSource());
-  }, [applyDatasource, createDataSource]);
+    syncCurrentPageSelectionState();
+  }, [applyDatasource, createDataSource, syncCurrentPageSelectionState]);
 
   return (
     <>
@@ -367,11 +514,14 @@ const OrderStartDeliveryGrid = ({
           pagination
           paginationPageSize={ORDER_START_DELIVERY_PAGE_SIZE}
           rowSelection={rowSelection}
-          selectionColumnDef={{ width: 60, resizable: false, sortable: false }}
+          selectionColumnDef={selectionColumnDef}
           rowHeight={48}
           overlayNoRowsTemplate="데이터가 없습니다."
           getRowId={(params) => `${params.data?.ordNo ?? ''}-${params.data?.ordDtlNo ?? ''}`}
           onGridReady={handleGridReady}
+          onSelectionChanged={handleSelectionChanged}
+          onPaginationChanged={handlePaginationChanged}
+          onModelUpdated={handleModelUpdated}
         />
       </div>
     </>

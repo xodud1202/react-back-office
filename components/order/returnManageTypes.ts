@@ -1,3 +1,5 @@
+import type { AdminOrderReturnReasonItem } from '@/components/order/types';
+
 // 반품 회수 관리에서 검색 가능한 반품 상세 상태 코드입니다.
 export type OrderReturnManageStatusCode = 'CHG_DTL_STAT_11' | 'CHG_DTL_STAT_12' | 'CHG_DTL_STAT_13';
 
@@ -91,4 +93,84 @@ export interface AdminOrderReturnPickupStartRequest {
 export interface AdminOrderReturnManageStatusResponse {
   // 변경된 클레임 건수입니다.
   updatedCount: number;
+}
+
+// 회수완료 검수 팝업의 클레임 기본 정보를 정의합니다.
+export interface OrderReturnManagePickupCompleteClaim {
+  // 클레임번호입니다.
+  clmNo: string;
+  // 주문번호입니다.
+  ordNo: string;
+  // 클레임 신청 일시입니다.
+  chgDt: string;
+}
+
+// 회수완료 검수 팝업의 상품 상세 행 정보를 정의합니다.
+export interface OrderReturnManagePickupCompleteDetail {
+  // 주문상세번호입니다.
+  ordDtlNo: number;
+  // 상품코드입니다.
+  goodsId: string;
+  // 상품명입니다.
+  goodsNm: string;
+  // 사이즈코드입니다.
+  sizeId: string;
+  // 반품수량입니다.
+  qty: number;
+  // 판매가입니다.
+  saleAmt: number;
+  // 추가금액입니다.
+  addAmt: number;
+  // 상품쿠폰 차감 금액입니다.
+  goodsCouponDiscountAmt: number;
+  // 장바구니쿠폰 차감 금액입니다.
+  cartCouponDiscountAmt: number;
+  // 포인트 환급 예정 금액입니다.
+  pointDcAmt: number;
+  // 저장된 반품 사유 코드입니다.
+  chgReasonCd: string | null;
+  // 저장된 반품 사유 상세입니다.
+  chgReasonDtl: string | null;
+}
+
+// 회수완료 검수 팝업의 고정 금액 요약 정보를 정의합니다.
+export interface OrderReturnManagePickupCompletePreviewAmount {
+  // 총 상품가격입니다.
+  totalSupplyAmt: number;
+  // 총 상품할인 금액입니다.
+  totalGoodsDiscountAmt: number;
+  // 총 상품쿠폰 차감 금액입니다.
+  totalGoodsCouponDiscountAmt: number;
+  // 총 장바구니쿠폰 차감 금액입니다.
+  totalCartCouponDiscountAmt: number;
+  // 배송비쿠폰 환급 금액입니다.
+  deliveryCouponRefundAmt: number;
+  // 총 포인트 환급 금액입니다.
+  totalPointRefundAmt: number;
+  // 실결제 상품가입니다.
+  paidGoodsAmt: number;
+  // 환급 혜택 합계입니다.
+  benefitAmt: number;
+}
+
+// 회수완료 검수 팝업 화면 응답을 정의합니다.
+export interface OrderReturnManagePickupCompletePageResponse {
+  // 클레임 기본 정보입니다.
+  claim: OrderReturnManagePickupCompleteClaim;
+  // 반품 상품 목록입니다.
+  detailList: OrderReturnManagePickupCompleteDetail[];
+  // 반품 사유 목록입니다.
+  reasonList: AdminOrderReturnReasonItem[];
+  // 공통 기본 반품 사유 코드입니다.
+  defaultReasonCd: string | null;
+  // 공통 기본 반품 사유 상세입니다.
+  defaultReasonDetail: string | null;
+  // 상품별 저장 사유가 서로 다른지 여부입니다.
+  mixedReasonYn: boolean;
+  // 고정 금액 요약입니다.
+  previewAmount: OrderReturnManagePickupCompletePreviewAmount;
+  // 회사 귀책 선택 시 배송비 조정 금액입니다.
+  companyFaultShippingAdjustmentAmt: number;
+  // 고객 귀책 선택 시 배송비 조정 금액입니다.
+  customerFaultShippingAdjustmentAmt: number;
 }

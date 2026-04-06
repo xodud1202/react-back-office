@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
+import OrderReturnPickupCompleteModal from '@/components/order/OrderReturnPickupCompleteModal';
 import type {
   CellStyle,
   ColDef,
@@ -193,6 +194,7 @@ const OrderReturnManageGrid = ({
   const [totalCount, setTotalCount] = useState(0);
   const [selectedClaimNoSet, setSelectedClaimNoSet] = useState<Set<string>>(() => new Set());
   const [processingAction, setProcessingAction] = useState<OrderReturnManageProcessingAction>(null);
+  const [pickupCompleteClaimNo, setPickupCompleteClaimNo] = useState<string | null>(null);
 
   // 택배사 코드를 이름으로 빠르게 변환하기 위한 맵입니다.
   const deliveryCompanyNameMap = useMemo(() => (
@@ -713,16 +715,34 @@ const OrderReturnManageGrid = ({
     }
   }, [getDistinctSelectedClaimRows, isPickupStartMode, refreshGrid]);
 
-  // 회수완료 버튼은 추후 개발 예정 안내만 제공합니다.
+  // 회수완료 검수 팝업을 닫습니다.
+  const handleClosePickupCompleteModal = useCallback(() => {
+    setPickupCompleteClaimNo(null);
+  }, []);
+
+  // 회수완료 버튼 클릭 시 단건 검수 팝업을 엽니다.
   const handlePickupCompletePending = useCallback(() => {
     if (!isPickupCompletePendingMode) {
       return;
     }
-    alert('회수완료 기능은 추후 개발 예정입니다.');
-  }, [isPickupCompletePendingMode]);
+
+    const selectedClaimRows = getDistinctSelectedClaimRows();
+    if (selectedClaimRows.length !== 1) {
+      alert('회수완료 처리할 반품건을 1건 선택해주세요.');
+      return;
+    }
+
+    setPickupCompleteClaimNo(selectedClaimRows[0].clmNo);
+  }, [getDistinctSelectedClaimRows, isPickupCompletePendingMode]);
 
   return (
     <>
+      <OrderReturnPickupCompleteModal
+        isOpen={pickupCompleteClaimNo !== null}
+        clmNo={pickupCompleteClaimNo}
+        onClose={handleClosePickupCompleteModal}
+      />
+
       <div className="d-flex justify-content-end gap-2 mb-3">
         <button
           type="button"

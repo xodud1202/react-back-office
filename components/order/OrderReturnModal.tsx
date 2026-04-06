@@ -3,6 +3,11 @@ import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
 import type { ColDef, IHeaderParams } from 'ag-grid-community';
 import api from '@/utils/axios/axios';
 import AdminFormTable from '@/components/common/AdminFormTable';
+import OrderReturnAmountTable, {
+  formatOrderAmount,
+  formatSignedOrderAmount,
+  type OrderReturnAmountColumn,
+} from '@/components/order/OrderReturnAmountTable';
 import type {
   AdminOrderAddressSearchItem,
   AdminOrderAddressSearchResponse,
@@ -47,16 +52,6 @@ const ORDER_CHANGE_ADDRESS_BASE_MAX_LENGTH = 100;
 // 클레임 상세주소 최대 길이입니다.
 const ORDER_CHANGE_ADDRESS_DETAIL_MAX_LENGTH = 100;
 
-// 금액을 천 단위 구분 문자열로 변환합니다.
-const formatAmount = (value: number): string => value.toLocaleString('ko-KR');
-
-// 부호 포함 금액 문자열을 변환합니다.
-const formatSignedAmount = (value: number): string => {
-  if (value > 0) return `+${formatAmount(value)}`;
-  if (value < 0) return `-${formatAmount(Math.abs(value))}`;
-  return '0';
-};
-
 // 가운데 정렬 셀 스타일입니다.
 const ADMIN_ORDER_RETURN_CENTER_CELL_STYLE = {
   display: 'flex',
@@ -91,64 +86,10 @@ const resolveOrderReturnActionErrorMessage = (error: unknown, fallbackMessage: s
   return fallbackMessage;
 };
 
-interface AdminOrderReturnAmountItem {
-  // 항목 키입니다.
-  key: string;
-  // 라벨입니다.
-  label: string;
-  // 표시 텍스트입니다.
-  valueText: string;
-  // 강조 여부입니다.
-  isStrong?: boolean;
-}
-
-interface AdminOrderReturnAmountColumn {
-  // 컬럼 키입니다.
-  key: string;
-  // 컬럼 제목입니다.
-  title: string;
-  // 컬럼 아이템 목록입니다.
-  itemList: AdminOrderReturnAmountItem[];
-}
-
-interface AdminOrderReturnAmountTableProps {
-  // 금액 컬럼 목록입니다.
-  columnList: AdminOrderReturnAmountColumn[];
-}
-
-// 관리자 반품 금액 테이블 공통 UI를 렌더링합니다.
-const AdminOrderReturnAmountTable = ({ columnList }: AdminOrderReturnAmountTableProps) => {
-  return (
-    <div className="admin-order-return-amount-table">
-      {columnList.map((columnItem) => (
-        <section key={columnItem.key} className="admin-order-return-amount-column">
-          <h6 className="admin-order-return-amount-title">{columnItem.title}</h6>
-          <div className="admin-order-return-amount-item-list">
-            {columnItem.itemList.map((amountItem) => (
-              <div key={amountItem.key} className="admin-order-return-amount-item">
-                <span className="admin-order-return-amount-label">{amountItem.label}</span>
-                <span
-                  className={
-                    amountItem.isStrong
-                      ? 'admin-order-return-amount-value admin-order-return-amount-value-strong'
-                      : 'admin-order-return-amount-value'
-                  }
-                >
-                  {amountItem.valueText}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
-  );
-};
-
 // 현재 주문 금액 컬럼 목록을 생성합니다.
 const createCurrentAmountColumnList = (
   pageData: AdminOrderReturnPageResponse,
-): AdminOrderReturnAmountColumn[] => {
+): OrderReturnAmountColumn[] => {
   const totalBenefitAmt =
     pageData.amountSummary.totalGoodsCouponDiscountAmt +
     pageData.amountSummary.totalCartCouponDiscountAmt +
@@ -158,27 +99,27 @@ const createCurrentAmountColumnList = (
       key: 'goodsPrice',
       title: '상품가격',
       itemList: [
-        { key: 'totalSupplyAmt', label: '상품가격', valueText: `${formatAmount(pageData.amountSummary.totalSupplyAmt)}원` },
-        { key: 'totalGoodsDiscountAmt', label: '상품할인', valueText: `${formatAmount(pageData.amountSummary.totalGoodsDiscountAmt)}원` },
+        { key: 'totalSupplyAmt', label: '상품가격', valueText: `${formatOrderAmount(pageData.amountSummary.totalSupplyAmt)}원` },
+        { key: 'totalGoodsDiscountAmt', label: '상품할인', valueText: `${formatOrderAmount(pageData.amountSummary.totalGoodsDiscountAmt)}원` },
       ],
     },
     {
       key: 'discountBenefit',
       title: '상품 할인혜택',
       itemList: [
-        { key: 'totalGoodsCouponDiscountAmt', label: '상품쿠폰', valueText: `${formatAmount(pageData.amountSummary.totalGoodsCouponDiscountAmt)}원` },
-        { key: 'totalCartCouponDiscountAmt', label: '장바구니쿠폰', valueText: `${formatAmount(pageData.amountSummary.totalCartCouponDiscountAmt)}원` },
-        { key: 'totalPointUseAmt', label: '포인트', valueText: `${formatAmount(pageData.amountSummary.totalPointUseAmt)}원` },
+        { key: 'totalGoodsCouponDiscountAmt', label: '상품쿠폰', valueText: `${formatOrderAmount(pageData.amountSummary.totalGoodsCouponDiscountAmt)}원` },
+        { key: 'totalCartCouponDiscountAmt', label: '장바구니쿠폰', valueText: `${formatOrderAmount(pageData.amountSummary.totalCartCouponDiscountAmt)}원` },
+        { key: 'totalPointUseAmt', label: '포인트', valueText: `${formatOrderAmount(pageData.amountSummary.totalPointUseAmt)}원` },
       ],
     },
     {
       key: 'finalAmount',
       title: '최종금액',
       itemList: [
-        { key: 'totalOrderAmt', label: '상품 판매가', valueText: `${formatAmount(pageData.amountSummary.totalOrderAmt)}원` },
-        { key: 'totalBenefitAmt', label: '할인 총액', valueText: `${formatAmount(totalBenefitAmt)}원` },
-        { key: 'deliveryFeeAmt', label: '배송비', valueText: `${formatAmount(pageData.amountSummary.deliveryFeeAmt)}원` },
-        { key: 'finalPayAmt', label: '결제금액', valueText: `${formatAmount(pageData.amountSummary.finalPayAmt)}원`, isStrong: true },
+        { key: 'totalOrderAmt', label: '상품 판매가', valueText: `${formatOrderAmount(pageData.amountSummary.totalOrderAmt)}원` },
+        { key: 'totalBenefitAmt', label: '할인 총액', valueText: `${formatOrderAmount(totalBenefitAmt)}원` },
+        { key: 'deliveryFeeAmt', label: '배송비', valueText: `${formatOrderAmount(pageData.amountSummary.deliveryFeeAmt)}원` },
+        { key: 'finalPayAmt', label: '결제금액', valueText: `${formatOrderAmount(pageData.amountSummary.finalPayAmt)}원`, isStrong: true },
       ],
     },
   ];
@@ -187,34 +128,34 @@ const createCurrentAmountColumnList = (
 // 반품 예정 금액 컬럼 목록을 생성합니다.
 const createReturnPreviewAmountColumnList = (
   previewResult: NonNullable<ReturnType<typeof buildAdminOrderReturnPreviewResult>>,
-): AdminOrderReturnAmountColumn[] => {
+): OrderReturnAmountColumn[] => {
   return [
     {
       key: 'goodsPrice',
       title: '상품가격',
       itemList: [
-        { key: 'totalSupplyAmt', label: '상품가격', valueText: `${formatAmount(previewResult.returnPreviewSummary.totalSupplyAmt)}원` },
-        { key: 'totalGoodsDiscountAmt', label: '상품할인', valueText: `${formatAmount(previewResult.returnPreviewSummary.totalGoodsDiscountAmt)}원` },
+        { key: 'totalSupplyAmt', label: '상품가격', valueText: `${formatOrderAmount(previewResult.returnPreviewSummary.totalSupplyAmt)}원` },
+        { key: 'totalGoodsDiscountAmt', label: '상품할인', valueText: `${formatOrderAmount(previewResult.returnPreviewSummary.totalGoodsDiscountAmt)}원` },
       ],
     },
     {
       key: 'returnBenefit',
       title: '반품 혜택',
       itemList: [
-        { key: 'totalGoodsCouponDiscountAmt', label: '상품쿠폰', valueText: `${formatAmount(previewResult.returnPreviewSummary.totalGoodsCouponDiscountAmt)}원` },
-        { key: 'totalCartCouponDiscountAmt', label: '장바구니쿠폰', valueText: `${formatAmount(previewResult.returnPreviewSummary.totalCartCouponDiscountAmt)}원` },
-        { key: 'deliveryCouponRefundAmt', label: '배송비쿠폰환급', valueText: `${formatAmount(previewResult.returnPreviewSummary.deliveryCouponRefundAmt)}원` },
-        { key: 'totalPointRefundAmt', label: '포인트환급', valueText: `${formatAmount(previewResult.returnPreviewSummary.totalPointRefundAmt)}원` },
+        { key: 'totalGoodsCouponDiscountAmt', label: '상품쿠폰', valueText: `${formatOrderAmount(previewResult.returnPreviewSummary.totalGoodsCouponDiscountAmt)}원` },
+        { key: 'totalCartCouponDiscountAmt', label: '장바구니쿠폰', valueText: `${formatOrderAmount(previewResult.returnPreviewSummary.totalCartCouponDiscountAmt)}원` },
+        { key: 'deliveryCouponRefundAmt', label: '배송비쿠폰환급', valueText: `${formatOrderAmount(previewResult.returnPreviewSummary.deliveryCouponRefundAmt)}원` },
+        { key: 'totalPointRefundAmt', label: '포인트환급', valueText: `${formatOrderAmount(previewResult.returnPreviewSummary.totalPointRefundAmt)}원` },
       ],
     },
     {
       key: 'expectedRefund',
       title: '반품 예정금액',
       itemList: [
-        { key: 'paidGoodsAmt', label: '실결제 상품가', valueText: `${formatAmount(previewResult.returnPreviewSummary.paidGoodsAmt)}원` },
-        { key: 'benefitAmt', label: '환급 혜택 합계', valueText: `${formatAmount(previewResult.returnPreviewSummary.benefitAmt)}원` },
-        { key: 'shippingAdjustmentAmt', label: '배송비', valueText: `${formatSignedAmount(previewResult.returnPreviewSummary.shippingAdjustmentAmt)}원` },
-        { key: 'expectedRefundAmt', label: '반품 예정 금액', valueText: `${formatAmount(previewResult.returnPreviewSummary.expectedRefundAmt)}원`, isStrong: true },
+        { key: 'paidGoodsAmt', label: '실결제 상품가', valueText: `${formatOrderAmount(previewResult.returnPreviewSummary.paidGoodsAmt)}원` },
+        { key: 'benefitAmt', label: '환급 혜택 합계', valueText: `${formatOrderAmount(previewResult.returnPreviewSummary.benefitAmt)}원` },
+        { key: 'shippingAdjustmentAmt', label: '배송비', valueText: `${formatSignedOrderAmount(previewResult.returnPreviewSummary.shippingAdjustmentAmt)}원` },
+        { key: 'expectedRefundAmt', label: '반품 예정 금액', valueText: `${formatOrderAmount(previewResult.returnPreviewSummary.expectedRefundAmt)}원`, isStrong: true },
       ],
     },
   ];
@@ -629,7 +570,7 @@ const OrderReturnModal = ({
         flex: 1,
         cellClass: 'admin-order-return-right-cell',
         cellStyle: ADMIN_ORDER_RETURN_RIGHT_CELL_STYLE,
-        valueFormatter: (params) => `${formatAmount(((params.data?.saleAmt ?? 0) + (params.data?.addAmt ?? 0)) * (params.data?.ordQty ?? 0))}원`,
+        valueFormatter: (params) => `${formatOrderAmount(((params.data?.saleAmt ?? 0) + (params.data?.addAmt ?? 0)) * (params.data?.ordQty ?? 0))}원`,
       },
     ];
   }, [allSelected, selectionMap, someSelected, targetDetailList]);
@@ -928,14 +869,14 @@ const OrderReturnModal = ({
 
                   <div>
                     <h6 className="fw-bold mb-2 text-white">현재 주문 금액</h6>
-                    <AdminOrderReturnAmountTable columnList={currentAmountColumnList} />
+                    <OrderReturnAmountTable columnList={currentAmountColumnList} />
                   </div>
 
                   <div>
                     <h6 className="fw-bold mb-2 text-white">반품 예정 금액</h6>
                     {previewResult?.previewVisible ? (
                       <>
-                        <AdminOrderReturnAmountTable columnList={returnPreviewAmountColumnList} />
+                        <OrderReturnAmountTable columnList={returnPreviewAmountColumnList} />
                         {!previewResult.canSubmit && previewResult.submitBlockMessage && (
                           <div className="alert alert-danger mt-3 mb-0">{previewResult.submitBlockMessage}</div>
                         )}
