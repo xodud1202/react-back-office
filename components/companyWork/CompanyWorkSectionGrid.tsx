@@ -7,25 +7,35 @@ import {
   createCompanyWorkColumnDefs,
   createCompanyWorkDefaultColDef,
 } from '@/components/companyWork/companyWorkGridColumns';
-import type { CompanyWorkListRow } from '@/components/companyWork/types';
+import type { CompanyWorkListRow, CompanyWorkSaveEditableRowHandler } from '@/components/companyWork/types';
 
 interface CompanyWorkSectionGridProps {
   // 상태 영역 제목입니다.
   title: string;
   // 상태 영역 행 목록입니다.
   rowData: CompanyWorkListRow[];
+  // 상태 공통코드 목록입니다.
+  workStatList: CommonCode[];
   // 우선순위 공통코드 목록입니다.
   workPriorList: CommonCode[];
+  // 즉시 저장 처리 함수입니다.
+  onSaveEditableRow: CompanyWorkSaveEditableRowHandler;
 }
 
 // 회사 업무 상태 영역 그리드를 렌더링합니다.
 const CompanyWorkSectionGrid = ({
   title,
   rowData,
+  workStatList,
   workPriorList,
+  onSaveEditableRow,
 }: CompanyWorkSectionGridProps) => {
   // 우선순위 공통코드 기준 컬럼 정의를 구성합니다.
-  const columnDefs = useMemo(() => createCompanyWorkColumnDefs(workPriorList), [workPriorList]);
+  const columnDefs = useMemo(() => createCompanyWorkColumnDefs({
+    workPriorList,
+    workStatList,
+    onSaveEditableRow,
+  }), [onSaveEditableRow, workPriorList, workStatList]);
 
   // 공통 기본 컬럼 옵션을 구성합니다.
   const defaultColDef = useMemo(() => createCompanyWorkDefaultColDef(), []);
@@ -44,7 +54,7 @@ const CompanyWorkSectionGrid = ({
               <h5 className="mb-0">{title}</h5>
               <span className="text-muted small">총 {rowData.length}건</span>
             </div>
-            <div className="ag-theme-alpine-dark header-center" style={{ width: '100%' }}>
+            <div className="ag-theme-alpine-dark header-center company-work-grid-theme" style={{ width: '100%' }}>
               <AgGridReact<CompanyWorkListRow>
                 columnDefs={columnDefs}
                 defaultColDef={defaultColDef}
@@ -52,6 +62,7 @@ const CompanyWorkSectionGrid = ({
                 domLayout="autoHeight"
                 overlayNoRowsTemplate="조회 결과가 없습니다."
                 getRowId={(params) => String(params.data?.workSeq ?? '')}
+                rowHeight={46}
               />
             </div>
           </div>

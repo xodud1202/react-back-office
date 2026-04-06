@@ -7,7 +7,7 @@ import {
   createCompanyWorkColumnDefs,
   createCompanyWorkDefaultColDef,
 } from '@/components/companyWork/companyWorkGridColumns';
-import type { CompanyWorkListRow } from '@/components/companyWork/types';
+import type { CompanyWorkListRow, CompanyWorkSaveEditableRowHandler } from '@/components/companyWork/types';
 
 interface CompanyWorkCompletedGridProps {
   // 완료 업무 목록입니다.
@@ -20,10 +20,14 @@ interface CompanyWorkCompletedGridProps {
   pageSize: number;
   // 완료 목록 조회 중 여부입니다.
   loading: boolean;
+  // 상태 공통코드 목록입니다.
+  workStatList: CommonCode[];
   // 우선순위 공통코드 목록입니다.
   workPriorList: CommonCode[];
   // 페이지 변경 처리입니다.
   onChangePage: (page: number) => void;
+  // 즉시 저장 처리 함수입니다.
+  onSaveEditableRow: CompanyWorkSaveEditableRowHandler;
 }
 
 // 완료 목록 총 페이지 수를 계산합니다.
@@ -42,11 +46,17 @@ const CompanyWorkCompletedGrid = ({
   page,
   pageSize,
   loading,
+  workStatList,
   workPriorList,
   onChangePage,
+  onSaveEditableRow,
 }: CompanyWorkCompletedGridProps) => {
   // 우선순위 공통코드 기준 컬럼 정의를 구성합니다.
-  const columnDefs = useMemo(() => createCompanyWorkColumnDefs(workPriorList), [workPriorList]);
+  const columnDefs = useMemo(() => createCompanyWorkColumnDefs({
+    workPriorList,
+    workStatList,
+    onSaveEditableRow,
+  }), [onSaveEditableRow, workPriorList, workStatList]);
 
   // 공통 기본 컬럼 옵션을 구성합니다.
   const defaultColDef = useMemo(() => createCompanyWorkDefaultColDef(), []);
@@ -71,7 +81,7 @@ const CompanyWorkCompletedGrid = ({
             {loading ? (
               <div className="text-end text-muted small mb-2">완료 목록을 불러오는 중입니다.</div>
             ) : null}
-            <div className="ag-theme-alpine-dark header-center" style={{ width: '100%' }}>
+            <div className="ag-theme-alpine-dark header-center company-work-grid-theme" style={{ width: '100%' }}>
               <AgGridReact<CompanyWorkListRow>
                 columnDefs={columnDefs}
                 defaultColDef={defaultColDef}
@@ -79,6 +89,7 @@ const CompanyWorkCompletedGrid = ({
                 domLayout="autoHeight"
                 overlayNoRowsTemplate="조회 결과가 없습니다."
                 getRowId={(params) => String(params.data?.workSeq ?? '')}
+                rowHeight={46}
               />
             </div>
             {totalPageCount > 1 ? (

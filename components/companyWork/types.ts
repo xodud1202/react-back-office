@@ -138,6 +138,32 @@ export interface CompanyWorkImportResponse {
   workKey: string;
 }
 
+// 회사 업무 즉시 수정 가능 항목을 정의합니다.
+export interface CompanyWorkEditableValues {
+  // 업무 상태 코드입니다.
+  workStatCd: string;
+  // 업무 시작일입니다.
+  workStartDt: string;
+  // 업무 종료일입니다.
+  workEndDt: string;
+  // IT 담당자명입니다.
+  itManager: string;
+}
+
+// 회사 업무 즉시 수정 요청 데이터를 정의합니다.
+export interface CompanyWorkUpdateRequest extends CompanyWorkEditableValues {
+  // 업무 시퀀스입니다.
+  workSeq: number;
+  // 수정자 번호입니다.
+  udtNo: number;
+}
+
+// 회사 업무 즉시 저장 처리 함수 타입을 정의합니다.
+export type CompanyWorkSaveEditableRowHandler = (
+  row: CompanyWorkListRow,
+  changes: Partial<CompanyWorkEditableValues>,
+) => Promise<void>;
+
 // 회사 업무 페이지 서버 주입 데이터 타입을 정의합니다.
 export interface CompanyWorkPageInitialData {
   // 회사 목록입니다.
