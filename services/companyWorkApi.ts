@@ -1,8 +1,14 @@
 import type {
   CompanyWorkCompletedListResponse,
+  CompanyWorkDetail,
+  CompanyWorkDetailResponse,
+  CompanyWorkDetailUpdateRequest,
+  CompanyWorkFile,
   CompanyWorkImportRequest,
   CompanyWorkImportResponse,
   CompanyWorkProjectOption,
+  CompanyWorkReply,
+  CompanyWorkReplySaveRequest,
   CompanyWorkSearchParams,
   CompanyWorkStatusListResponse,
   CompanyWorkUpdateRequest,
@@ -22,12 +28,45 @@ const normalizeCompanyWorkListRow = (row: Partial<CompanyWorkListRow> | null | u
   workCreateDt: typeof row?.workCreateDt === 'string' ? row.workCreateDt : '',
   workStartDt: typeof row?.workStartDt === 'string' ? row.workStartDt : '',
   workEndDt: typeof row?.workEndDt === 'string' ? row.workEndDt : '',
+  workTime: typeof row?.workTime === 'number' ? row.workTime : null,
   workPriorCd: typeof row?.workPriorCd === 'string' ? row.workPriorCd : '',
   workPriorNm: typeof row?.workPriorNm === 'string' ? row.workPriorNm : '',
   itManager: typeof row?.itManager === 'string' ? row.itManager : '',
   coManager: typeof row?.coManager === 'string' ? row.coManager : '',
   regDt: typeof row?.regDt === 'string' ? row.regDt : '',
   udtDt: typeof row?.udtDt === 'string' ? row.udtDt : '',
+});
+
+// 회사 업무 상세 응답을 안전하게 정규화합니다.
+const normalizeCompanyWorkDetail = (detail: Partial<CompanyWorkDetail> | null | undefined): CompanyWorkDetail => ({
+  // 목록 공통 필드와 상세 전용 필드를 모두 기본값 기준으로 정규화합니다.
+  ...normalizeCompanyWorkListRow(detail),
+  workCompanyNm: typeof detail?.workCompanyNm === 'string' ? detail.workCompanyNm : '',
+  workCompanyProjectNm: typeof detail?.workCompanyProjectNm === 'string' ? detail.workCompanyProjectNm : '',
+  content: typeof detail?.content === 'string' ? detail.content : '',
+  workTime: typeof detail?.workTime === 'number' ? detail.workTime : null,
+});
+
+// 회사 업무 첨부파일 응답을 안전하게 정규화합니다.
+const normalizeCompanyWorkFile = (file: Partial<CompanyWorkFile> | null | undefined): CompanyWorkFile => ({
+  // 첨부파일 목록에 필요한 값을 안전한 기본값으로 정규화합니다.
+  workJobFileSeq: typeof file?.workJobFileSeq === 'number' ? file.workJobFileSeq : 0,
+  workSeq: typeof file?.workSeq === 'number' ? file.workSeq : 0,
+  workJobFileNm: typeof file?.workJobFileNm === 'string' ? file.workJobFileNm : '',
+  workJobFileUrl: typeof file?.workJobFileUrl === 'string' ? file.workJobFileUrl : '',
+  regDt: typeof file?.regDt === 'string' ? file.regDt : '',
+  udtDt: typeof file?.udtDt === 'string' ? file.udtDt : '',
+});
+
+// 회사 업무 댓글 응답을 안전하게 정규화합니다.
+const normalizeCompanyWorkReply = (reply: Partial<CompanyWorkReply> | null | undefined): CompanyWorkReply => ({
+  // 댓글 목록에 필요한 값을 안전한 기본값으로 정규화합니다.
+  replySeq: typeof reply?.replySeq === 'number' ? reply.replySeq : 0,
+  workSeq: typeof reply?.workSeq === 'number' ? reply.workSeq : 0,
+  replyComment: typeof reply?.replyComment === 'string' ? reply.replyComment : '',
+  regNo: typeof reply?.regNo === 'number' ? reply.regNo : 0,
+  regDt: typeof reply?.regDt === 'string' ? reply.regDt : '',
+  udtDt: typeof reply?.udtDt === 'string' ? reply.udtDt : '',
 });
 
 // 회사 업무 프로젝트 목록을 조회합니다.
@@ -79,6 +118,24 @@ export const fetchCompanyWorkCompletedList = async (
   };
 };
 
+// 회사 업무 상세 팝업 데이터를 조회합니다.
+export const fetchCompanyWorkDetail = async (workSeq: number): Promise<CompanyWorkDetailResponse> => {
+  // 선택 업무 번호 기준 상세/첨부/댓글 응답을 요청합니다.
+  const response = await api.get('/api/admin/company/work/detail', {
+    params: { workSeq },
+  });
+  const responseData = response.data as Partial<CompanyWorkDetailResponse> | null;
+  return {
+    detail: responseData?.detail ? normalizeCompanyWorkDetail(responseData.detail) : null,
+    fileList: Array.isArray(responseData?.fileList)
+      ? responseData!.fileList!.map((fileItem) => normalizeCompanyWorkFile(fileItem))
+      : [],
+    replyList: Array.isArray(responseData?.replyList)
+      ? responseData!.replyList!.map((replyItem) => normalizeCompanyWorkReply(replyItem))
+      : [],
+  };
+};
+
 // 회사 업무 Jira 가져오기 저장을 요청합니다.
 export const importCompanyWork = async (
   payload: CompanyWorkImportRequest,
@@ -100,4 +157,22 @@ export const updateCompanyWork = async (
   // 수정 요청 본문을 백엔드 저장 API로 전송합니다.
   const response = await api.post('/api/admin/company/work/update', payload);
   return normalizeCompanyWorkListRow(response.data as Partial<CompanyWorkListRow> | null);
+};
+
+// 회사 업무 상세 수정값을 저장합니다.
+export const updateCompanyWorkDetail = async (
+  payload: CompanyWorkDetailUpdateRequest,
+): Promise<CompanyWorkDetail> => {
+  // 상세 저장 요청 본문을 백엔드 저장 API로 전송합니다.
+  const response = await api.post('/api/admin/company/work/detail/update', payload);
+  return normalizeCompanyWorkDetail(response.data as Partial<CompanyWorkDetail> | null);
+};
+
+// 회사 업무 댓글을 등록합니다.
+export const createCompanyWorkReply = async (
+  payload: CompanyWorkReplySaveRequest,
+): Promise<CompanyWorkReply> => {
+  // 댓글 등록 요청 본문을 백엔드 저장 API로 전송합니다.
+  const response = await api.post('/api/admin/company/work/reply', payload);
+  return normalizeCompanyWorkReply(response.data as Partial<CompanyWorkReply> | null);
 };

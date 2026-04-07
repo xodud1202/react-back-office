@@ -3,11 +3,12 @@ import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { createElement } from 'react';
 import {
   CompanyWorkDateCell,
+  CompanyWorkNumberCell,
   CompanyWorkStatusSelectCell,
   CompanyWorkTextCell,
 } from '@/components/companyWork/CompanyWorkEditableCells';
 import type { CompanyWorkListRow } from '@/components/companyWork/types';
-import type { CompanyWorkSaveEditableRowHandler } from '@/components/companyWork/types';
+import type { CompanyWorkOpenDetailHandler, CompanyWorkSaveEditableRowHandler } from '@/components/companyWork/types';
 import { dateFormatter } from '@/utils/common';
 
 // 우선순위 코드명을 빠르게 찾기 위한 맵을 생성합니다.
@@ -39,6 +40,8 @@ interface CreateCompanyWorkColumnDefsParams {
   workStatList: CommonCode[];
   // 즉시 저장 처리 함수입니다.
   onSaveEditableRow: CompanyWorkSaveEditableRowHandler;
+  // 상세 팝업 열기 처리 함수입니다.
+  onOpenDetail: CompanyWorkOpenDetailHandler;
 }
 
 // 회사 업무 그리드 컬럼 정의를 생성합니다.
@@ -46,16 +49,17 @@ export const createCompanyWorkColumnDefs = ({
   workPriorList,
   workStatList,
   onSaveEditableRow,
+  onOpenDetail,
 }: CreateCompanyWorkColumnDefsParams): ColDef<CompanyWorkListRow>[] => {
   // 우선순위 코드명을 조회용 맵으로 구성합니다.
   const workPriorNameMap = createWorkPriorNameMap(workPriorList);
 
   return [
-    { headerName: '업무번호', field: 'workKey', width: 120 },
+    { headerName: '업무번호', field: 'workKey', width: 90 },
     {
       headerName: '상태',
       field: 'workStatCd',
-      width: 180,
+      width: 110,
       cellRenderer: (params: ICellRendererParams<CompanyWorkListRow>) => {
         // 행 데이터가 있으면 상태 선택 셀을 렌더링합니다.
         if (!params.data) {
@@ -72,23 +76,41 @@ export const createCompanyWorkColumnDefs = ({
       headerName: '타이틀',
       field: 'title',
       flex: 1,
-      minWidth: 400,
+      minWidth: 450,
       cellClass: 'company-work-title-cell text-start',
       cellStyle: { textAlign: 'left' },
       cellRenderer: (params: ICellRendererParams<CompanyWorkListRow>) => {
-        // 내부 flex 정렬 영향 없이 타이틀을 좌측 정렬 블록으로 렌더링합니다.
+        // 타이틀 클릭 시 상세 레이어 팝업을 열 수 있는 버튼으로 렌더링합니다.
+        if (!params.data) {
+          return '';
+        }
         return createElement(
-          'div',
-          { style: { display: 'block', width: '100%', textAlign: 'left' } },
+          'button',
+          {
+            type: 'button',
+            className: 'btn btn-link p-0 w-100 text-start',
+            style: { display: 'block', width: '100%', textAlign: 'left' },
+            onClick: () => onOpenDetail(params.data!.workSeq),
+          },
           String(params.value ?? ''),
         );
       },
     },
     {
-      headerName: '업무생성일자',
-      field: 'workCreateDt',
-      width: 170,
-      valueFormatter: (params) => dateFormatter({ value: params.value } as any),
+      headerName: 'IT담당자',
+      field: 'itManager',
+      width: 150,
+      cellRenderer: (params: ICellRendererParams<CompanyWorkListRow>) => {
+        // 행 데이터가 있으면 IT 담당자 입력 셀을 렌더링합니다.
+        if (!params.data) {
+          return '';
+        }
+        return createElement(CompanyWorkTextCell, {
+          value: params.data.itManager,
+          placeholder: 'IT담당자 입력',
+          onSave: (nextValue: string) => onSaveEditableRow(params.data!, { itManager: nextValue }),
+        });
+      },
     },
     {
       headerName: '시작일시',
@@ -121,6 +143,28 @@ export const createCompanyWorkColumnDefs = ({
       },
     },
     {
+      headerName: '공수시간',
+      field: 'workTime',
+      width: 130,
+      cellRenderer: (params: ICellRendererParams<CompanyWorkListRow>) => {
+        // 행 데이터가 있으면 공수시간 숫자 입력 셀을 렌더링합니다.
+        if (!params.data) {
+          return '';
+        }
+        return createElement(CompanyWorkNumberCell, {
+          value: params.data.workTime,
+          placeholder: '공수시간 입력',
+          onSave: (nextValue: number | null) => onSaveEditableRow(params.data!, { workTime: nextValue }),
+        });
+      },
+    },
+    {
+      headerName: '업무생성일자',
+      field: 'workCreateDt',
+      width: 170,
+      valueFormatter: (params) => dateFormatter({ value: params.value } as any),
+    },
+    {
       headerName: '우선순위',
       field: 'workPriorNm',
       width: 120,
@@ -131,22 +175,6 @@ export const createCompanyWorkColumnDefs = ({
         }
         const workPriorCode = params.data?.workPriorCd || '';
         return workPriorNameMap.get(workPriorCode) || '';
-      },
-    },
-    {
-      headerName: 'IT담당자',
-      field: 'itManager',
-      width: 150,
-      cellRenderer: (params: ICellRendererParams<CompanyWorkListRow>) => {
-        // 행 데이터가 있으면 IT 담당자 입력 셀을 렌더링합니다.
-        if (!params.data) {
-          return '';
-        }
-        return createElement(CompanyWorkTextCell, {
-          value: params.data.itManager,
-          placeholder: 'IT담당자 입력',
-          onSave: (nextValue: string) => onSaveEditableRow(params.data!, { itManager: nextValue }),
-        });
       },
     },
     { headerName: '업무담당자', field: 'coManager', width: 130 },

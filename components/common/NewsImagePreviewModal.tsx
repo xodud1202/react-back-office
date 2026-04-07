@@ -6,10 +6,22 @@ interface NewsImagePreviewModalProps {
   isOpen: boolean;
   imageUrl: string | null;
   onClose: () => void;
+  width?: string;
+  height?: string;
+  maxWidth?: string;
+  maxHeight?: string;
 }
 
 // 뉴스 이미지 미리보기 모달을 렌더링합니다.
-const NewsImagePreviewModal: React.FC<NewsImagePreviewModalProps> = ({ isOpen, imageUrl, onClose }) => {
+const NewsImagePreviewModal: React.FC<NewsImagePreviewModalProps> = ({
+  isOpen,
+  imageUrl,
+  onClose,
+  width = '500px',
+  height = '500px',
+  maxWidth,
+  maxHeight,
+}) => {
   // 모달이 열릴 때 배경 스크롤을 잠급니다.
   useEffect(() => {
     if (!isOpen) {
@@ -58,8 +70,10 @@ const NewsImagePreviewModal: React.FC<NewsImagePreviewModalProps> = ({ isOpen, i
         <div
           role="document"
           style={{
-            width: '500px',
-            height: '500px',
+            width,
+            height,
+            maxWidth,
+            maxHeight,
             backgroundColor: '#ffffff',
             borderRadius: '8px',
             overflow: 'hidden',

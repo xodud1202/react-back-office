@@ -7,7 +7,7 @@ import {
   createCompanyWorkColumnDefs,
   createCompanyWorkDefaultColDef,
 } from '@/components/companyWork/companyWorkGridColumns';
-import type { CompanyWorkListRow, CompanyWorkSaveEditableRowHandler } from '@/components/companyWork/types';
+import type { CompanyWorkListRow, CompanyWorkOpenDetailHandler, CompanyWorkSaveEditableRowHandler } from '@/components/companyWork/types';
 
 interface CompanyWorkCompletedGridProps {
   // 완료 업무 목록입니다.
@@ -28,6 +28,8 @@ interface CompanyWorkCompletedGridProps {
   onChangePage: (page: number) => void;
   // 즉시 저장 처리 함수입니다.
   onSaveEditableRow: CompanyWorkSaveEditableRowHandler;
+  // 상세 팝업 열기 처리 함수입니다.
+  onOpenDetail: CompanyWorkOpenDetailHandler;
 }
 
 // 완료 목록 총 페이지 수를 계산합니다.
@@ -50,13 +52,15 @@ const CompanyWorkCompletedGrid = ({
   workPriorList,
   onChangePage,
   onSaveEditableRow,
+  onOpenDetail,
 }: CompanyWorkCompletedGridProps) => {
   // 우선순위 공통코드 기준 컬럼 정의를 구성합니다.
   const columnDefs = useMemo(() => createCompanyWorkColumnDefs({
     workPriorList,
     workStatList,
     onSaveEditableRow,
-  }), [onSaveEditableRow, workPriorList, workStatList]);
+    onOpenDetail,
+  }), [onOpenDetail, onSaveEditableRow, workPriorList, workStatList]);
 
   // 공통 기본 컬럼 옵션을 구성합니다.
   const defaultColDef = useMemo(() => createCompanyWorkDefaultColDef(), []);
@@ -71,50 +75,46 @@ const CompanyWorkCompletedGrid = ({
 
   return (
     <div className="row">
-      <div className="col-lg-12 grid-margin stretch-card">
-        <div className="card">
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="mb-0">완료</h5>
-              <span className="text-muted small">총 {totalCount}건</span>
-            </div>
-            {loading ? (
-              <div className="text-end text-muted small mb-2">완료 목록을 불러오는 중입니다.</div>
-            ) : null}
-            <div className="ag-theme-alpine-dark header-center company-work-grid-theme" style={{ width: '100%' }}>
-              <AgGridReact<CompanyWorkListRow>
-                columnDefs={columnDefs}
-                defaultColDef={defaultColDef}
-                rowData={rowData}
-                domLayout="autoHeight"
-                overlayNoRowsTemplate="조회 결과가 없습니다."
-                getRowId={(params) => String(params.data?.workSeq ?? '')}
-                rowHeight={46}
-              />
-            </div>
-            {totalPageCount > 1 ? (
-              <div className="d-flex justify-content-end align-items-center gap-2 mt-3">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => onChangePage(page - 1)}
-                  disabled={loading || page <= 1}
-                >
-                  이전
-                </button>
-                <span className="text-muted small">{page} / {totalPageCount}</span>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => onChangePage(page + 1)}
-                  disabled={loading || page >= totalPageCount}
-                >
-                  다음
-                </button>
-              </div>
-            ) : null}
-          </div>
+      <div className="col-lg-12 grid-margin">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5 className="mb-0">완료</h5>
+          <span className="text-muted small">총 {totalCount}건</span>
         </div>
+        {loading ? (
+          <div className="text-end text-muted small mb-2">완료 목록을 불러오는 중입니다.</div>
+        ) : null}
+        <div className="ag-theme-alpine-dark header-center company-work-grid-theme" style={{ width: '100%' }}>
+          <AgGridReact<CompanyWorkListRow>
+            columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
+            rowData={rowData}
+            domLayout="autoHeight"
+            overlayNoRowsTemplate="조회 결과가 없습니다."
+            getRowId={(params) => String(params.data?.workSeq ?? '')}
+            rowHeight={46}
+          />
+        </div>
+        {totalPageCount > 1 ? (
+          <div className="d-flex justify-content-end align-items-center gap-2 mt-3">
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={() => onChangePage(page - 1)}
+              disabled={loading || page <= 1}
+            >
+              이전
+            </button>
+            <span className="text-muted small">{page} / {totalPageCount}</span>
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={() => onChangePage(page + 1)}
+              disabled={loading || page >= totalPageCount}
+            >
+              다음
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

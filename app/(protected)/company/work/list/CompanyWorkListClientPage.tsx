@@ -3,14 +3,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CommonCode } from '@/components/goods/types';
 import CompanyWorkCompletedGrid from '@/components/companyWork/CompanyWorkCompletedGrid';
+import CompanyWorkDetailModal from '@/components/companyWork/CompanyWorkDetailModal';
 import CompanyWorkImportModal from '@/components/companyWork/CompanyWorkImportModal';
 import CompanyWorkSearchForm from '@/components/companyWork/CompanyWorkSearchForm';
 import CompanyWorkSectionGrid from '@/components/companyWork/CompanyWorkSectionGrid';
 import type {
   CompanyWorkCompanyOption,
   CompanyWorkCompletedListResponse,
+  CompanyWorkDetail,
+  CompanyWorkDetailEditableValues,
+  CompanyWorkDetailResponse,
   CompanyWorkListRow,
   CompanyWorkProjectOption,
+  CompanyWorkReply,
   CompanyWorkSaveEditableRowHandler,
   CompanyWorkSearchFormState,
   CompanyWorkSearchParams,
@@ -18,14 +23,17 @@ import type {
   CompanyWorkUpdateRequest,
 } from '@/components/companyWork/types';
 import {
+  createCompanyWorkReply,
   fetchCompanyWorkCompletedList,
+  fetchCompanyWorkDetail,
   fetchCompanyWorkProjectList,
   fetchCompanyWorkStatusList,
   updateCompanyWork,
+  updateCompanyWorkDetail,
 } from '@/services/companyWorkApi';
 import { requireLoginUsrNo } from '@/utils/auth';
 import { extractApiErrorMessage } from '@/utils/api/error';
-import { notifyError } from '@/utils/ui/feedback';
+import { notifyError, notifySuccess } from '@/utils/ui/feedback';
 
 interface CompanyWorkListClientPageProps {
   // 회사 목록입니다.
@@ -108,6 +116,33 @@ const normalizeEditableManager = (value?: string | null): string => {
   // 문자열 양끝 공백만 제거해 저장값을 맞춥니다.
   return normalizeComparableText(value).trim();
 };
+
+// 공수시간 값을 저장 가능한 숫자 또는 null로 정규화합니다.
+const normalizeEditableWorkTime = (value?: number | null): number | null => {
+  // 숫자가 아니면 빈값(null)으로 저장합니다.
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+};
+
+// 상세 업무 정보를 목록 행 구조로 변환합니다.
+const createCompanyWorkListRowFromDetail = (detail: CompanyWorkDetail): CompanyWorkListRow => ({
+  // 상세 응답을 현재 목록 행 갱신에 필요한 구조로 맞춥니다.
+  workSeq: detail.workSeq,
+  workCompanySeq: detail.workCompanySeq,
+  workCompanyProjectSeq: detail.workCompanyProjectSeq,
+  workStatCd: detail.workStatCd,
+  workKey: detail.workKey,
+  title: detail.title,
+  workCreateDt: detail.workCreateDt,
+  workStartDt: detail.workStartDt,
+  workEndDt: detail.workEndDt,
+  workTime: detail.workTime,
+  workPriorCd: detail.workPriorCd,
+  workPriorNm: detail.workPriorNm,
+  itManager: detail.itManager,
+  coManager: detail.coManager,
+  regDt: detail.regDt,
+  udtDt: detail.udtDt,
+});
 
 // 회사 업무 행 목록을 정렬 기준에 맞게 정렬합니다.
 const sortCompanyWorkRows = (rowList: CompanyWorkListRow[]): CompanyWorkListRow[] => {
@@ -219,7 +254,15 @@ const CompanyWorkListClientPage = ({
   const [searchExecuted, setSearchExecuted] = useState(false);
   const [activeSearchParams, setActiveSearchParams] = useState<CompanyWorkSearchParams | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailSaving, setDetailSaving] = useState(false);
+  const [replySaving, setReplySaving] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [detailResponse, setDetailResponse] = useState<CompanyWorkDetailResponse | null>(null);
   const companyWorkRowMapRef = useRef<Map<number, CompanyWorkListRow>>(new Map());
+  const detailRequestSequenceRef = useRef(0);
+  const initialAutoSearchDoneRef = useRef(false);
 
   // 상태 코드별 코드명을 빠르게 찾기 위한 맵을 구성합니다.
   const workStatusNameMap = useMemo(() => createWorkStatusNameMap(workStatList), [workStatList]);
@@ -384,6 +427,24 @@ const CompanyWorkListClientPage = ({
     }
   }, [resetSearchResult, resolveSearchParams]);
 
+  // 화면 최초 진입 시 기본 선택 회사/프로젝트 조건으로 자동 검색을 실행합니다.
+  useEffect(() => {
+    // 최초 자동 검색은 한 번만 수행하고 필수 선택값이 없으면 건너뜁니다.
+    if (initialAutoSearchDoneRef.current) {
+      return;
+    }
+    if (!initialSearchFormState.workCompanySeq || !initialSearchFormState.workCompanyProjectSeq) {
+      return;
+    }
+
+    initialAutoSearchDoneRef.current = true;
+    void handleSearch();
+  }, [
+    handleSearch,
+    initialSearchFormState.workCompanyProjectSeq,
+    initialSearchFormState.workCompanySeq,
+  ]);
+
   // 검색 초기화 시 입력값과 결과를 모두 비웁니다.
   const handleReset = useCallback(() => {
     // 검색 폼과 프로젝트 목록과 결과 상태를 초기화합니다.
@@ -430,11 +491,56 @@ const CompanyWorkListClientPage = ({
     setIsImportModalOpen(false);
   }, []);
 
+  // 상세 팝업을 닫고 관련 상태를 초기화합니다.
+  const handleCloseDetailModal = useCallback(() => {
+    // 상세 조회 상태와 선택 데이터를 모두 비웁니다.
+    detailRequestSequenceRef.current += 1;
+    setIsDetailModalOpen(false);
+    setDetailLoading(false);
+    setDetailSaving(false);
+    setReplySaving(false);
+    setDetailError(null);
+    setDetailResponse(null);
+  }, []);
+
   // SR 가져오기 완료 후 현재 조건으로 목록을 다시 조회합니다.
   const handleImported = useCallback(async () => {
     // 가져오기 완료 직후 현재 검색 조건 기준으로 목록을 새로 고칩니다.
     await handleSearch();
   }, [handleSearch]);
+
+  // 업무 타이틀 클릭 시 상세 팝업을 열고 최신 데이터를 조회합니다.
+  const handleOpenDetail = useCallback(async (workSeq: number) => {
+    // 요청 순서를 증가시켜 늦게 도착한 이전 응답을 무시할 수 있게 합니다.
+    detailRequestSequenceRef.current += 1;
+    const requestSequence = detailRequestSequenceRef.current;
+
+    setIsDetailModalOpen(true);
+    setDetailLoading(true);
+    setDetailError(null);
+    setDetailResponse(null);
+
+    try {
+      // 선택 업무의 상세/첨부/댓글 데이터를 조회합니다.
+      const nextDetailResponse = await fetchCompanyWorkDetail(workSeq);
+      if (detailRequestSequenceRef.current !== requestSequence) {
+        return;
+      }
+      setDetailResponse(nextDetailResponse);
+    } catch (error) {
+      // 조회 실패 시 모달 내부 메시지로 오류를 안내합니다.
+      if (detailRequestSequenceRef.current !== requestSequence) {
+        return;
+      }
+      console.error('회사 업무 상세 조회에 실패했습니다.', error);
+      setDetailError(extractApiErrorMessage(error, '업무 상세 조회에 실패했습니다.'));
+    } finally {
+      if (detailRequestSequenceRef.current !== requestSequence) {
+        return;
+      }
+      setDetailLoading(false);
+    }
+  }, []);
 
   // 회사 업무 즉시 수정 요청을 저장하고 현재 목록 상태에 반영합니다.
   const handleSaveEditableRow = useCallback<CompanyWorkSaveEditableRowHandler>(async (row, changes) => {
@@ -453,6 +559,7 @@ const CompanyWorkListClientPage = ({
       workStatCd: normalizeComparableText(changes.workStatCd ?? latestRow.workStatCd),
       workStartDt: normalizeEditableDate(changes.workStartDt ?? latestRow.workStartDt),
       workEndDt: normalizeEditableDate(changes.workEndDt ?? latestRow.workEndDt),
+      workTime: normalizeEditableWorkTime(changes.workTime ?? latestRow.workTime),
       itManager: normalizeEditableManager(changes.itManager ?? latestRow.itManager),
       udtNo: loginUsrNo,
     };
@@ -469,6 +576,88 @@ const CompanyWorkListClientPage = ({
       throw error;
     }
   }, []);
+
+  // 상세 팝업 수정값을 저장하고 현재 목록과 상세 상태를 함께 반영합니다.
+  const handleSaveDetail = useCallback(async (changes: CompanyWorkDetailEditableValues) => {
+    // 상세 데이터나 로그인 사용자 정보가 없으면 저장을 진행하지 않습니다.
+    const selectedWorkSeq = detailResponse?.detail?.workSeq;
+    if (!selectedWorkSeq) {
+      notifyError('업무 정보를 확인해주세요.');
+      return;
+    }
+
+    const loginUsrNo = requireLoginUsrNo();
+    if (!loginUsrNo) {
+      throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
+    }
+
+    setDetailSaving(true);
+    try {
+      // 상세 저장 API를 호출하고 최신 상세값을 모달과 그리드에 반영합니다.
+      const updatedDetail = await updateCompanyWorkDetail({
+        workSeq: selectedWorkSeq,
+        workStatCd: normalizeComparableText(changes.workStatCd),
+        workStartDt: normalizeEditableDate(changes.workStartDt),
+        workEndDt: normalizeEditableDate(changes.workEndDt),
+        workTime: typeof changes.workTime === 'number' ? changes.workTime : null,
+        udtNo: loginUsrNo,
+      });
+
+      setDetailResponse((prevState) => prevState ? ({
+        ...prevState,
+        detail: updatedDetail,
+      }) : prevState);
+
+      const updatedRow = createCompanyWorkListRowFromDetail(updatedDetail);
+      setStatusSectionList((prevState) => applyUpdatedRowToStatusSections(prevState, updatedRow));
+      setCompletedResponse((prevState) => applyUpdatedRowToCompletedResponse(prevState, updatedRow));
+      notifySuccess('업무를 저장했습니다.');
+    } catch (error) {
+      // 저장 실패 시 서버 메시지를 사용자에게 노출합니다.
+      notifyError(extractApiErrorMessage(error, '업무 저장에 실패했습니다.'));
+      throw error;
+    } finally {
+      setDetailSaving(false);
+    }
+  }, [detailResponse]);
+
+  // 상세 팝업 댓글을 저장하고 목록 최상단에 즉시 반영합니다.
+  const handleSaveReply = useCallback(async (replyComment: string) => {
+    // 상세 데이터나 로그인 사용자 정보가 없으면 저장을 진행하지 않습니다.
+    const selectedWorkSeq = detailResponse?.detail?.workSeq;
+    if (!selectedWorkSeq) {
+      notifyError('업무 정보를 확인해주세요.');
+      return;
+    }
+
+    const loginUsrNo = requireLoginUsrNo();
+    if (!loginUsrNo) {
+      throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
+    }
+
+    setReplySaving(true);
+    try {
+      // 댓글 저장 API를 호출하고 현재 상세 댓글 목록 최상단에 반영합니다.
+      const savedReply: CompanyWorkReply = await createCompanyWorkReply({
+        workSeq: selectedWorkSeq,
+        replyComment,
+        regNo: loginUsrNo,
+        udtNo: loginUsrNo,
+      });
+
+      setDetailResponse((prevState) => prevState ? ({
+        ...prevState,
+        replyList: [savedReply, ...(prevState.replyList || [])],
+      }) : prevState);
+      notifySuccess('댓글을 등록했습니다.');
+    } catch (error) {
+      // 저장 실패 시 서버 메시지를 사용자에게 노출합니다.
+      notifyError(extractApiErrorMessage(error, '댓글 등록에 실패했습니다.'));
+      throw error;
+    } finally {
+      setReplySaving(false);
+    }
+  }, [detailResponse]);
 
   return (
     <>
@@ -526,6 +715,7 @@ const CompanyWorkListClientPage = ({
               workStatList={workStatList}
               workPriorList={workPriorList}
               onSaveEditableRow={handleSaveEditableRow}
+              onOpenDetail={handleOpenDetail}
             />
           ))}
           <CompanyWorkCompletedGrid
@@ -538,6 +728,7 @@ const CompanyWorkListClientPage = ({
             workPriorList={workPriorList}
             onChangePage={handleChangeCompletedPage}
             onSaveEditableRow={handleSaveEditableRow}
+            onOpenDetail={handleOpenDetail}
           />
         </>
       ) : null}
@@ -549,6 +740,19 @@ const CompanyWorkListClientPage = ({
         initialWorkCompanyProjectSeq={searchFormState.workCompanyProjectSeq}
         onClose={handleCloseImportModal}
         onImported={handleImported}
+      />
+
+      <CompanyWorkDetailModal
+        isOpen={isDetailModalOpen}
+        loading={detailLoading}
+        saving={detailSaving}
+        replySaving={replySaving}
+        error={detailError}
+        detailResponse={detailResponse}
+        workStatList={workStatList}
+        onSave={handleSaveDetail}
+        onSaveReply={handleSaveReply}
+        onClose={handleCloseDetailModal}
       />
     </>
   );
