@@ -7,8 +7,12 @@ import type {
   CompanyWorkImportRequest,
   CompanyWorkImportResponse,
   CompanyWorkProjectOption,
+  CompanyWorkReplyDeleteRequest,
+  CompanyWorkReplyFile,
+  CompanyWorkReplyFileDownloadData,
   CompanyWorkReply,
   CompanyWorkReplySaveRequest,
+  CompanyWorkReplyUpdateRequest,
   CompanyWorkSearchParams,
   CompanyWorkStatusListResponse,
   CompanyWorkUpdateRequest,
@@ -58,6 +62,19 @@ const normalizeCompanyWorkFile = (file: Partial<CompanyWorkFile> | null | undefi
   udtDt: typeof file?.udtDt === 'string' ? file.udtDt : '',
 });
 
+// 회사 업무 댓글 첨부파일 응답을 안전하게 정규화합니다.
+const normalizeCompanyWorkReplyFile = (file: Partial<CompanyWorkReplyFile> | null | undefined): CompanyWorkReplyFile => ({
+  // 댓글 첨부파일 목록에 필요한 값을 안전한 기본값으로 정규화합니다.
+  replyFileSeq: typeof file?.replyFileSeq === 'number' ? file.replyFileSeq : 0,
+  replySeq: typeof file?.replySeq === 'number' ? file.replySeq : 0,
+  workSeq: typeof file?.workSeq === 'number' ? file.workSeq : 0,
+  replyFileNm: typeof file?.replyFileNm === 'string' ? file.replyFileNm : '',
+  replyFileUrl: typeof file?.replyFileUrl === 'string' ? file.replyFileUrl : '',
+  replyFileSize: typeof file?.replyFileSize === 'number' ? file.replyFileSize : null,
+  regDt: typeof file?.regDt === 'string' ? file.regDt : '',
+  udtDt: typeof file?.udtDt === 'string' ? file.udtDt : '',
+});
+
 // 회사 업무 댓글 응답을 안전하게 정규화합니다.
 const normalizeCompanyWorkReply = (reply: Partial<CompanyWorkReply> | null | undefined): CompanyWorkReply => ({
   // 댓글 목록에 필요한 값을 안전한 기본값으로 정규화합니다.
@@ -67,6 +84,9 @@ const normalizeCompanyWorkReply = (reply: Partial<CompanyWorkReply> | null | und
   regNo: typeof reply?.regNo === 'number' ? reply.regNo : 0,
   regDt: typeof reply?.regDt === 'string' ? reply.regDt : '',
   udtDt: typeof reply?.udtDt === 'string' ? reply.udtDt : '',
+  replyFileList: Array.isArray(reply?.replyFileList)
+    ? reply.replyFileList.map((fileItem) => normalizeCompanyWorkReplyFile(fileItem))
+    : [],
 });
 
 // 회사 업무 프로젝트 목록을 조회합니다.
@@ -171,8 +191,83 @@ export const updateCompanyWorkDetail = async (
 // 회사 업무 댓글을 등록합니다.
 export const createCompanyWorkReply = async (
   payload: CompanyWorkReplySaveRequest,
+  replyFiles: File[] = [],
 ): Promise<CompanyWorkReply> => {
-  // 댓글 등록 요청 본문을 백엔드 저장 API로 전송합니다.
-  const response = await api.post('/api/admin/company/work/reply', payload);
+  // 댓글 저장 payload와 첨부파일을 multipart 요청으로 전송합니다.
+  const formData = buildCompanyWorkReplyFormData(payload, replyFiles);
+  const response = await api.post('/api/admin/company/work/reply', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return normalizeCompanyWorkReply(response.data as Partial<CompanyWorkReply> | null);
+};
+
+// 회사 업무 댓글 수정 payload와 첨부파일 FormData를 생성합니다.
+const buildCompanyWorkReplyFormData = (
+  payload: CompanyWorkReplySaveRequest | CompanyWorkReplyUpdateRequest,
+  replyFiles: File[],
+): FormData => {
+  // 댓글 payload와 첨부파일 배열을 FormData에 담아 반환합니다.
+  const formData = new FormData();
+  formData.append('payload', JSON.stringify(payload));
+  replyFiles.forEach((fileItem) => {
+    formData.append('files', fileItem);
+  });
+  return formData;
+};
+
+// 회사 업무 댓글을 수정합니다.
+export const updateCompanyWorkReply = async (
+  payload: CompanyWorkReplyUpdateRequest,
+  replyFiles: File[] = [],
+): Promise<CompanyWorkReply> => {
+  // 댓글 수정 payload와 첨부파일을 multipart 요청으로 전송합니다.
+  const formData = buildCompanyWorkReplyFormData(payload, replyFiles);
+  const response = await api.post('/api/admin/company/work/reply/update', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return normalizeCompanyWorkReply(response.data as Partial<CompanyWorkReply> | null);
+};
+
+// 회사 업무 댓글을 삭제 처리합니다.
+export const deleteCompanyWorkReply = async (
+  payload: CompanyWorkReplyDeleteRequest,
+): Promise<void> => {
+  // 댓글 삭제 요청 본문을 백엔드 삭제 API로 전송합니다.
+  await api.post('/api/admin/company/work/reply/delete', payload);
+};
+
+// attachment 응답 헤더에서 파일명을 추출합니다.
+const resolveDownloadFileName = (contentDisposition: string | undefined): string => {
+  // UTF-8 인코딩 파일명과 기본 filename 헤더를 순서대로 확인합니다.
+  if (!contentDisposition) {
+    return '';
+  }
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+
+  const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+  return fileNameMatch?.[1] || '';
+};
+
+// 회사 업무 댓글 첨부파일을 다운로드합니다.
+export const downloadCompanyWorkReplyFile = async (
+  replyFileSeq: number,
+): Promise<CompanyWorkReplyFileDownloadData> => {
+  // 댓글 첨부파일 다운로드 API를 호출하고 blob과 파일명을 함께 반환합니다.
+  const response = await api.get('/api/admin/company/work/reply/file/download', {
+    params: { replyFileSeq },
+    responseType: 'blob',
+  });
+  const responseBlob = new Blob([response.data], { type: response.headers['content-type'] || 'application/octet-stream' });
+  return {
+    fileName: resolveDownloadFileName(response.headers['content-disposition'] as string | undefined),
+    blob: responseBlob,
+  };
 };

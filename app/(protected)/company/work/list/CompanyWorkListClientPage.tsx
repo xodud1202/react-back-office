@@ -16,6 +16,8 @@ import type {
   CompanyWorkListRow,
   CompanyWorkProjectOption,
   CompanyWorkReply,
+  CompanyWorkReplyDeleteRequest,
+  CompanyWorkReplyUpdateRequest,
   CompanyWorkSaveEditableRowHandler,
   CompanyWorkSearchFormState,
   CompanyWorkSearchParams,
@@ -24,10 +26,12 @@ import type {
 } from '@/components/companyWork/types';
 import {
   createCompanyWorkReply,
+  deleteCompanyWorkReply,
   fetchCompanyWorkCompletedList,
   fetchCompanyWorkDetail,
   fetchCompanyWorkProjectList,
   fetchCompanyWorkStatusList,
+  updateCompanyWorkReply,
   updateCompanyWork,
   updateCompanyWorkDetail,
 } from '@/services/companyWorkApi';
@@ -622,7 +626,7 @@ const CompanyWorkListClientPage = ({
   }, [detailResponse]);
 
   // 상세 팝업 댓글을 저장하고 목록 최상단에 즉시 반영합니다.
-  const handleSaveReply = useCallback(async (replyComment: string) => {
+  const handleSaveReply = useCallback(async (replyComment: string, replyFiles: File[]) => {
     // 상세 데이터나 로그인 사용자 정보가 없으면 저장을 진행하지 않습니다.
     const selectedWorkSeq = detailResponse?.detail?.workSeq;
     if (!selectedWorkSeq) {
@@ -643,7 +647,7 @@ const CompanyWorkListClientPage = ({
         replyComment,
         regNo: loginUsrNo,
         udtNo: loginUsrNo,
-      });
+      }, replyFiles);
 
       setDetailResponse((prevState) => prevState ? ({
         ...prevState,
@@ -653,6 +657,91 @@ const CompanyWorkListClientPage = ({
     } catch (error) {
       // 저장 실패 시 서버 메시지를 사용자에게 노출합니다.
       notifyError(extractApiErrorMessage(error, '댓글 등록에 실패했습니다.'));
+      throw error;
+    } finally {
+      setReplySaving(false);
+    }
+  }, [detailResponse]);
+
+  // 상세 팝업 댓글을 수정하고 현재 댓글 목록에 즉시 반영합니다.
+  const handleUpdateReply = useCallback(async (
+    replySeq: number,
+    replyComment: string,
+    deleteReplyFileSeqList: number[],
+    replyFiles: File[],
+  ) => {
+    // 상세 데이터나 로그인 사용자 정보가 없으면 수정을 진행하지 않습니다.
+    const selectedWorkSeq = detailResponse?.detail?.workSeq;
+    if (!selectedWorkSeq) {
+      notifyError('업무 정보를 확인해주세요.');
+      return;
+    }
+
+    const loginUsrNo = requireLoginUsrNo();
+    if (!loginUsrNo) {
+      throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
+    }
+
+    setReplySaving(true);
+    try {
+      // 댓글 수정 API를 호출하고 현재 상세 댓글 목록의 대상 항목만 교체합니다.
+      const requestPayload: CompanyWorkReplyUpdateRequest = {
+        replySeq,
+        workSeq: selectedWorkSeq,
+        replyComment,
+        deleteReplyFileSeqList,
+        udtNo: loginUsrNo,
+      };
+      const updatedReply: CompanyWorkReply = await updateCompanyWorkReply(requestPayload, replyFiles);
+
+      setDetailResponse((prevState) => prevState ? ({
+        ...prevState,
+        replyList: (prevState.replyList || []).map((replyItem) => (
+          replyItem.replySeq === replySeq ? updatedReply : replyItem
+        )),
+      }) : prevState);
+      notifySuccess('댓글을 수정했습니다.');
+    } catch (error) {
+      // 수정 실패 시 서버 메시지를 사용자에게 노출합니다.
+      notifyError(extractApiErrorMessage(error, '댓글 수정에 실패했습니다.'));
+      throw error;
+    } finally {
+      setReplySaving(false);
+    }
+  }, [detailResponse]);
+
+  // 상세 팝업 댓글을 삭제하고 현재 댓글 목록에서 즉시 제거합니다.
+  const handleDeleteReply = useCallback(async (replySeq: number) => {
+    // 상세 데이터나 로그인 사용자 정보가 없으면 삭제를 진행하지 않습니다.
+    const selectedWorkSeq = detailResponse?.detail?.workSeq;
+    if (!selectedWorkSeq) {
+      notifyError('업무 정보를 확인해주세요.');
+      return;
+    }
+
+    const loginUsrNo = requireLoginUsrNo();
+    if (!loginUsrNo) {
+      throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
+    }
+
+    setReplySaving(true);
+    try {
+      // 댓글 삭제 API를 호출하고 현재 상세 댓글 목록에서 대상 항목을 제거합니다.
+      const requestPayload: CompanyWorkReplyDeleteRequest = {
+        replySeq,
+        workSeq: selectedWorkSeq,
+        udtNo: loginUsrNo,
+      };
+      await deleteCompanyWorkReply(requestPayload);
+
+      setDetailResponse((prevState) => prevState ? ({
+        ...prevState,
+        replyList: (prevState.replyList || []).filter((replyItem) => replyItem.replySeq !== replySeq),
+      }) : prevState);
+      notifySuccess('댓글을 삭제했습니다.');
+    } catch (error) {
+      // 삭제 실패 시 서버 메시지를 사용자에게 노출합니다.
+      notifyError(extractApiErrorMessage(error, '댓글 삭제에 실패했습니다.'));
       throw error;
     } finally {
       setReplySaving(false);
@@ -752,6 +841,8 @@ const CompanyWorkListClientPage = ({
         workStatList={workStatList}
         onSave={handleSaveDetail}
         onSaveReply={handleSaveReply}
+        onUpdateReply={handleUpdateReply}
+        onDeleteReply={handleDeleteReply}
         onClose={handleCloseDetailModal}
       />
     </>

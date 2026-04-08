@@ -122,6 +122,28 @@ export interface CompanyWorkReply {
   regDt: string;
   // 수정 일시입니다.
   udtDt: string;
+  // 댓글 첨부파일 목록입니다.
+  replyFileList: CompanyWorkReplyFile[];
+}
+
+// 회사 업무 댓글 첨부파일 정보를 정의합니다.
+export interface CompanyWorkReplyFile {
+  // 댓글 첨부파일 시퀀스입니다.
+  replyFileSeq: number;
+  // 댓글 시퀀스입니다.
+  replySeq: number;
+  // 업무 시퀀스입니다.
+  workSeq: number;
+  // 원본 파일명입니다.
+  replyFileNm: string;
+  // 첨부파일 URL입니다.
+  replyFileUrl: string;
+  // 첨부파일 크기입니다.
+  replyFileSize: number | null;
+  // 등록 일시입니다.
+  regDt: string;
+  // 수정 일시입니다.
+  udtDt: string;
 }
 
 // 회사 업무 상세 팝업 응답을 정의합니다.
@@ -248,6 +270,30 @@ export interface CompanyWorkReplySaveRequest {
   udtNo: number;
 }
 
+// 회사 업무 댓글 수정 요청 데이터를 정의합니다.
+export interface CompanyWorkReplyUpdateRequest {
+  // 댓글 시퀀스입니다.
+  replySeq: number;
+  // 업무 시퀀스입니다.
+  workSeq: number;
+  // 댓글 HTML 내용입니다.
+  replyComment: string;
+  // 삭제할 댓글 첨부파일 시퀀스 목록입니다.
+  deleteReplyFileSeqList: number[];
+  // 수정자 번호입니다.
+  udtNo: number;
+}
+
+// 회사 업무 댓글 삭제 요청 데이터를 정의합니다.
+export interface CompanyWorkReplyDeleteRequest {
+  // 댓글 시퀀스입니다.
+  replySeq: number;
+  // 업무 시퀀스입니다.
+  workSeq: number;
+  // 수정자 번호입니다.
+  udtNo: number;
+}
+
 // 회사 업무 즉시 저장 처리 함수 타입을 정의합니다.
 export type CompanyWorkSaveEditableRowHandler = (
   row: CompanyWorkListRow,
@@ -262,7 +308,29 @@ export type CompanyWorkSaveDetailHandler = (
 // 회사 업무 댓글 등록 처리 함수 타입을 정의합니다.
 export type CompanyWorkSaveReplyHandler = (
   replyComment: string,
+  replyFiles: File[],
 ) => Promise<void>;
+
+// 회사 업무 댓글 수정 처리 함수 타입을 정의합니다.
+export type CompanyWorkUpdateReplyHandler = (
+  replySeq: number,
+  replyComment: string,
+  deleteReplyFileSeqList: number[],
+  replyFiles: File[],
+) => Promise<void>;
+
+// 회사 업무 댓글 삭제 처리 함수 타입을 정의합니다.
+export type CompanyWorkDeleteReplyHandler = (
+  replySeq: number,
+) => Promise<void>;
+
+// 회사 업무 댓글 첨부파일 다운로드 결과를 정의합니다.
+export interface CompanyWorkReplyFileDownloadData {
+  // 다운로드할 파일명입니다.
+  fileName: string;
+  // 다운로드할 Blob 데이터입니다.
+  blob: Blob;
+}
 
 // 회사 업무 상세 열기 처리 함수 타입을 정의합니다.
 export type CompanyWorkOpenDetailHandler = (
