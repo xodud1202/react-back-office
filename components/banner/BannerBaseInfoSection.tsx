@@ -1,5 +1,6 @@
 import React from 'react';
 import AdminFormTable from '@/components/common/AdminFormTable';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import type { CommonCode } from '@/components/goods/types';
 
 interface BannerBaseInfoSectionProps {
@@ -82,7 +83,12 @@ const BannerBaseInfoSection = ({
         <th scope="row">노출시작일시</th>
         <td>
           <div className="admin-form-inline">
-            <input className="form-control" type="date" value={dispStartDate} onChange={(e) => setDispStartDate(e.target.value)} />
+            <AdminDateInput
+              className="form-control"
+              wrapperClassName="admin-date-input"
+              value={dispStartDate}
+              onChange={(e) => setDispStartDate(e.target.value)}
+            />
             <select className="form-select" value={dispStartHour} onChange={(e) => setDispStartHour(e.target.value)}>
               {hourOptions.map((item) => (
                 <option key={`disp-start-${item}`} value={item}>{item}시</option>
@@ -93,7 +99,12 @@ const BannerBaseInfoSection = ({
         <th scope="row">노출종료일시</th>
         <td>
           <div className="admin-form-inline">
-            <input className="form-control" type="date" value={dispEndDate} onChange={(e) => setDispEndDate(e.target.value)} />
+            <AdminDateInput
+              className="form-control"
+              wrapperClassName="admin-date-input"
+              value={dispEndDate}
+              onChange={(e) => setDispEndDate(e.target.value)}
+            />
             <select className="form-select" value={dispEndHour} onChange={(e) => setDispEndHour(e.target.value)}>
               {hourOptions.map((item) => (
                 <option key={`disp-end-${item}`} value={item}>{item}시</option>

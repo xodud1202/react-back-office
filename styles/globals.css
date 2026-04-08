@@ -86,8 +86,77 @@ button {
 }
 
 .admin-search-date-input {
-  flex: 1 1 0;
-  min-width: 160px;
+  width: 140px;
+  min-width: 140px;
+  max-width: 140px;
+  flex: 0 0 140px;
+}
+
+.admin-date-input {
+  width: 140px;
+  min-width: 140px;
+  max-width: 140px;
+  flex: 0 0 140px;
+}
+
+.admin-date-input-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 140px;
+  min-width: 140px;
+  max-width: 140px;
+  flex: 0 0 140px;
+}
+
+.admin-date-input-wrapper .form-control {
+  width: 100%;
+  min-width: 0;
+  padding-left: 2.35rem;
+}
+
+.admin-date-input-wrapper .form-control.form-control-sm {
+  padding-left: 2rem;
+}
+
+.admin-date-input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.admin-date-input-icon:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.admin-date-input-wrapper input[type="date"] {
+  position: relative;
+}
+
+.admin-date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+  margin: 0;
+  opacity: 0;
+  width: 0;
+  pointer-events: none;
+}
+
+.admin-date-input-wrapper input[type="date"]::-webkit-clear-button,
+.admin-date-input-wrapper input[type="date"]::-webkit-inner-spin-button {
+  display: none;
 }
 
 .admin-search-separator {
@@ -205,6 +274,41 @@ button {
   margin-top: 0.5rem;
   color: rgba(255, 255, 255, 0.68);
   font-size: 0.8125rem;
+}
+
+.w-25px {
+  width: 25px !important;
+  min-width: 25px !important;
+  max-width: 25px !important;
+  flex: 0 0 25px !important;
+}
+
+.w-50px {
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+  flex: 0 0 50px !important;
+}
+
+.w-100px {
+  width: 100px !important;
+  min-width: 100px !important;
+  max-width: 100px !important;
+  flex: 0 0 100px !important;
+}
+
+.w-200px {
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  flex: 0 0 200px !important;
+}
+
+.w-500px {
+  width: 500px !important;
+  min-width: 500px !important;
+  max-width: 500px !important;
+  flex: 0 0 500px !important;
 }
 
 .header-center .ag-header-cell-label {

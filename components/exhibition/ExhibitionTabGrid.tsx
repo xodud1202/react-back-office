@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import type { ColDef, CellValueChangedEvent, ICellRendererParams, RowClickedEvent, RowDragEndEvent } from 'ag-grid-community';
 import { AgGridReact } from '@/components/common/agGrid/AgGridReact';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import type { ExhibitionTabItem } from '@/components/exhibition/types';
 
 interface ExhibitionTabGridProps {
@@ -132,9 +133,9 @@ const ExhibitionTabGrid = ({
         // 캘린더(datetime-local) 입력으로 노출일시를 수정합니다.
         return (
           <div className="d-flex align-items-center gap-1">
-            <input
-              type="date"
+            <AdminDateInput
               className="form-control form-control-sm"
+              wrapperClassName="admin-date-input"
               value={currentDate}
               onChange={(event) => handleChangeDateTimeField(rowKey, 'dispStartDt', event.target.value, currentHour, false)}
             />
@@ -173,9 +174,9 @@ const ExhibitionTabGrid = ({
         // 캘린더(datetime-local) 입력으로 노출일시를 수정합니다.
         return (
           <div className="d-flex align-items-center gap-1">
-            <input
-              type="date"
+            <AdminDateInput
               className="form-control form-control-sm"
+              wrapperClassName="admin-date-input"
               value={currentDate}
               onChange={(event) => handleChangeDateTimeField(rowKey, 'dispEndDt', event.target.value, currentHour, true)}
             />

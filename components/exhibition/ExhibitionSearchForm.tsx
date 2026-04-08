@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import AdminSearchPanel from '@/components/common/AdminSearchPanel';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import type { ExhibitionSearchParams } from '@/components/exhibition/types';
 import { DEFAULT_EXHIBITION_SEARCH_PARAMS } from '@/components/exhibition/types';
 
@@ -52,9 +53,17 @@ const ExhibitionSearchForm = ({ loading, onSearch }: ExhibitionSearchFormProps) 
         <th scope="row">노출기간</th>
         <td>
           <div className="admin-search-inline">
-            <input type="date" name="searchStartDt" className="form-control admin-search-date-input" />
+            <AdminDateInput
+              name="searchStartDt"
+              className="form-control"
+              wrapperClassName="admin-search-date-input"
+            />
             <span className="admin-search-separator">~</span>
-            <input type="date" name="searchEndDt" className="form-control admin-search-date-input" />
+            <AdminDateInput
+              name="searchEndDt"
+              className="form-control"
+              wrapperClassName="admin-search-date-input"
+            />
           </div>
         </td>
       </tr>

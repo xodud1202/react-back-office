@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import AdminSearchPanel from '@/components/common/AdminSearchPanel';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import type { CommonCode } from '@/components/goods/types';
 import type { CouponSearchParams } from '@/components/coupon/types';
 import { DEFAULT_COUPON_SEARCH_PARAMS } from '@/components/coupon/types';
@@ -72,9 +73,17 @@ const CouponSearchForm = ({
               <option value="REG_DT">등록기간</option>
               <option value="DOWN_DT">다운로드가능기간</option>
             </select>
-            <input type="date" name="searchStartDt" className="form-control admin-search-date-input" />
+            <AdminDateInput
+              name="searchStartDt"
+              className="form-control"
+              wrapperClassName="admin-search-date-input"
+            />
             <span className="admin-search-separator">~</span>
-            <input type="date" name="searchEndDt" className="form-control admin-search-date-input" />
+            <AdminDateInput
+              name="searchEndDt"
+              className="form-control"
+              wrapperClassName="admin-search-date-input"
+            />
           </div>
         </td>
       </tr>

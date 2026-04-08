@@ -1,5 +1,6 @@
 import React from 'react';
 import AdminSearchPanel from '@/components/common/AdminSearchPanel';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import type { NotionCategoryOption, NotionSearchForm as NotionSearchFormType } from '@/components/notion/types';
 
 interface NotionSearchFormProps {
@@ -58,18 +59,18 @@ const NotionSearchForm = ({
         <th scope="row">등록일시</th>
         <td colSpan={3}>
           <div className="admin-search-inline">
-            <input
-              type="date"
+            <AdminDateInput
               name="createDtStart"
-              className="form-control admin-search-date-input"
+              className="form-control"
+              wrapperClassName="admin-search-date-input"
               value={searchForm.createDtStart}
               onChange={onChange}
             />
             <span className="admin-search-separator">~</span>
-            <input
-              type="date"
+            <AdminDateInput
               name="createDtEnd"
-              className="form-control admin-search-date-input"
+              className="form-control"
+              wrapperClassName="admin-search-date-input"
               value={searchForm.createDtEnd}
               onChange={onChange}
             />

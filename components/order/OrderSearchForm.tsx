@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AdminSearchPanel from '@/components/common/AdminSearchPanel';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import type { CommonCode } from '@/components/goods/types';
 import type { OrderSearchParams } from '@/components/order/types';
 import { createDefaultOrderSearchParams } from '@/components/order/types';
@@ -67,16 +68,16 @@ const OrderSearchForm = ({
               <option value="ORDER_DT">주문기간</option>
               <option value="PAY_DT">결제기간</option>
             </select>
-            <input
-              type="date"
-              className="form-control admin-search-date-input"
+            <AdminDateInput
+              className="form-control"
+              wrapperClassName="admin-search-date-input"
               value={formState.searchStartDt}
               onChange={(event) => updateField('searchStartDt', event.target.value)}
             />
             <span className="admin-search-separator">~</span>
-            <input
-              type="date"
-              className="form-control admin-search-date-input"
+            <AdminDateInput
+              className="form-control"
+              wrapperClassName="admin-search-date-input"
               value={formState.searchEndDt}
               onChange={(event) => updateField('searchEndDt', event.target.value)}
             />

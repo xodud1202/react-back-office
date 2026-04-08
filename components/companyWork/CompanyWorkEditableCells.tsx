@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import type { CommonCode } from '@/components/goods/types';
 
 interface CompanyWorkStatusSelectCellProps {
@@ -143,9 +144,9 @@ export const CompanyWorkDateCell = ({
   }, [inputValue, onSave, value]);
 
   return (
-    <input
-      type="date"
+    <AdminDateInput
       className="form-control form-control-sm"
+      wrapperClassName="admin-date-input"
       value={inputValue}
       onChange={handleChange}
       onBlur={() => { void handleBlur(); }}

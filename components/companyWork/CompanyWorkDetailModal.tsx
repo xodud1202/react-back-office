@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CommonCode } from '@/components/goods/types';
 import CompanyWorkReplyReadOnlyContent from '@/components/companyWork/CompanyWorkReplyReadOnlyContent';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import AdminFormTable from '@/components/common/AdminFormTable';
 import Modal from '@/components/common/Modal';
 import NewsImagePreviewModal from '@/components/common/NewsImagePreviewModal';
@@ -611,7 +612,7 @@ const CompanyWorkDetailModal = ({
                   <td>
                     <select
                       name="workStatCd"
-                      className="form-select"
+                      className="form-select w-200px"
                       value={formState.workStatCd}
                       onChange={handleChangeField}
                     >
@@ -625,7 +626,7 @@ const CompanyWorkDetailModal = ({
                     <input
                       type="number"
                       name="workTime"
-                      className="form-control"
+                      className="form-control w-100px"
                       min="0"
                       step="1"
                       value={formState.workTime}
@@ -636,20 +637,20 @@ const CompanyWorkDetailModal = ({
                 <tr>
                   <th scope="row">업무 시작일시</th>
                   <td>
-                    <input
-                      type="date"
+                    <AdminDateInput
                       name="workStartDt"
                       className="form-control"
+                      wrapperClassName="admin-date-input"
                       value={formState.workStartDt}
                       onChange={handleChangeField}
                     />
                   </td>
                   <th scope="row">업무 종료일시</th>
                   <td>
-                    <input
-                      type="date"
+                    <AdminDateInput
                       name="workEndDt"
                       className="form-control"
+                      wrapperClassName="admin-date-input"
                       value={formState.workEndDt}
                       onChange={handleChangeField}
                     />

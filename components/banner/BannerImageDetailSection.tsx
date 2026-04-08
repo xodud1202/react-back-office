@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import api from '@/utils/axios/axios';
 import { requireLoginUsrNo } from '@/utils/auth';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import AdminFormTable from '@/components/common/AdminFormTable';
 import BannerImageGrid from '@/components/banner/BannerImageGrid';
 import type { BannerImageInfo } from '@/components/banner/types';
@@ -310,9 +311,9 @@ const BannerImageDetailSection = ({
                 <th scope="row">이미지 노출시작일시</th>
                 <td>
                   <div className="admin-form-inline">
-                    <input
+                    <AdminDateInput
                       className="form-control"
-                      type="date"
+                      wrapperClassName="admin-date-input"
                       value={imageDispStartDate}
                       onChange={(e) => handleChangeImageDateTime('dispStartDt', e.target.value, imageDispStartHour, false)}
                     />
@@ -330,9 +331,9 @@ const BannerImageDetailSection = ({
                 <th scope="row">이미지 노출종료일시</th>
                 <td>
                   <div className="admin-form-inline">
-                    <input
+                    <AdminDateInput
                       className="form-control"
-                      type="date"
+                      wrapperClassName="admin-date-input"
                       value={imageDispEndDate}
                       onChange={(e) => handleChangeImageDateTime('dispEndDt', e.target.value, imageDispEndHour, true)}
                     />

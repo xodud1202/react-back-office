@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '@/utils/axios/axios';
 import { requireLoginUsrNo } from '@/utils/auth';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import Modal from '@/components/common/Modal';
 import AdminFormTable from '@/components/common/AdminFormTable';
 import GoodsSelectorModal from '@/components/common/selector/GoodsSelectorModal';
@@ -129,7 +130,12 @@ const DateHourInput = ({
   <div className={hideLabel ? '' : 'form-group mb-2'}>
     {!hideLabel ? <label className={compact ? 'mb-1' : undefined}>{label}</label> : null}
     <div className="admin-form-inline">
-      <input type="date" className={`form-control ${compact ? 'form-control-sm' : ''}`} value={dateValue} onChange={(event) => onChangeDate(event.target.value)} />
+      <AdminDateInput
+        className={`form-control ${compact ? 'form-control-sm' : ''}`}
+        wrapperClassName="admin-date-input"
+        value={dateValue}
+        onChange={(event) => onChangeDate(event.target.value)}
+      />
       <select className={`form-select ${compact ? 'form-select-sm' : ''}`} value={hourValue} onChange={(event) => onChangeHour(event.target.value)}>
         {hourOptions.map((item) => (
           <option key={`${label}-${item}`} value={item}>{item}시</option>

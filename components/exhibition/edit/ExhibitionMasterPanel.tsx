@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
+import AdminDateInput from '@/components/common/AdminDateInput';
 import LazyQuillEditor from '@/components/common/editor/LazyQuillEditor';
 import AdminFormTable from '@/components/common/AdminFormTable';
 
@@ -141,9 +142,9 @@ const ExhibitionMasterPanel = ({
             <th scope="row">노출시작일시</th>
             <td>
               <div className="admin-form-inline">
-                <input
-                  type="date"
+                <AdminDateInput
                   className="form-control"
+                  wrapperClassName="admin-date-input"
                   value={dispStartDate}
                   onChange={(event) => onChangeDispStartDate(event.target.value)}
                 />
@@ -159,9 +160,9 @@ const ExhibitionMasterPanel = ({
             <th scope="row">노출종료일시</th>
             <td>
               <div className="admin-form-inline">
-                <input
-                  type="date"
+                <AdminDateInput
                   className="form-control"
+                  wrapperClassName="admin-date-input"
                   value={dispEndDate}
                   onChange={(event) => onChangeDispEndDate(event.target.value)}
                 />
