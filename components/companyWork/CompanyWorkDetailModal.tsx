@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CommonCode } from '@/components/goods/types';
+import CompanyWorkReplyReadOnlyContent from '@/components/companyWork/CompanyWorkReplyReadOnlyContent';
 import AdminFormTable from '@/components/common/AdminFormTable';
 import Modal from '@/components/common/Modal';
 import NewsImagePreviewModal from '@/components/common/NewsImagePreviewModal';
@@ -186,32 +187,6 @@ const buildLocalReplyFilePreviewList = (fileList: File[]): LocalReplyFilePreview
       isImage,
     };
   });
-};
-
-// 읽기 전용 HTML 또는 텍스트 본문을 렌더링합니다.
-const CompanyWorkReadonlyHtml = ({
-  value,
-  emptyText,
-  className,
-}: {
-  value: string;
-  emptyText: string;
-  className?: string;
-}) => {
-  // 값이 없으면 안내 문구를 표시합니다.
-  if (!value.trim()) {
-    return (
-      <div className={className}>
-        <div className="text-muted">{emptyText}</div>
-      </div>
-    );
-  }
-
-  // HTML 마크업이 있으면 그대로 렌더링하고, 아니면 줄바꿈을 유지합니다.
-  if (hasHtmlMarkup(value)) {
-    return <div className={className} dangerouslySetInnerHTML={{ __html: value }} />;
-  }
-  return <div className={className} style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{value}</div>;
 };
 
 // 브라우저 다운로드를 시작합니다.
@@ -623,8 +598,12 @@ const CompanyWorkDetailModal = ({
                 </tr>
                 <tr>
                   <th scope="row">타이틀</th>
-                  <td colSpan={3}>
+                  <td>
                     <div className="form-control-plaintext">{detailResponse.detail.title || '-'}</div>
+                  </td>
+                  <th scope="row">업무담당자</th>
+                  <td>
+                    <div className="form-control-plaintext">{detailResponse.detail.coManager || '-'}</div>
                   </td>
                 </tr>
                 <tr>
@@ -1001,50 +980,11 @@ const CompanyWorkDetailModal = ({
                                   ) : null}
                                 </>
                               ) : (
-                                <>
-                                  <CompanyWorkReadonlyHtml
-                                    value={replyItem.replyComment || ''}
-                                    emptyText={replyItem.replyFileList.length > 0 ? '첨부파일만 등록된 댓글입니다.' : '댓글 내용이 없습니다.'}
-                                    className="quill-content"
-                                  />
-                                  {replyItem.replyFileList.length > 0 ? (
-                                    <div className="d-flex flex-wrap gap-3 mt-3">
-                                      {replyItem.replyFileList.map((replyFileItem) => (
-                                        <div key={replyFileItem.replyFileSeq} className="company-work-file-item border rounded p-2">
-                                          {isImageReplyAttachment(replyFileItem) && replyFileItem.replyFileUrl ? (
-                                            <button
-                                              type="button"
-                                              className="btn btn-link p-0 border-0 company-work-file-preview-button"
-                                              onClick={() => handleOpenPreviewImage(replyFileItem.replyFileUrl)}
-                                            >
-                                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                                              <img
-                                                src={replyFileItem.replyFileUrl}
-                                                alt={replyFileItem.replyFileNm || '댓글 첨부 이미지'}
-                                                className="company-work-file-thumbnail"
-                                              />
-                                            </button>
-                                          ) : (
-                                            <button
-                                              type="button"
-                                              className="btn btn-link p-0 border-0 company-work-file-preview-link d-flex align-items-center justify-content-center bg-light text-muted text-decoration-none"
-                                              onClick={() => { void handleDownloadReplyFile(replyFileItem); }}
-                                            >
-                                              FILE
-                                            </button>
-                                          )}
-                                          <button
-                                            type="button"
-                                            className="btn btn-link p-0 text-start company-work-file-name-link small"
-                                            onClick={() => { void handleDownloadReplyFile(replyFileItem); }}
-                                          >
-                                            {replyFileItem.replyFileNm || '첨부파일'}
-                                          </button>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : null}
-                                </>
+                                <CompanyWorkReplyReadOnlyContent
+                                  reply={replyItem}
+                                  onOpenPreviewImage={handleOpenPreviewImage}
+                                  onDownloadReplyFile={handleDownloadReplyFile}
+                                />
                               )}
                             </div>
                           );

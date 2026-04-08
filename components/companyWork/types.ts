@@ -58,6 +58,8 @@ export interface CompanyWorkListRow {
   workKey: string;
   // 업무 타이틀입니다.
   title: string;
+  // 댓글 개수입니다.
+  replyCount: number;
   // 업무 생성 일시입니다.
   workCreateDt: string;
   // 업무 시작 일시입니다.
@@ -335,6 +337,23 @@ export interface CompanyWorkReplyFileDownloadData {
 // 회사 업무 상세 열기 처리 함수 타입을 정의합니다.
 export type CompanyWorkOpenDetailHandler = (
   workSeq: number,
+) => void;
+
+// 회사 업무 댓글 조회 팝업 대상 정보를 정의합니다.
+export interface CompanyWorkReplyViewTarget {
+  // 업무 시퀀스입니다.
+  workSeq: number;
+  // 업무 키입니다.
+  workKey: string;
+  // 업무 타이틀입니다.
+  title: string;
+  // 댓글 개수입니다.
+  replyCount: number;
+}
+
+// 회사 업무 댓글 조회 팝업 열기 처리 함수 타입을 정의합니다.
+export type CompanyWorkOpenReplyViewHandler = (
+  row: CompanyWorkListRow,
 ) => void;
 
 // 회사 업무 페이지 서버 주입 데이터 타입을 정의합니다.

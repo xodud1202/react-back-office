@@ -2,9 +2,12 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CommonCode } from '@/components/goods/types';
-import CompanyWorkCompletedGrid from '@/components/companyWork/CompanyWorkCompletedGrid';
+import CompanyWorkCompletedGrid, {
+  type CompanyWorkCompletedGridHandle,
+} from '@/components/companyWork/CompanyWorkCompletedGrid';
 import CompanyWorkDetailModal from '@/components/companyWork/CompanyWorkDetailModal';
 import CompanyWorkImportModal from '@/components/companyWork/CompanyWorkImportModal';
+import CompanyWorkReplyViewModal from '@/components/companyWork/CompanyWorkReplyViewModal';
 import CompanyWorkSearchForm from '@/components/companyWork/CompanyWorkSearchForm';
 import CompanyWorkSectionGrid from '@/components/companyWork/CompanyWorkSectionGrid';
 import type {
@@ -17,7 +20,9 @@ import type {
   CompanyWorkProjectOption,
   CompanyWorkReply,
   CompanyWorkReplyDeleteRequest,
+  CompanyWorkReplyViewTarget,
   CompanyWorkReplyUpdateRequest,
+  CompanyWorkOpenReplyViewHandler,
   CompanyWorkSaveEditableRowHandler,
   CompanyWorkSearchFormState,
   CompanyWorkSearchParams,
@@ -30,6 +35,7 @@ import {
   fetchCompanyWorkCompletedList,
   fetchCompanyWorkDetail,
   fetchCompanyWorkProjectList,
+  fetchCompanyWorkReplyList,
   fetchCompanyWorkStatusList,
   updateCompanyWorkReply,
   updateCompanyWork,
@@ -50,7 +56,7 @@ interface CompanyWorkListClientPageProps {
   workPriorList: CommonCode[];
 }
 
-const COMPANY_WORK_COMPLETED_PAGE_SIZE = 20;
+const COMPANY_WORK_COMPLETED_PAGE_SIZE = 10;
 const COMPANY_WORK_COMPLETED_STATUS_CODE = 'WORK_STAT_05';
 
 // 회사 업무 검색 폼 기본 상태를 생성합니다.
@@ -136,6 +142,7 @@ const createCompanyWorkListRowFromDetail = (detail: CompanyWorkDetail): CompanyW
   workStatCd: detail.workStatCd,
   workKey: detail.workKey,
   title: detail.title,
+  replyCount: typeof detail.replyCount === 'number' ? detail.replyCount : 0,
   workCreateDt: detail.workCreateDt,
   workStartDt: detail.workStartDt,
   workEndDt: detail.workEndDt,
@@ -160,6 +167,41 @@ const sortCompanyWorkRows = (rowList: CompanyWorkListRow[]): CompanyWorkListRow[
     return Number(nextRow.workSeq || 0) - Number(previousRow.workSeq || 0);
   });
 };
+
+// 특정 업무의 댓글 개수를 최신값으로 교체한 행 정보를 반환합니다.
+const applyReplyCountToRow = (row: CompanyWorkListRow, replyCount: number): CompanyWorkListRow => ({
+  // 댓글 개수만 덮어써 목록 아이콘 상태를 즉시 반영합니다.
+  ...row,
+  replyCount,
+});
+
+// 특정 업무의 댓글 개수를 상태별 섹션 목록에 반영합니다.
+const applyReplyCountToStatusSections = (
+  statusSectionList: CompanyWorkStatusSection[],
+  workSeq: number,
+  replyCount: number,
+): CompanyWorkStatusSection[] => (
+  // 대상 업무가 포함된 행의 댓글 개수만 갱신합니다.
+  statusSectionList.map((statusSectionItem) => ({
+    ...statusSectionItem,
+    list: (statusSectionItem.list || []).map((rowItem) => (
+      rowItem.workSeq === workSeq ? applyReplyCountToRow(rowItem, replyCount) : rowItem
+    )),
+  }))
+);
+
+// 특정 업무의 댓글 개수를 완료 목록 응답에 반영합니다.
+const applyReplyCountToCompletedResponse = (
+  completedResponse: CompanyWorkCompletedListResponse,
+  workSeq: number,
+  replyCount: number,
+): CompanyWorkCompletedListResponse => ({
+  // 완료 목록 현재 페이지에 포함된 대상 행의 댓글 개수만 갱신합니다.
+  ...completedResponse,
+  list: (completedResponse.list || []).map((rowItem) => (
+    rowItem.workSeq === workSeq ? applyReplyCountToRow(rowItem, replyCount) : rowItem
+  )),
+});
 
 // 최신 행 정보를 상태별 섹션 목록에 반영합니다.
 const applyUpdatedRowToStatusSections = (
@@ -264,8 +306,15 @@ const CompanyWorkListClientPage = ({
   const [replySaving, setReplySaving] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailResponse, setDetailResponse] = useState<CompanyWorkDetailResponse | null>(null);
+  const [isReplyViewModalOpen, setIsReplyViewModalOpen] = useState(false);
+  const [replyViewLoading, setReplyViewLoading] = useState(false);
+  const [replyViewError, setReplyViewError] = useState<string | null>(null);
+  const [replyViewTarget, setReplyViewTarget] = useState<CompanyWorkReplyViewTarget | null>(null);
+  const [replyViewList, setReplyViewList] = useState<CompanyWorkReply[]>([]);
   const companyWorkRowMapRef = useRef<Map<number, CompanyWorkListRow>>(new Map());
+  const completedGridRef = useRef<CompanyWorkCompletedGridHandle | null>(null);
   const detailRequestSequenceRef = useRef(0);
+  const replyViewRequestSequenceRef = useRef(0);
   const initialAutoSearchDoneRef = useRef(false);
 
   // 상태 코드별 코드명을 빠르게 찾기 위한 맵을 구성합니다.
@@ -458,31 +507,6 @@ const CompanyWorkListClientPage = ({
     resetSearchResult();
   }, [initialProjectList, initialSearchFormState, resetSearchResult]);
 
-  // 완료 목록 페이지만 다시 조회합니다.
-  const handleChangeCompletedPage = useCallback(async (page: number) => {
-    // 이전 검색 조건이 없거나 페이지가 1보다 작으면 종료합니다.
-    if (!activeSearchParams || page < 1) {
-      return;
-    }
-
-    setCompletedLoading(true);
-    try {
-      // 마지막 검색 조건 기준으로 완료 목록 페이지를 다시 조회합니다.
-      const nextCompletedResponse = await fetchCompanyWorkCompletedList({
-        ...activeSearchParams,
-        page,
-        pageSize: COMPANY_WORK_COMPLETED_PAGE_SIZE,
-      });
-      setCompletedResponse(nextCompletedResponse);
-    } catch (error) {
-      // 페이지 조회 실패 시 현재 페이지를 유지하고 오류를 안내합니다.
-      console.error('회사 업무 완료 목록 조회에 실패했습니다.', error);
-      notifyError('완료 목록 조회에 실패했습니다.');
-    } finally {
-      setCompletedLoading(false);
-    }
-  }, [activeSearchParams]);
-
   // SR 가져오기 모달을 엽니다.
   const handleOpenImportModal = useCallback(() => {
     // 모달 오픈 상태를 true로 전환합니다.
@@ -505,6 +529,17 @@ const CompanyWorkListClientPage = ({
     setReplySaving(false);
     setDetailError(null);
     setDetailResponse(null);
+  }, []);
+
+  // 댓글 조회 전용 팝업을 닫고 상태를 초기화합니다.
+  const handleCloseReplyViewModal = useCallback(() => {
+    // 진행 중 응답을 무효화하고 댓글 조회 상태를 비웁니다.
+    replyViewRequestSequenceRef.current += 1;
+    setIsReplyViewModalOpen(false);
+    setReplyViewLoading(false);
+    setReplyViewError(null);
+    setReplyViewTarget(null);
+    setReplyViewList([]);
   }, []);
 
   // SR 가져오기 완료 후 현재 조건으로 목록을 다시 조회합니다.
@@ -546,6 +581,45 @@ const CompanyWorkListClientPage = ({
     }
   }, []);
 
+  // 댓글 아이콘 클릭 시 댓글 조회 전용 팝업을 열고 최신 댓글 목록을 조회합니다.
+  const handleOpenReplyView = useCallback<CompanyWorkOpenReplyViewHandler>(async (row) => {
+    // 요청 순서를 증가시켜 늦게 도착한 이전 응답을 무시할 수 있게 합니다.
+    replyViewRequestSequenceRef.current += 1;
+    const requestSequence = replyViewRequestSequenceRef.current;
+
+    setReplyViewTarget({
+      workSeq: row.workSeq,
+      workKey: row.workKey,
+      title: row.title,
+      replyCount: row.replyCount,
+    });
+    setIsReplyViewModalOpen(true);
+    setReplyViewLoading(true);
+    setReplyViewError(null);
+    setReplyViewList([]);
+
+    try {
+      // 선택 업무의 댓글 목록과 댓글 첨부파일 목록을 조회합니다.
+      const nextReplyList = await fetchCompanyWorkReplyList(row.workSeq);
+      if (replyViewRequestSequenceRef.current !== requestSequence) {
+        return;
+      }
+      setReplyViewList(nextReplyList);
+    } catch (error) {
+      // 조회 실패 시 모달 내부 메시지로 오류를 안내합니다.
+      if (replyViewRequestSequenceRef.current !== requestSequence) {
+        return;
+      }
+      console.error('회사 업무 댓글 목록 조회에 실패했습니다.', error);
+      setReplyViewError(extractApiErrorMessage(error, '댓글 조회에 실패했습니다.'));
+    } finally {
+      if (replyViewRequestSequenceRef.current !== requestSequence) {
+        return;
+      }
+      setReplyViewLoading(false);
+    }
+  }, []);
+
   // 회사 업무 즉시 수정 요청을 저장하고 현재 목록 상태에 반영합니다.
   const handleSaveEditableRow = useCallback<CompanyWorkSaveEditableRowHandler>(async (row, changes) => {
     // 로그인 사용자 번호가 없으면 저장을 진행하지 않습니다.
@@ -573,6 +647,7 @@ const CompanyWorkListClientPage = ({
       const updatedRow = await updateCompanyWork(requestPayload);
       setStatusSectionList((prevState) => applyUpdatedRowToStatusSections(prevState, updatedRow));
       setCompletedResponse((prevState) => applyUpdatedRowToCompletedResponse(prevState, updatedRow));
+      completedGridRef.current?.refresh();
     } catch (error) {
       // 저장 실패 시 서버 메시지를 노출하고 호출부에 다시 전달합니다.
       const message = extractApiErrorMessage(error, '업무 저장에 실패했습니다.');
@@ -615,6 +690,7 @@ const CompanyWorkListClientPage = ({
       const updatedRow = createCompanyWorkListRowFromDetail(updatedDetail);
       setStatusSectionList((prevState) => applyUpdatedRowToStatusSections(prevState, updatedRow));
       setCompletedResponse((prevState) => applyUpdatedRowToCompletedResponse(prevState, updatedRow));
+      completedGridRef.current?.refresh();
       notifySuccess('업무를 저장했습니다.');
     } catch (error) {
       // 저장 실패 시 서버 메시지를 사용자에게 노출합니다.
@@ -651,8 +727,23 @@ const CompanyWorkListClientPage = ({
 
       setDetailResponse((prevState) => prevState ? ({
         ...prevState,
+        detail: prevState.detail ? {
+          ...prevState.detail,
+          replyCount: (prevState.detail.replyCount || 0) + 1,
+        } : prevState.detail,
         replyList: [savedReply, ...(prevState.replyList || [])],
       }) : prevState);
+      setStatusSectionList((prevState) => applyReplyCountToStatusSections(
+        prevState,
+        selectedWorkSeq,
+        (detailResponse?.detail?.replyCount || 0) + 1,
+      ));
+      setCompletedResponse((prevState) => applyReplyCountToCompletedResponse(
+        prevState,
+        selectedWorkSeq,
+        (detailResponse?.detail?.replyCount || 0) + 1,
+      ));
+      completedGridRef.current?.refresh();
       notifySuccess('댓글을 등록했습니다.');
     } catch (error) {
       // 저장 실패 시 서버 메시지를 사용자에게 노출합니다.
@@ -736,8 +827,23 @@ const CompanyWorkListClientPage = ({
 
       setDetailResponse((prevState) => prevState ? ({
         ...prevState,
+        detail: prevState.detail ? {
+          ...prevState.detail,
+          replyCount: Math.max(0, (prevState.detail.replyCount || 0) - 1),
+        } : prevState.detail,
         replyList: (prevState.replyList || []).filter((replyItem) => replyItem.replySeq !== replySeq),
       }) : prevState);
+      setStatusSectionList((prevState) => applyReplyCountToStatusSections(
+        prevState,
+        selectedWorkSeq,
+        Math.max(0, (detailResponse?.detail?.replyCount || 0) - 1),
+      ));
+      setCompletedResponse((prevState) => applyReplyCountToCompletedResponse(
+        prevState,
+        selectedWorkSeq,
+        Math.max(0, (detailResponse?.detail?.replyCount || 0) - 1),
+      ));
+      completedGridRef.current?.refresh();
       notifySuccess('댓글을 삭제했습니다.');
     } catch (error) {
       // 삭제 실패 시 서버 메시지를 사용자에게 노출합니다.
@@ -805,19 +911,22 @@ const CompanyWorkListClientPage = ({
               workPriorList={workPriorList}
               onSaveEditableRow={handleSaveEditableRow}
               onOpenDetail={handleOpenDetail}
+              onOpenReplyView={handleOpenReplyView}
             />
           ))}
           <CompanyWorkCompletedGrid
-            rowData={completedResponse.list}
+            ref={completedGridRef}
             totalCount={completedResponse.totalCount}
-            page={completedResponse.page}
             pageSize={completedResponse.pageSize}
+            searchParams={activeSearchParams}
             loading={completedLoading}
             workStatList={workStatList}
             workPriorList={workPriorList}
-            onChangePage={handleChangeCompletedPage}
+            onLoaded={setCompletedResponse}
+            onLoadingChange={setCompletedLoading}
             onSaveEditableRow={handleSaveEditableRow}
             onOpenDetail={handleOpenDetail}
+            onOpenReplyView={handleOpenReplyView}
           />
         </>
       ) : null}
@@ -844,6 +953,15 @@ const CompanyWorkListClientPage = ({
         onUpdateReply={handleUpdateReply}
         onDeleteReply={handleDeleteReply}
         onClose={handleCloseDetailModal}
+      />
+
+      <CompanyWorkReplyViewModal
+        isOpen={isReplyViewModalOpen}
+        loading={replyViewLoading}
+        error={replyViewError}
+        target={replyViewTarget}
+        replyList={replyViewList}
+        onClose={handleCloseReplyViewModal}
       />
     </>
   );

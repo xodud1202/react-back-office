@@ -29,6 +29,7 @@ const normalizeCompanyWorkListRow = (row: Partial<CompanyWorkListRow> | null | u
   workStatCd: typeof row?.workStatCd === 'string' ? row.workStatCd : '',
   workKey: typeof row?.workKey === 'string' ? row.workKey : '',
   title: typeof row?.title === 'string' ? row.title : '',
+  replyCount: typeof row?.replyCount === 'number' ? row.replyCount : 0,
   workCreateDt: typeof row?.workCreateDt === 'string' ? row.workCreateDt : '',
   workStartDt: typeof row?.workStartDt === 'string' ? row.workStartDt : '',
   workEndDt: typeof row?.workEndDt === 'string' ? row.workEndDt : '',
@@ -154,6 +155,17 @@ export const fetchCompanyWorkDetail = async (workSeq: number): Promise<CompanyWo
       ? responseData!.replyList!.map((replyItem) => normalizeCompanyWorkReply(replyItem))
       : [],
   };
+};
+
+// 회사 업무 댓글 전용 목록을 조회합니다.
+export const fetchCompanyWorkReplyList = async (workSeq: number): Promise<CompanyWorkReply[]> => {
+  // 선택 업무 번호 기준 댓글 목록 응답을 요청합니다.
+  const response = await api.get('/api/admin/company/work/reply/list', {
+    params: { workSeq },
+  });
+  return Array.isArray(response.data)
+    ? response.data.map((replyItem) => normalizeCompanyWorkReply(replyItem as Partial<CompanyWorkReply> | null))
+    : [];
 };
 
 // 회사 업무 Jira 가져오기 저장을 요청합니다.

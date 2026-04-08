@@ -8,7 +8,11 @@ import {
   CompanyWorkTextCell,
 } from '@/components/companyWork/CompanyWorkEditableCells';
 import type { CompanyWorkListRow } from '@/components/companyWork/types';
-import type { CompanyWorkOpenDetailHandler, CompanyWorkSaveEditableRowHandler } from '@/components/companyWork/types';
+import type {
+  CompanyWorkOpenDetailHandler,
+  CompanyWorkOpenReplyViewHandler,
+  CompanyWorkSaveEditableRowHandler,
+} from '@/components/companyWork/types';
 import { dateFormatter } from '@/utils/common';
 
 // 우선순위 코드명을 빠르게 찾기 위한 맵을 생성합니다.
@@ -42,6 +46,8 @@ interface CreateCompanyWorkColumnDefsParams {
   onSaveEditableRow: CompanyWorkSaveEditableRowHandler;
   // 상세 팝업 열기 처리 함수입니다.
   onOpenDetail: CompanyWorkOpenDetailHandler;
+  // 댓글 조회 팝업 열기 처리 함수입니다.
+  onOpenReplyView: CompanyWorkOpenReplyViewHandler;
 }
 
 // 회사 업무 그리드 컬럼 정의를 생성합니다.
@@ -50,6 +56,7 @@ export const createCompanyWorkColumnDefs = ({
   workStatList,
   onSaveEditableRow,
   onOpenDetail,
+  onOpenReplyView,
 }: CreateCompanyWorkColumnDefsParams): ColDef<CompanyWorkListRow>[] => {
   // 우선순위 코드명을 조회용 맵으로 구성합니다.
   const workPriorNameMap = createWorkPriorNameMap(workPriorList);
@@ -85,14 +92,37 @@ export const createCompanyWorkColumnDefs = ({
           return '';
         }
         return createElement(
-          'button',
+          'div',
           {
-            type: 'button',
-            className: 'btn btn-link p-0 w-100 text-start',
-            style: { display: 'block', width: '100%', textAlign: 'left' },
-            onClick: () => onOpenDetail(params.data!.workSeq),
+            className: 'company-work-title-action d-flex align-items-center gap-2 w-100',
           },
-          String(params.value ?? ''),
+          createElement(
+            'button',
+            {
+              type: 'button',
+              className: 'btn btn-link p-0 text-start company-work-title-link',
+              title: String(params.value ?? ''),
+              onClick: () => onOpenDetail(params.data!.workSeq),
+            },
+            String(params.value ?? ''),
+          ),
+          params.data.replyCount > 0 ? createElement(
+            'button',
+            {
+              type: 'button',
+              className: 'btn btn-link p-0 d-inline-flex align-items-center justify-content-center company-work-title-reply-button',
+              title: `댓글 ${params.data.replyCount}개 보기`,
+              'aria-label': `댓글 ${params.data.replyCount}개 보기`,
+              onClick: (event: any) => {
+                event.stopPropagation();
+                onOpenReplyView(params.data!);
+              },
+            },
+            createElement('i', {
+              className: 'mdi mdi-chat-processing-outline',
+              style: { fontSize: '1.1rem', lineHeight: 1 },
+            }),
+          ) : null,
         );
       },
     },

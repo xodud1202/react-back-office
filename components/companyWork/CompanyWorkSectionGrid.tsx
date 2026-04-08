@@ -7,7 +7,12 @@ import {
   createCompanyWorkColumnDefs,
   createCompanyWorkDefaultColDef,
 } from '@/components/companyWork/companyWorkGridColumns';
-import type { CompanyWorkListRow, CompanyWorkOpenDetailHandler, CompanyWorkSaveEditableRowHandler } from '@/components/companyWork/types';
+import type {
+  CompanyWorkListRow,
+  CompanyWorkOpenDetailHandler,
+  CompanyWorkOpenReplyViewHandler,
+  CompanyWorkSaveEditableRowHandler,
+} from '@/components/companyWork/types';
 
 interface CompanyWorkSectionGridProps {
   // 상태 영역 제목입니다.
@@ -22,6 +27,8 @@ interface CompanyWorkSectionGridProps {
   onSaveEditableRow: CompanyWorkSaveEditableRowHandler;
   // 상세 팝업 열기 처리 함수입니다.
   onOpenDetail: CompanyWorkOpenDetailHandler;
+  // 댓글 조회 팝업 열기 처리 함수입니다.
+  onOpenReplyView: CompanyWorkOpenReplyViewHandler;
 }
 
 // 회사 업무 상태 영역 그리드를 렌더링합니다.
@@ -32,6 +39,7 @@ const CompanyWorkSectionGrid = ({
   workPriorList,
   onSaveEditableRow,
   onOpenDetail,
+  onOpenReplyView,
 }: CompanyWorkSectionGridProps) => {
   // 우선순위 공통코드 기준 컬럼 정의를 구성합니다.
   const columnDefs = useMemo(() => createCompanyWorkColumnDefs({
@@ -39,7 +47,8 @@ const CompanyWorkSectionGrid = ({
     workStatList,
     onSaveEditableRow,
     onOpenDetail,
-  }), [onOpenDetail, onSaveEditableRow, workPriorList, workStatList]);
+    onOpenReplyView,
+  }), [onOpenDetail, onOpenReplyView, onSaveEditableRow, workPriorList, workStatList]);
 
   // 공통 기본 컬럼 옵션을 구성합니다.
   const defaultColDef = useMemo(() => createCompanyWorkDefaultColDef(), []);

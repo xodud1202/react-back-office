@@ -215,6 +215,25 @@ button {
 .company-work-title-cell .ag-cell-value {
   justify-content: flex-start !important;
   text-align: left !important;
+  overflow: hidden;
+}
+
+.company-work-title-action {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.company-work-title-link {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.company-work-title-reply-button {
+  flex: 0 0 auto;
 }
 
 .company-work-grid-theme .ag-cell-wrapper {
