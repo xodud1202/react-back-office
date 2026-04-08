@@ -76,7 +76,7 @@ const BoardDetailModal = ({
                     </div>
                   </div>
                   <div className="mb-3">
-                    <div className="text-break board-detail-content">
+                    <div className="text-break board-detail-content quill-content">
                       {selectedBoard.content ? (
                         <div
                           className="board-detail-body"

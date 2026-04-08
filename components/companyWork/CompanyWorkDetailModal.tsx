@@ -61,6 +61,17 @@ interface CompanyWorkDetailFormState {
   workTime: string;
 }
 
+interface LocalReplyFilePreview {
+  // 로컬 선택 파일 식별 키입니다.
+  key: string;
+  // 표시용 파일명입니다.
+  fileName: string;
+  // 이미지 미리보기 URL입니다.
+  previewUrl: string | null;
+  // 이미지 파일 여부입니다.
+  isImage: boolean;
+}
+
 const COMPANY_WORK_IMAGE_FILE_PATTERN = /\.(png|jpe?g|gif|bmp|webp|svg)(\?|$)/i;
 const COMPANY_WORK_REPLY_FILE_ACCEPT = '.pdf,.xls,.xlsx,.doc,.docx,.ppt,.pptx,.txt,.zip,.jpg,.jpeg,.png,.gif';
 const COMPANY_WORK_CONTENT_QUILL_FORMATS = [
@@ -139,24 +150,68 @@ const hasVisibleEditorText = (value: string): boolean => {
     .trim() !== '';
 };
 
+// 파일명과 URL 기준으로 이미지 첨부 여부를 판단합니다.
+const isImageAttachmentByValues = (fileName: string, fileUrl?: string | null): boolean => {
+  // 파일명 또는 URL 중 하나라도 이미지 확장자면 이미지 첨부로 간주합니다.
+  return COMPANY_WORK_IMAGE_FILE_PATTERN.test(fileName || '') || COMPANY_WORK_IMAGE_FILE_PATTERN.test(fileUrl || '');
+};
+
 // 첨부파일이 이미지인지 파일명과 URL로 판단합니다.
 const isImageAttachment = (file: CompanyWorkFile): boolean => {
   // 파일명 또는 URL에 이미지 확장자가 있으면 미리보기 대상으로 처리합니다.
-  return COMPANY_WORK_IMAGE_FILE_PATTERN.test(file.workJobFileNm || '') || COMPANY_WORK_IMAGE_FILE_PATTERN.test(file.workJobFileUrl || '');
+  return isImageAttachmentByValues(file.workJobFileNm, file.workJobFileUrl);
+};
+
+// 댓글 첨부파일이 이미지인지 파일명과 URL로 판단합니다.
+const isImageReplyAttachment = (file: CompanyWorkReplyFile): boolean => {
+  // 파일명 또는 URL에 이미지 확장자가 있으면 미리보기 대상으로 처리합니다.
+  return isImageAttachmentByValues(file.replyFileNm, file.replyFileUrl);
+};
+
+// 로컬 선택 파일이 이미지인지 MIME 타입과 파일명으로 판단합니다.
+const isImageSelectedFile = (file: File): boolean => {
+  // 브라우저 MIME 타입이 이미지면 우선 처리하고, 없으면 파일명 확장자를 사용합니다.
+  return file.type.startsWith('image/') || isImageAttachmentByValues(file.name);
+};
+
+// 로컬 선택 파일 목록을 카드 렌더링용 미리보기 목록으로 변환합니다.
+const buildLocalReplyFilePreviewList = (fileList: File[]): LocalReplyFilePreview[] => {
+  // 이미지 파일만 Object URL을 생성하고, 나머지는 텍스트 카드로 표시합니다.
+  return fileList.map((file, fileIndex) => {
+    const isImage = isImageSelectedFile(file);
+    return {
+      key: `${file.name}-${file.size}-${file.lastModified}-${fileIndex}`,
+      fileName: file.name,
+      previewUrl: isImage ? URL.createObjectURL(file) : null,
+      isImage,
+    };
+  });
 };
 
 // 읽기 전용 HTML 또는 텍스트 본문을 렌더링합니다.
-const CompanyWorkReadonlyHtml = ({ value, emptyText }: { value: string; emptyText: string }) => {
+const CompanyWorkReadonlyHtml = ({
+  value,
+  emptyText,
+  className,
+}: {
+  value: string;
+  emptyText: string;
+  className?: string;
+}) => {
   // 값이 없으면 안내 문구를 표시합니다.
   if (!value.trim()) {
-    return <div className="text-muted">{emptyText}</div>;
+    return (
+      <div className={className}>
+        <div className="text-muted">{emptyText}</div>
+      </div>
+    );
   }
 
   // HTML 마크업이 있으면 그대로 렌더링하고, 아니면 줄바꿈을 유지합니다.
   if (hasHtmlMarkup(value)) {
-    return <div dangerouslySetInnerHTML={{ __html: value }} />;
+    return <div className={className} dangerouslySetInnerHTML={{ __html: value }} />;
   }
-  return <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{value}</div>;
+  return <div className={className} style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{value}</div>;
 };
 
 // 브라우저 다운로드를 시작합니다.
@@ -191,9 +246,11 @@ const CompanyWorkDetailModal = ({
   const [formState, setFormState] = useState<CompanyWorkDetailFormState>(() => createInitialDetailFormState());
   const [replyComment, setReplyComment] = useState('');
   const [replyFiles, setReplyFiles] = useState<File[]>([]);
+  const [replyFilePreviewList, setReplyFilePreviewList] = useState<LocalReplyFilePreview[]>([]);
   const [editingReplySeq, setEditingReplySeq] = useState<number | null>(null);
   const [editingReplyComment, setEditingReplyComment] = useState('');
   const [editingReplyFiles, setEditingReplyFiles] = useState<File[]>([]);
+  const [editingReplyFilePreviewList, setEditingReplyFilePreviewList] = useState<LocalReplyFilePreview[]>([]);
   const [editingDeleteReplyFileSeqList, setEditingDeleteReplyFileSeqList] = useState<number[]>([]);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const loginUsrNoFromStore = useAppSelector((state) => state.auth.user?.usrNo ?? 0);
@@ -265,6 +322,36 @@ const CompanyWorkDetailModal = ({
   useEffect(() => {
     setFormState(buildDetailFormState(detailResponse));
   }, [detailResponse]);
+
+  // 댓글 작성 선택 파일이 바뀌면 카드용 미리보기 목록을 다시 구성합니다.
+  useEffect(() => {
+    const nextPreviewList = buildLocalReplyFilePreviewList(replyFiles);
+    setReplyFilePreviewList(nextPreviewList);
+
+    return () => {
+      // 이전 미리보기 URL을 정리해 브라우저 메모리 누수를 방지합니다.
+      nextPreviewList.forEach((previewItem) => {
+        if (previewItem.previewUrl) {
+          URL.revokeObjectURL(previewItem.previewUrl);
+        }
+      });
+    };
+  }, [replyFiles]);
+
+  // 댓글 수정 선택 파일이 바뀌면 카드용 미리보기 목록을 다시 구성합니다.
+  useEffect(() => {
+    const nextPreviewList = buildLocalReplyFilePreviewList(editingReplyFiles);
+    setEditingReplyFilePreviewList(nextPreviewList);
+
+    return () => {
+      // 이전 미리보기 URL을 정리해 브라우저 메모리 누수를 방지합니다.
+      nextPreviewList.forEach((previewItem) => {
+        if (previewItem.previewUrl) {
+          URL.revokeObjectURL(previewItem.previewUrl);
+        }
+      });
+    };
+  }, [editingReplyFiles]);
 
   // 다른 업무 상세를 열면 댓글 작성/수정 상태를 초기화합니다.
   useEffect(() => {
@@ -685,18 +772,43 @@ const CompanyWorkDetailModal = ({
                       />
                       <div className="form-text">문서와 이미지 파일을 여러 개 첨부할 수 있습니다. 파일당 최대 10MB까지 업로드 가능합니다.</div>
                     </div>
-                    {replyFiles.length > 0 ? (
-                      <div className="company-work-reply-selected-file-list mt-3">
-                        {replyFiles.map((fileItem, fileIndex) => (
-                          <div key={`${fileItem.name}-${fileItem.size}-${fileItem.lastModified}-${fileIndex}`} className="company-work-reply-selected-file-item">
-                            <span className="company-work-reply-selected-file-name">{fileItem.name}</span>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-secondary"
-                              onClick={() => handleRemoveReplyFile(fileIndex)}
+                    {replyFilePreviewList.length > 0 ? (
+                      <div className="d-flex flex-wrap gap-3 mt-3">
+                        {replyFilePreviewList.map((previewItem, fileIndex) => (
+                          <div key={previewItem.key} className="company-work-file-item border rounded p-2">
+                            {previewItem.isImage && previewItem.previewUrl ? (
+                              <button
+                                type="button"
+                                className="btn btn-link p-0 border-0 company-work-file-preview-button"
+                                onClick={() => handleOpenPreviewImage(previewItem.previewUrl as string)}
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={previewItem.previewUrl}
+                                  alt={previewItem.fileName || '댓글 첨부 이미지'}
+                                  className="company-work-file-thumbnail"
+                                />
+                              </button>
+                            ) : (
+                              <div className="company-work-file-preview-link d-flex align-items-center justify-content-center bg-light text-muted">
+                                FILE
+                              </div>
+                            )}
+                            <div
+                              className="company-work-file-name-link small"
+                              style={{ color: 'var(--bs-link-color)' }}
                             >
-                              제거
-                            </button>
+                              {previewItem.fileName || '첨부파일'}
+                            </div>
+                            <div className="w-100">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary w-100"
+                                onClick={() => handleRemoveReplyFile(fileIndex)}
+                              >
+                                제거
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -782,29 +894,53 @@ const CompanyWorkDetailModal = ({
                                     formats={editingReplyQuill.quillFormats}
                                   />
                                   {replyItem.replyFileList.length > 0 ? (
-                                    <div className="company-work-reply-edit-file-list mt-3">
+                                    <div className="d-flex flex-wrap gap-3 mt-3">
                                       {replyItem.replyFileList.map((replyFileItem) => {
                                         const isDeletedReplyFile = isEditingReplyFileDeleted(replyFileItem.replyFileSeq);
                                         return (
                                           <div
                                             key={replyFileItem.replyFileSeq}
-                                            className={`company-work-reply-edit-file-item ${isDeletedReplyFile ? 'is-deleted' : ''}`}
+                                            className={`company-work-file-item border rounded p-2 ${isDeletedReplyFile ? 'is-deleted' : ''}`}
                                           >
+                                            {isImageReplyAttachment(replyFileItem) && replyFileItem.replyFileUrl ? (
+                                              <button
+                                                type="button"
+                                                className="btn btn-link p-0 border-0 company-work-file-preview-button"
+                                                onClick={() => handleOpenPreviewImage(replyFileItem.replyFileUrl)}
+                                              >
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                  src={replyFileItem.replyFileUrl}
+                                                  alt={replyFileItem.replyFileNm || '댓글 첨부 이미지'}
+                                                  className="company-work-file-thumbnail"
+                                                />
+                                              </button>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                className="btn btn-link p-0 border-0 company-work-file-preview-link d-flex align-items-center justify-content-center bg-light text-muted text-decoration-none"
+                                                onClick={() => { void handleDownloadReplyFile(replyFileItem); }}
+                                              >
+                                                FILE
+                                              </button>
+                                            )}
                                             <button
                                               type="button"
-                                              className="btn btn-sm btn-outline-primary company-work-reply-file-button"
+                                              className="btn btn-link p-0 text-start company-work-file-name-link small"
                                               onClick={() => { void handleDownloadReplyFile(replyFileItem); }}
                                             >
                                               {replyFileItem.replyFileNm || '첨부파일'}
                                             </button>
-                                            <button
-                                              type="button"
-                                              className={`btn btn-sm ${isDeletedReplyFile ? 'btn-outline-secondary' : 'btn-outline-danger'}`}
-                                              onClick={() => handleToggleDeleteEditingReplyFile(replyFileItem.replyFileSeq)}
-                                              disabled={replySaving}
-                                            >
-                                              {isDeletedReplyFile ? '삭제취소' : '삭제'}
-                                            </button>
+                                            <div className="w-100">
+                                              <button
+                                                type="button"
+                                                className={`btn btn-sm w-100 ${isDeletedReplyFile ? 'btn-outline-secondary' : 'btn-outline-danger'}`}
+                                                onClick={() => handleToggleDeleteEditingReplyFile(replyFileItem.replyFileSeq)}
+                                                disabled={replySaving}
+                                              >
+                                                {isDeletedReplyFile ? '삭제취소' : '삭제'}
+                                              </button>
+                                            </div>
                                           </div>
                                         );
                                       })}
@@ -821,19 +957,44 @@ const CompanyWorkDetailModal = ({
                                     />
                                     <div className="form-text">기존 첨부는 삭제만 가능하고, 새 첨부는 여러 개 추가할 수 있습니다.</div>
                                   </div>
-                                  {editingReplyFiles.length > 0 ? (
-                                    <div className="company-work-reply-selected-file-list mt-3">
-                                      {editingReplyFiles.map((fileItem, fileIndex) => (
-                                        <div key={`${fileItem.name}-${fileItem.size}-${fileItem.lastModified}-${fileIndex}`} className="company-work-reply-selected-file-item">
-                                          <span className="company-work-reply-selected-file-name">{fileItem.name}</span>
-                                          <button
-                                            type="button"
-                                            className="btn btn-sm btn-outline-secondary"
-                                            onClick={() => handleRemoveEditingReplyFile(fileIndex)}
-                                            disabled={replySaving}
+                                  {editingReplyFilePreviewList.length > 0 ? (
+                                    <div className="d-flex flex-wrap gap-3 mt-3">
+                                      {editingReplyFilePreviewList.map((previewItem, fileIndex) => (
+                                        <div key={previewItem.key} className="company-work-file-item border rounded p-2">
+                                          {previewItem.isImage && previewItem.previewUrl ? (
+                                            <button
+                                              type="button"
+                                              className="btn btn-link p-0 border-0 company-work-file-preview-button"
+                                              onClick={() => handleOpenPreviewImage(previewItem.previewUrl as string)}
+                                            >
+                                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                                              <img
+                                                src={previewItem.previewUrl}
+                                                alt={previewItem.fileName || '댓글 첨부 이미지'}
+                                                className="company-work-file-thumbnail"
+                                              />
+                                            </button>
+                                          ) : (
+                                            <div className="company-work-file-preview-link d-flex align-items-center justify-content-center bg-light text-muted">
+                                              FILE
+                                            </div>
+                                          )}
+                                          <div
+                                            className="company-work-file-name-link small"
+                                            style={{ color: 'var(--bs-link-color)' }}
                                           >
-                                            제거
-                                          </button>
+                                            {previewItem.fileName || '첨부파일'}
+                                          </div>
+                                          <div className="w-100">
+                                            <button
+                                              type="button"
+                                              className="btn btn-sm btn-outline-secondary w-100"
+                                              onClick={() => handleRemoveEditingReplyFile(fileIndex)}
+                                              disabled={replySaving}
+                                            >
+                                              제거
+                                            </button>
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
@@ -844,18 +1005,42 @@ const CompanyWorkDetailModal = ({
                                   <CompanyWorkReadonlyHtml
                                     value={replyItem.replyComment || ''}
                                     emptyText={replyItem.replyFileList.length > 0 ? '첨부파일만 등록된 댓글입니다.' : '댓글 내용이 없습니다.'}
+                                    className="quill-content"
                                   />
                                   {replyItem.replyFileList.length > 0 ? (
-                                    <div className="company-work-reply-file-list mt-3">
+                                    <div className="d-flex flex-wrap gap-3 mt-3">
                                       {replyItem.replyFileList.map((replyFileItem) => (
-                                        <button
-                                          key={replyFileItem.replyFileSeq}
-                                          type="button"
-                                          className="btn btn-sm btn-outline-primary company-work-reply-file-button"
-                                          onClick={() => { void handleDownloadReplyFile(replyFileItem); }}
-                                        >
-                                          {replyFileItem.replyFileNm || '첨부파일'}
-                                        </button>
+                                        <div key={replyFileItem.replyFileSeq} className="company-work-file-item border rounded p-2">
+                                          {isImageReplyAttachment(replyFileItem) && replyFileItem.replyFileUrl ? (
+                                            <button
+                                              type="button"
+                                              className="btn btn-link p-0 border-0 company-work-file-preview-button"
+                                              onClick={() => handleOpenPreviewImage(replyFileItem.replyFileUrl)}
+                                            >
+                                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                                              <img
+                                                src={replyFileItem.replyFileUrl}
+                                                alt={replyFileItem.replyFileNm || '댓글 첨부 이미지'}
+                                                className="company-work-file-thumbnail"
+                                              />
+                                            </button>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              className="btn btn-link p-0 border-0 company-work-file-preview-link d-flex align-items-center justify-content-center bg-light text-muted text-decoration-none"
+                                              onClick={() => { void handleDownloadReplyFile(replyFileItem); }}
+                                            >
+                                              FILE
+                                            </button>
+                                          )}
+                                          <button
+                                            type="button"
+                                            className="btn btn-link p-0 text-start company-work-file-name-link small"
+                                            onClick={() => { void handleDownloadReplyFile(replyFileItem); }}
+                                          >
+                                            {replyFileItem.replyFileNm || '첨부파일'}
+                                          </button>
+                                        </div>
                                       ))}
                                     </div>
                                   ) : null}
@@ -923,6 +1108,9 @@ const CompanyWorkDetailModal = ({
           align-items: flex-start;
           gap: 8px;
         }
+        .company-work-file-item.is-deleted {
+          opacity: 0.6;
+        }
         .company-work-file-thumbnail,
         .company-work-file-preview-link,
         .company-work-file-preview-button {
@@ -970,49 +1158,6 @@ const CompanyWorkDetailModal = ({
         }
         .company-work-reply-editor :global(.ql-container) {
           min-height: 130px;
-        }
-        .company-work-reply-selected-file-list,
-        .company-work-reply-file-list {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-        .company-work-reply-edit-file-list {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        .company-work-reply-edit-file-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .company-work-reply-edit-file-item.is-deleted {
-          opacity: 0.6;
-        }
-        .company-work-reply-edit-file-item.is-deleted :global(.company-work-reply-file-button) {
-          text-decoration: line-through;
-        }
-        .company-work-reply-selected-file-item {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 10px;
-          border: 1px solid #dee2e6;
-          border-radius: 999px;
-          background-color: #f8f9fa;
-          max-width: 100%;
-        }
-        .company-work-reply-selected-file-name {
-          max-width: 360px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        .company-work-reply-file-button {
-          max-width: 100%;
-          word-break: break-all;
         }
       `}</style>
     </>

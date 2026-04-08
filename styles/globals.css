@@ -429,11 +429,12 @@ button {
   color: #000;
 }
 
-/* 게시글 상세보기 코드 블록 스타일을 에디터와 비슷하게 맞춥니다 */
-.board-detail-content pre.ql-syntax,
-.board-detail-content code.ql-syntax,
-.board-detail-content pre.ql-syntax div,
-.board-detail-content pre[data-language] {
+/* Quill 읽기 영역 코드 블록 스타일을 에디터와 비슷하게 맞춥니다 */
+.quill-content pre.ql-syntax,
+.quill-content code.ql-syntax,
+.quill-content pre.ql-syntax div,
+.quill-content pre[data-language],
+.quill-content .ql-code-block-container {
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
   background-color: #23241f;
   color: #f8f8f2;
@@ -441,9 +442,20 @@ button {
   margin: 5px 0;
   padding: 8px 12px;
   line-height: 1.5;
-  white-space: pre;
   overflow-x: auto;
   display: block;
+}
+
+.quill-content pre.ql-syntax,
+.quill-content code.ql-syntax,
+.quill-content pre[data-language],
+.quill-content .ql-code-block {
+  white-space: pre;
+}
+
+.quill-content .ql-code-block {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  color: inherit;
 }
 
 @media screen and (max-width: 576px) {
