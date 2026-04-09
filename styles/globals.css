@@ -322,6 +322,13 @@ button {
   overflow: hidden;
 }
 
+.board-title-cell .ag-cell-wrapper,
+.board-title-cell .ag-cell-value {
+  justify-content: flex-start !important;
+  text-align: left !important;
+  overflow: hidden;
+}
+
 .company-work-title-action {
   min-width: 0;
   overflow: hidden;

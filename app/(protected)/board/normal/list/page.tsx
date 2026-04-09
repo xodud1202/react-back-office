@@ -58,19 +58,19 @@ const BoardList = () => {
         onReset={handleSearchReset}
       />
 
-      <BoardListGrid
-        onGridReady={handleGridReady}
-        onOpenDetail={handleOpenDetail}
-        onDeleteBoard={handleDeleteBoard}
-      />
-
       <div className="row">
-        <div className="col-lg-12 d-flex justify-content-end mt-3">
+        <div className="col-lg-12 d-flex justify-content-end mb-3">
           <button type="button" className="btn btn-primary" onClick={handleOpenCreate}>
             등록
           </button>
         </div>
       </div>
+
+      <BoardListGrid
+        onGridReady={handleGridReady}
+        onOpenDetail={handleOpenDetail}
+        onDeleteBoard={handleDeleteBoard}
+      />
 
       <BoardDetailModal
         isOpen={isDetailModalOpen}

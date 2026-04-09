@@ -29,11 +29,11 @@ const BoardListGrid = ({ onGridReady, onOpenDetail, onDeleteBoard }: BoardListGr
       field: 'title',
       flex: 1,
       minWidth: 220,
-      cellClass: 'text-start',
+      cellClass: 'board-title-cell',
       cellRenderer: (params: ICellRendererParams<BoardData>) => (
         <button
           type="button"
-          className="btn p-0 text-decoration-none fw-bold"
+          className="btn p-0 text-decoration-none fw-bold text-start w-100"
           onClick={() => params.data?.boardNo && onOpenDetail(params.data.boardNo)}
         >
           {params.data?.title || '제목 없음'}
