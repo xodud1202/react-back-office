@@ -218,6 +218,56 @@ export interface CompanyWorkImportResponse {
   workKey: string;
 }
 
+// 회사 업무 수기 등록 입력 상태를 정의합니다.
+export interface CompanyWorkManualCreateFormState {
+  // 선택된 회사 번호 문자열입니다.
+  workCompanySeq: string;
+  // 선택된 프로젝트 번호 문자열입니다.
+  workCompanyProjectSeq: string;
+  // 업무 타이틀입니다.
+  title: string;
+  // 업무 본문 HTML입니다.
+  content: string;
+  // 업무 담당자명입니다.
+  coManager: string;
+  // 업무 우선순위 코드입니다.
+  workPriorCd: string;
+}
+
+// 회사 업무 수기 등록 저장값을 정의합니다.
+export interface CompanyWorkManualCreateValues {
+  // 회사 번호입니다.
+  workCompanySeq: number;
+  // 프로젝트 번호입니다.
+  workCompanyProjectSeq: number;
+  // 업무 타이틀입니다.
+  title: string;
+  // 업무 본문 HTML입니다.
+  content: string;
+  // 업무 담당자명입니다.
+  coManager: string;
+  // 업무 우선순위 코드입니다.
+  workPriorCd: string;
+}
+
+// 회사 업무 수기 등록 요청 데이터를 정의합니다.
+export interface CompanyWorkManualCreateRequest extends CompanyWorkManualCreateValues {
+  // 등록자 번호입니다.
+  regNo: number;
+  // 수정자 번호입니다.
+  udtNo: number;
+}
+
+// 회사 업무 수기 등록 응답 데이터를 정의합니다.
+export interface CompanyWorkManualCreateResponse {
+  // 처리 결과 메시지입니다.
+  message: string;
+  // 저장된 업무 시퀀스입니다.
+  workSeq: number;
+  // 저장된 업무 키입니다.
+  workKey: string;
+}
+
 // 회사 업무 즉시 수정 가능 항목을 정의합니다.
 export interface CompanyWorkEditableValues {
   // 업무 상태 코드입니다.
@@ -311,6 +361,11 @@ export type CompanyWorkSaveDetailHandler = (
 export type CompanyWorkSaveReplyHandler = (
   replyComment: string,
   replyFiles: File[],
+) => Promise<void>;
+
+// 회사 업무 수기 등록 처리 함수 타입을 정의합니다.
+export type CompanyWorkSaveManualCreateHandler = (
+  values: CompanyWorkManualCreateValues,
 ) => Promise<void>;
 
 // 회사 업무 댓글 수정 처리 함수 타입을 정의합니다.

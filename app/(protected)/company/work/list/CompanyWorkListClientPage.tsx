@@ -7,6 +7,7 @@ import CompanyWorkCompletedGrid, {
 } from '@/components/companyWork/CompanyWorkCompletedGrid';
 import CompanyWorkDetailModal from '@/components/companyWork/CompanyWorkDetailModal';
 import CompanyWorkImportModal from '@/components/companyWork/CompanyWorkImportModal';
+import CompanyWorkManualCreateModal from '@/components/companyWork/CompanyWorkManualCreateModal';
 import CompanyWorkReplyViewModal from '@/components/companyWork/CompanyWorkReplyViewModal';
 import CompanyWorkSearchForm from '@/components/companyWork/CompanyWorkSearchForm';
 import CompanyWorkSectionGrid from '@/components/companyWork/CompanyWorkSectionGrid';
@@ -17,6 +18,7 @@ import type {
   CompanyWorkDetailEditableValues,
   CompanyWorkDetailResponse,
   CompanyWorkListRow,
+  CompanyWorkManualCreateValues,
   CompanyWorkProjectOption,
   CompanyWorkReply,
   CompanyWorkReplyDeleteRequest,
@@ -30,6 +32,7 @@ import type {
   CompanyWorkUpdateRequest,
 } from '@/components/companyWork/types';
 import {
+  createCompanyWorkManual,
   createCompanyWorkReply,
   deleteCompanyWorkReply,
   fetchCompanyWorkCompletedList,
@@ -105,6 +108,15 @@ const resolveRequiredSequence = (value: string): number | null => {
 // 문자열 값을 비교 가능한 빈 문자열 기준으로 정규화합니다.
 const normalizeComparableText = (value?: string | null): string => {
   // undefined/null 값은 빈 문자열로 통일합니다.
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value;
+};
+
+// 수기 등록 본문 HTML 값을 저장용 문자열로 정규화합니다.
+const normalizeManualContent = (value?: string | null): string => {
+  // 문자열이 아니면 빈 문자열로 저장합니다.
   if (typeof value !== 'string') {
     return '';
   }
@@ -300,6 +312,8 @@ const CompanyWorkListClientPage = ({
   const [searchExecuted, setSearchExecuted] = useState(false);
   const [activeSearchParams, setActiveSearchParams] = useState<CompanyWorkSearchParams | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [manualSaving, setManualSaving] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailSaving, setDetailSaving] = useState(false);
@@ -324,6 +338,11 @@ const CompanyWorkListClientPage = ({
   const visibleStatusSectionList = useMemo(() => (
     statusSectionList.filter((statusSectionItem) => (statusSectionItem.list || []).length > 0)
   ), [statusSectionList]);
+
+  // 수기 등록 팝업을 열 수 있는지 계산합니다.
+  const canOpenManualModal = useMemo(() => (
+    !!searchFormState.workCompanySeq && !!searchFormState.workCompanyProjectSeq
+  ), [searchFormState.workCompanyProjectSeq, searchFormState.workCompanySeq]);
 
   // 현재 검색 결과에 실제 업무가 존재하는지 계산합니다.
   const hasSearchResult = useMemo(() => (
@@ -408,20 +427,19 @@ const CompanyWorkListClientPage = ({
     };
   }, [searchFormState]);
 
-  // 회사 변경 시 프로젝트 선택과 기존 조회 결과를 초기화합니다.
+  // 회사 변경 시 프로젝트 선택을 초기화하고 새 프로젝트 목록을 조회합니다.
   const handleChangeWorkCompanySeq = useCallback(async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const nextWorkCompanySeq = event.target.value;
 
-    // 회사 변경 즉시 프로젝트 선택과 결과 목록을 비웁니다.
+    // 회사 변경 즉시 프로젝트 선택만 비우고, 결과 목록은 검색 전까지 유지합니다.
     setSearchFormState((prevState) => ({
       ...prevState,
       workCompanySeq: nextWorkCompanySeq,
       workCompanyProjectSeq: '',
     }));
     setProjectList([]);
-    resetSearchResult();
     await loadProjectList(nextWorkCompanySeq);
-  }, [loadProjectList, resetSearchResult]);
+  }, [loadProjectList]);
 
   // 프로젝트 선택 변경을 반영합니다.
   const handleChangeWorkCompanyProjectSeq = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -445,14 +463,8 @@ const CompanyWorkListClientPage = ({
     }));
   }, []);
 
-  // 검색 버튼 클릭 시 상태별 목록과 완료 목록을 함께 조회합니다.
-  const handleSearch = useCallback(async () => {
-    // 현재 입력 상태를 조회 파라미터로 검증합니다.
-    const nextSearchParams = resolveSearchParams();
-    if (!nextSearchParams) {
-      return;
-    }
-
+  // 지정 검색 조건으로 상태별 목록과 완료 목록을 함께 조회합니다.
+  const executeSearch = useCallback(async (nextSearchParams: CompanyWorkSearchParams) => {
     setStatusLoading(true);
     setCompletedLoading(true);
     try {
@@ -478,7 +490,18 @@ const CompanyWorkListClientPage = ({
       setStatusLoading(false);
       setCompletedLoading(false);
     }
-  }, [resetSearchResult, resolveSearchParams]);
+  }, [resetSearchResult]);
+
+  // 검색 버튼 클릭 시 상태별 목록과 완료 목록을 함께 조회합니다.
+  const handleSearch = useCallback(async () => {
+    // 현재 입력 상태를 조회 파라미터로 검증합니다.
+    const nextSearchParams = resolveSearchParams();
+    if (!nextSearchParams) {
+      return;
+    }
+
+    await executeSearch(nextSearchParams);
+  }, [executeSearch, resolveSearchParams]);
 
   // 화면 최초 진입 시 기본 선택 회사/프로젝트 조건으로 자동 검색을 실행합니다.
   useEffect(() => {
@@ -519,6 +542,22 @@ const CompanyWorkListClientPage = ({
     setIsImportModalOpen(false);
   }, []);
 
+  // 수기 등록 모달을 엽니다.
+  const handleOpenManualModal = useCallback(() => {
+    // 회사와 프로젝트가 선택된 상태에서만 모달을 엽니다.
+    if (!resolveSearchParams()) {
+      return;
+    }
+    setIsManualModalOpen(true);
+  }, [resolveSearchParams]);
+
+  // 수기 등록 모달을 닫습니다.
+  const handleCloseManualModal = useCallback(() => {
+    // 모달 오픈 상태와 저장 상태를 함께 초기화합니다.
+    setIsManualModalOpen(false);
+    setManualSaving(false);
+  }, []);
+
   // 상세 팝업을 닫고 관련 상태를 초기화합니다.
   const handleCloseDetailModal = useCallback(() => {
     // 상세 조회 상태와 선택 데이터를 모두 비웁니다.
@@ -547,6 +586,62 @@ const CompanyWorkListClientPage = ({
     // 가져오기 완료 직후 현재 검색 조건 기준으로 목록을 새로 고칩니다.
     await handleSearch();
   }, [handleSearch]);
+
+  // 수기 등록 요청을 저장하고 현재 목록을 다시 조회합니다.
+  const handleSaveManual = useCallback(async (values: CompanyWorkManualCreateValues) => {
+    const loginUsrNo = requireLoginUsrNo();
+    if (!loginUsrNo) {
+      throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
+    }
+
+    const nextWorkCompanySeqValue = String(values.workCompanySeq);
+    const nextWorkCompanyProjectSeqValue = String(values.workCompanyProjectSeq);
+    const nextSearchParams: CompanyWorkSearchParams = {
+      workCompanySeq: values.workCompanySeq,
+      workCompanyProjectSeq: values.workCompanyProjectSeq,
+      title: searchFormState.title.trim(),
+    };
+
+    setManualSaving(true);
+    try {
+      // 수기 등록 API를 호출합니다.
+      const response = await createCompanyWorkManual({
+        workCompanySeq: values.workCompanySeq,
+        workCompanyProjectSeq: values.workCompanyProjectSeq,
+        title: normalizeComparableText(values.title).trim(),
+        content: normalizeManualContent(values.content),
+        coManager: normalizeEditableManager(values.coManager),
+        workPriorCd: normalizeComparableText(values.workPriorCd).trim(),
+        regNo: loginUsrNo,
+        udtNo: loginUsrNo,
+      });
+
+      // 저장 대상 회사와 프로젝트를 현재 검색 조건에도 반영합니다.
+      setIsManualModalOpen(false);
+      setSearchFormState((prevState) => ({
+        ...prevState,
+        workCompanySeq: nextWorkCompanySeqValue,
+        workCompanyProjectSeq: nextWorkCompanyProjectSeqValue,
+      }));
+      try {
+        // 저장 대상 회사 기준 프로젝트 목록을 다시 맞춰 검색 폼 선택을 유지합니다.
+        const nextProjectList = await fetchCompanyWorkProjectList(values.workCompanySeq);
+        setProjectList(nextProjectList);
+      } catch (projectError) {
+        // 프로젝트 목록 동기화 실패는 저장 성공을 막지 않고 안내만 남깁니다.
+        console.error('회사 업무 프로젝트 목록 동기화에 실패했습니다.', projectError);
+        notifyError('프로젝트 목록 조회에 실패했습니다.');
+      }
+      notifySuccess(response.message || '업무를 등록했습니다.');
+      await executeSearch(nextSearchParams);
+    } catch (error) {
+      // 저장 실패 시 서버 메시지를 사용자에게 노출합니다.
+      notifyError(extractApiErrorMessage(error, '업무 등록에 실패했습니다.'));
+      throw error;
+    } finally {
+      setManualSaving(false);
+    }
+  }, [executeSearch, searchFormState.title]);
 
   // 업무 타이틀 클릭 시 상세 팝업을 열고 최신 데이터를 조회합니다.
   const handleOpenDetail = useCallback(async (workSeq: number) => {
@@ -879,7 +974,15 @@ const CompanyWorkListClientPage = ({
         onReset={handleReset}
       />
 
-      <div className="d-flex justify-content-end align-items-center mb-3">
+      <div className="d-flex justify-content-end align-items-center gap-2 mb-3">
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={handleOpenManualModal}
+          disabled={!canOpenManualModal || projectLoading}
+        >
+          수기등록
+        </button>
         <button type="button" className="btn btn-primary" onClick={handleOpenImportModal}>
           SR가져오기
         </button>
@@ -938,6 +1041,18 @@ const CompanyWorkListClientPage = ({
         initialWorkCompanyProjectSeq={searchFormState.workCompanyProjectSeq}
         onClose={handleCloseImportModal}
         onImported={handleImported}
+      />
+
+      <CompanyWorkManualCreateModal
+        isOpen={isManualModalOpen}
+        saving={manualSaving}
+        companyList={companyList}
+        initialProjectList={projectList}
+        initialWorkCompanySeq={searchFormState.workCompanySeq}
+        initialWorkCompanyProjectSeq={searchFormState.workCompanyProjectSeq}
+        workPriorList={workPriorList}
+        onSave={handleSaveManual}
+        onClose={handleCloseManualModal}
       />
 
       <CompanyWorkDetailModal

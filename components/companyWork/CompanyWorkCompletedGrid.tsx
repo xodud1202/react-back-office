@@ -196,6 +196,7 @@ const CompanyWorkCompletedGrid = forwardRef<CompanyWorkCompletedGridHandle, Comp
             cacheBlockSize={pageSize}
             pagination
             paginationPageSize={pageSize}
+            paginationPageSizeSelector={[10, 20, 50, 100]}
             getRowId={(params) => String(params.data?.workSeq ?? '')}
             rowHeight={46}
             onGridReady={handleGridReady}

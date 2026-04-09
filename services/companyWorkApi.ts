@@ -6,6 +6,8 @@ import type {
   CompanyWorkFile,
   CompanyWorkImportRequest,
   CompanyWorkImportResponse,
+  CompanyWorkManualCreateRequest,
+  CompanyWorkManualCreateResponse,
   CompanyWorkProjectOption,
   CompanyWorkReplyDeleteRequest,
   CompanyWorkReplyFile,
@@ -179,6 +181,20 @@ export const importCompanyWork = async (
     message: typeof responseData?.message === 'string' ? responseData.message : '',
     workSeq: typeof responseData?.workSeq === 'number' ? responseData.workSeq : 0,
     workKey: typeof responseData?.workKey === 'string' ? responseData.workKey : payload.workKey,
+  };
+};
+
+// 회사 업무 수기 등록 저장을 요청합니다.
+export const createCompanyWorkManual = async (
+  payload: CompanyWorkManualCreateRequest,
+): Promise<CompanyWorkManualCreateResponse> => {
+  // 수기 등록 요청 본문을 백엔드 저장 API로 전송합니다.
+  const response = await api.post('/api/admin/company/work/manual', payload);
+  const responseData = response.data as Partial<CompanyWorkManualCreateResponse> | null;
+  return {
+    message: typeof responseData?.message === 'string' ? responseData.message : '',
+    workSeq: typeof responseData?.workSeq === 'number' ? responseData.workSeq : 0,
+    workKey: typeof responseData?.workKey === 'string' ? responseData.workKey : '',
   };
 };
 
