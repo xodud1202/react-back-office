@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AdminDateInput from '@/components/common/AdminDateInput';
 import type { CommonCode } from '@/components/goods/types';
 
@@ -108,40 +108,61 @@ export const CompanyWorkDateCell = ({
 }: CompanyWorkDateCellProps) => {
   const [inputValue, setInputValue] = useState<string>(() => normalizeCellValue(value));
   const [saving, setSaving] = useState(false);
+  const lastRequestedValueRef = useRef<string>(normalizeCellValue(value));
 
   // 상위 값이 바뀌면 셀 표시값도 최신 상태로 동기화합니다.
   useEffect(() => {
-    setInputValue(normalizeCellValue(value));
+    const normalizedValue = normalizeCellValue(value);
+    setInputValue(normalizedValue);
+    lastRequestedValueRef.current = normalizedValue;
   }, [value]);
 
-  // 날짜 선택값을 로컬 상태에 반영합니다.
-  const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    // input[type=date]의 yyyy-MM-dd 값을 그대로 유지합니다.
-    setInputValue(normalizeCellValue(event.target.value));
-  }, []);
-
-  // 포커스 아웃 시 날짜를 즉시 저장합니다.
-  const handleBlur = useCallback(async () => {
-    const nextValue = normalizeCellValue(inputValue);
+  // 날짜 저장 요청을 공통 처리합니다.
+  const saveDateValue = useCallback(async (nextValue: string) => {
+    const normalizedNextValue = normalizeCellValue(nextValue);
     const previousValue = normalizeCellValue(value);
 
     // 변경 사항이 없으면 저장하지 않습니다.
-    if (nextValue === previousValue) {
+    if (normalizedNextValue === previousValue) {
       return;
     }
 
+    // 같은 값으로 이미 저장 요청을 보낸 경우 중복 저장하지 않습니다.
+    if (lastRequestedValueRef.current === normalizedNextValue) {
+      return;
+    }
+
+    lastRequestedValueRef.current = normalizedNextValue;
     setSaving(true);
     try {
-      // focus out 시 즉시 저장을 요청합니다.
-      await onSave(nextValue);
+      // 날짜 선택 또는 blur 시 즉시 저장을 요청합니다.
+      await onSave(normalizedNextValue);
     } catch (error) {
       // 저장 실패 시 이전 값으로 복구합니다.
       console.error('회사 업무 날짜 저장에 실패했습니다.', error);
+      lastRequestedValueRef.current = previousValue;
       setInputValue(previousValue);
     } finally {
       setSaving(false);
     }
-  }, [inputValue, onSave, value]);
+  }, [onSave, value]);
+
+  // 날짜 선택값을 로컬 상태에 반영하고 캘린더 선택 시 즉시 저장합니다.
+  const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextValue = normalizeCellValue(event.target.value);
+
+    // input[type=date]의 yyyy-MM-dd 값을 그대로 유지합니다.
+    setInputValue(nextValue);
+
+    // 캘린더 선택 직후에도 즉시 저장될 수 있게 change 단계에서 저장을 시도합니다.
+    void saveDateValue(nextValue);
+  }, [saveDateValue]);
+
+  // 포커스 아웃 시 날짜를 즉시 저장합니다.
+  const handleBlur = useCallback(() => {
+    // 수동 입력 사용자는 blur 시점에도 동일 저장 로직을 재사용합니다.
+    void saveDateValue(inputValue);
+  }, [inputValue, saveDateValue]);
 
   return (
     <AdminDateInput
