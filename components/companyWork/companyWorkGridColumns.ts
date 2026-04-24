@@ -7,6 +7,7 @@ import {
   CompanyWorkStatusSelectCell,
   CompanyWorkTextCell,
 } from '@/components/companyWork/CompanyWorkEditableCells';
+import { normalizeCompanyWorkDateInputValue } from '@/components/companyWork/companyWorkDateUtils';
 import type { CompanyWorkListRow } from '@/components/companyWork/types';
 import type {
   CompanyWorkOpenDetailHandler,
@@ -26,15 +27,6 @@ const createWorkPriorNameMap = (workPriorList: CommonCode[]): Map<string, string
     workPriorNameMap.set(workPriorItem.cd, workPriorItem.cdNm || '');
   }
   return workPriorNameMap;
-};
-
-// 날짜 문자열을 yyyy-MM-dd 형식으로 정규화합니다.
-const normalizeCompanyWorkDate = (value?: string | null): string => {
-  // 날짜 값이 없으면 빈 문자열을 반환합니다.
-  if (typeof value !== 'string' || value.trim() === '') {
-    return '';
-  }
-  return value.slice(0, 10);
 };
 
 interface CreateCompanyWorkColumnDefsParams {
@@ -143,7 +135,7 @@ export const createCompanyWorkColumnDefs = ({
       },
     },
     {
-      headerName: '시작일시',
+      headerName: '시작일',
       field: 'workStartDt',
       width: 170,
       cellRenderer: (params: ICellRendererParams<CompanyWorkListRow>) => {
@@ -152,13 +144,13 @@ export const createCompanyWorkColumnDefs = ({
           return '';
         }
         return createElement(CompanyWorkDateCell, {
-          value: normalizeCompanyWorkDate(params.data.workStartDt),
+          value: normalizeCompanyWorkDateInputValue(params.data.workStartDt),
           onSave: (nextValue: string) => onSaveEditableRow(params.data!, { workStartDt: nextValue }),
         });
       },
     },
     {
-      headerName: '종료일시',
+      headerName: '종료일',
       field: 'workEndDt',
       width: 170,
       cellRenderer: (params: ICellRendererParams<CompanyWorkListRow>) => {
@@ -167,7 +159,7 @@ export const createCompanyWorkColumnDefs = ({
           return '';
         }
         return createElement(CompanyWorkDateCell, {
-          value: normalizeCompanyWorkDate(params.data.workEndDt),
+          value: normalizeCompanyWorkDateInputValue(params.data.workEndDt),
           onSave: (nextValue: string) => onSaveEditableRow(params.data!, { workEndDt: nextValue }),
         });
       },

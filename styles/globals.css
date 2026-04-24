@@ -143,11 +143,14 @@ button {
   opacity: 0.5;
 }
 
-.admin-date-input-wrapper input[type="date"] {
+.admin-date-input-wrapper input[type="date"],
+.admin-date-input-wrapper input[type="datetime-local"] {
   position: relative;
 }
 
-.admin-date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+/* 좌측 커스텀 캘린더 아이콘만 보이도록 브라우저 기본 선택기 아이콘을 숨깁니다. */
+.admin-date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator,
+.admin-date-input-wrapper input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   margin: 0;
   opacity: 0;
   width: 0;
@@ -155,7 +158,9 @@ button {
 }
 
 .admin-date-input-wrapper input[type="date"]::-webkit-clear-button,
-.admin-date-input-wrapper input[type="date"]::-webkit-inner-spin-button {
+.admin-date-input-wrapper input[type="date"]::-webkit-inner-spin-button,
+.admin-date-input-wrapper input[type="datetime-local"]::-webkit-clear-button,
+.admin-date-input-wrapper input[type="datetime-local"]::-webkit-inner-spin-button {
   display: none;
 }
 

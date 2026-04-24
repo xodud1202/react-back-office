@@ -5,6 +5,8 @@ import React, { forwardRef, useCallback, useRef } from 'react';
 interface AdminDateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   // 날짜 입력 바깥 래퍼 클래스명입니다.
   wrapperClassName?: string;
+  // 브라우저 기본 입력 타입입니다.
+  inputType?: 'date' | 'datetime-local';
 }
 
 // 날짜 입력 DOM ref를 내부와 외부에 함께 연결합니다.
@@ -28,6 +30,7 @@ const assignInputRef = (
 const AdminDateInput = forwardRef<HTMLInputElement, AdminDateInputProps>(({
   className,
   wrapperClassName,
+  inputType = 'date',
   disabled,
   readOnly,
   ...inputProps
@@ -40,7 +43,7 @@ const AdminDateInput = forwardRef<HTMLInputElement, AdminDateInputProps>(({
     assignInputRef(ref, element);
   }, [ref]);
 
-  // 좌측 캘린더 아이콘 클릭 시 브라우저 날짜 선택기를 엽니다.
+  // 좌측 캘린더 아이콘 클릭 시 브라우저 날짜/일시 선택기를 엽니다.
   const handleClickCalendarButton = useCallback(() => {
     // 비활성화 또는 읽기 전용이면 선택기를 열지 않습니다.
     if (!inputRef.current || disabled || readOnly) {
@@ -73,14 +76,14 @@ const AdminDateInput = forwardRef<HTMLInputElement, AdminDateInputProps>(({
         onClick={handleClickCalendarButton}
         disabled={disabled || readOnly}
         tabIndex={-1}
-        aria-label="날짜 선택"
+        aria-label={inputType === 'datetime-local' ? '일시 선택' : '날짜 선택'}
       >
         <i className="mdi mdi-calendar" aria-hidden="true"></i>
       </button>
       <input
         {...inputProps}
         ref={handleInputRef}
-        type="date"
+        type={inputType}
         className={className}
         disabled={disabled}
         readOnly={readOnly}

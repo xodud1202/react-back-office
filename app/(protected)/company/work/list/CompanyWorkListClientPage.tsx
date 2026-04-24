@@ -11,6 +11,7 @@ import CompanyWorkManualCreateModal from '@/components/companyWork/CompanyWorkMa
 import CompanyWorkReplyViewModal from '@/components/companyWork/CompanyWorkReplyViewModal';
 import CompanyWorkSearchForm from '@/components/companyWork/CompanyWorkSearchForm';
 import CompanyWorkSectionGrid from '@/components/companyWork/CompanyWorkSectionGrid';
+import { normalizeCompanyWorkEditableDateValue } from '@/components/companyWork/companyWorkDateUtils';
 import type {
   CompanyWorkCompanyOption,
   CompanyWorkCompletedListResponse,
@@ -121,16 +122,6 @@ const normalizeManualContent = (value?: string | null): string => {
     return '';
   }
   return value;
-};
-
-// 날짜 값을 yyyy-MM-dd 문자열로 정규화합니다.
-const normalizeEditableDate = (value?: string | null): string => {
-  // 날짜 값이 없으면 빈 문자열을 반환합니다.
-  const normalizedValue = normalizeComparableText(value).trim();
-  if (!normalizedValue) {
-    return '';
-  }
-  return normalizedValue.slice(0, 10);
 };
 
 // IT 담당자 문자열을 저장용으로 정규화합니다.
@@ -730,8 +721,8 @@ const CompanyWorkListClientPage = ({
     const requestPayload: CompanyWorkUpdateRequest = {
       workSeq: latestRow.workSeq,
       workStatCd: normalizeComparableText(changes.workStatCd ?? latestRow.workStatCd),
-      workStartDt: normalizeEditableDate(changes.workStartDt ?? latestRow.workStartDt),
-      workEndDt: normalizeEditableDate(changes.workEndDt ?? latestRow.workEndDt),
+      workStartDt: normalizeCompanyWorkEditableDateValue(changes.workStartDt ?? latestRow.workStartDt),
+      workEndDt: normalizeCompanyWorkEditableDateValue(changes.workEndDt ?? latestRow.workEndDt),
       workTime: normalizeEditableWorkTime(changes.workTime ?? latestRow.workTime),
       itManager: normalizeEditableManager(changes.itManager ?? latestRow.itManager),
       udtNo: loginUsrNo,
@@ -771,8 +762,8 @@ const CompanyWorkListClientPage = ({
       const updatedDetail = await updateCompanyWorkDetail({
         workSeq: selectedWorkSeq,
         workStatCd: normalizeComparableText(changes.workStatCd),
-        workStartDt: normalizeEditableDate(changes.workStartDt),
-        workEndDt: normalizeEditableDate(changes.workEndDt),
+        workStartDt: normalizeCompanyWorkEditableDateValue(changes.workStartDt),
+        workEndDt: normalizeCompanyWorkEditableDateValue(changes.workEndDt),
         workTime: typeof changes.workTime === 'number' ? changes.workTime : null,
         udtNo: loginUsrNo,
       });

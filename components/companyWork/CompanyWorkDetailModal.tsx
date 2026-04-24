@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CommonCode } from '@/components/goods/types';
+import { normalizeCompanyWorkDateInputValue } from '@/components/companyWork/companyWorkDateUtils';
 import CompanyWorkReplyReadOnlyContent from '@/components/companyWork/CompanyWorkReplyReadOnlyContent';
 import AdminDateInput from '@/components/common/AdminDateInput';
 import AdminFormTable from '@/components/common/AdminFormTable';
@@ -55,9 +56,9 @@ interface CompanyWorkDetailModalProps {
 interface CompanyWorkDetailFormState {
   // 업무 상태 코드입니다.
   workStatCd: string;
-  // 업무 시작일입니다.
+  // 업무 시작일 입력값입니다.
   workStartDt: string;
-  // 업무 종료일입니다.
+  // 업무 종료일 입력값입니다.
   workEndDt: string;
   // 업무 공수시간 입력값입니다.
   workTime: string;
@@ -101,8 +102,8 @@ const createInitialDetailFormState = (): CompanyWorkDetailFormState => ({
 const buildDetailFormState = (detailResponse: CompanyWorkDetailResponse | null): CompanyWorkDetailFormState => ({
   // 서버 상세값을 input 제어용 문자열로 맞춥니다.
   workStatCd: detailResponse?.detail?.workStatCd || '',
-  workStartDt: detailResponse?.detail?.workStartDt || '',
-  workEndDt: detailResponse?.detail?.workEndDt || '',
+  workStartDt: normalizeCompanyWorkDateInputValue(detailResponse?.detail?.workStartDt),
+  workEndDt: normalizeCompanyWorkDateInputValue(detailResponse?.detail?.workEndDt),
   workTime: detailResponse?.detail?.workTime == null ? '' : String(detailResponse.detail.workTime),
 });
 
@@ -635,7 +636,7 @@ const CompanyWorkDetailModal = ({
                   </td>
                 </tr>
                 <tr>
-                  <th scope="row">업무 시작일시</th>
+                  <th scope="row">업무 시작일</th>
                   <td>
                     <AdminDateInput
                       name="workStartDt"
@@ -645,7 +646,7 @@ const CompanyWorkDetailModal = ({
                       onChange={handleChangeField}
                     />
                   </td>
-                  <th scope="row">업무 종료일시</th>
+                  <th scope="row">업무 종료일</th>
                   <td>
                     <AdminDateInput
                       name="workEndDt"
