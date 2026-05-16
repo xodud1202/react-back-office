@@ -4,6 +4,8 @@ import type { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
 import api from '@/utils/axios/axios';
 import AdminFormTable from '@/components/common/AdminFormTable';
 import type {
+  AdminOrderExchangeWithdrawRequest,
+  AdminOrderExchangeWithdrawResponse,
   AdminOrderReturnWithdrawRequest,
   AdminOrderReturnWithdrawResponse,
   AdminOrderDetailStatusUpdateRequest,
@@ -58,6 +60,48 @@ const resolveOrderDetailActionErrorMessage = (error: unknown, fallbackMessage: s
 // 주문 클레임 행이 관리자 반품 철회 가능한 상태인지 반환합니다.
 const isAdminOrderReturnWithdrawableClaimRow = (claimRow: OrderClaimRow): boolean => {
   return claimRow.chgDtlGbCd === 'CHG_DTL_GB_02' && claimRow.chgDtlStatCd === 'CHG_DTL_STAT_11';
+};
+
+// 주문 클레임 행이 관리자 교환 철회 가능한 상태인지 반환합니다.
+const isAdminOrderExchangeWithdrawableClaimRow = (claimRow: OrderClaimRow): boolean => {
+  return claimRow.chgDtlGbCd === 'CHG_DTL_GB_04' && ['CHG_DTL_STAT_21', 'CHG_DTL_STAT_22'].includes(claimRow.chgDtlStatCd);
+};
+
+// 주문 클레임 행이 관리자 교환 배송대기 행인지 반환합니다.
+const isAdminOrderExchangeDeliveryWaitClaimRow = (claimRow: OrderClaimRow): boolean => {
+  return claimRow.chgDtlGbCd === 'CHG_DTL_GB_03' && claimRow.chgDtlStatCd === 'CHG_DTL_STAT_31';
+};
+
+// 주문 클레임 행을 클레임번호와 주문상세번호 기준 키로 변환합니다.
+const buildOrderClaimPairKey = (claimRow: OrderClaimRow): string => {
+  return `${claimRow.clmNo}:${claimRow.ordDtlNo}`;
+};
+
+// 선택된 교환 클레임 행을 실제 철회 요청에 사용할 교환 회수 행 목록으로 정규화합니다.
+const resolveAdminOrderExchangeWithdrawClaimRows = (selectedClaimRows: OrderClaimRow[]): OrderClaimRow[] => {
+  const claimRowMap = new Map<string, { pickupRow?: OrderClaimRow; hasInvalidRow: boolean }>();
+
+  // 선택한 행을 교환 회수/교환 배송대기 페어 기준으로 모읍니다.
+  selectedClaimRows.forEach((claimRow) => {
+    const claimPairKey = buildOrderClaimPairKey(claimRow);
+    const claimRowPair = claimRowMap.get(claimPairKey) ?? { hasInvalidRow: false };
+    if (isAdminOrderExchangeWithdrawableClaimRow(claimRow)) {
+      claimRowPair.pickupRow = claimRow;
+    } else if (!isAdminOrderExchangeDeliveryWaitClaimRow(claimRow)) {
+      claimRowPair.hasInvalidRow = true;
+    }
+    claimRowMap.set(claimPairKey, claimRowPair);
+  });
+
+  const normalizedClaimRows: OrderClaimRow[] = [];
+  for (const claimRowPair of claimRowMap.values()) {
+    // 잘못된 상태가 섞였거나 교환 배송대기만 선택된 경우에는 철회 요청을 만들지 않습니다.
+    if (claimRowPair.hasInvalidRow || !claimRowPair.pickupRow) {
+      return [];
+    }
+    normalizedClaimRows.push(claimRowPair.pickupRow);
+  }
+  return normalizedClaimRows;
 };
 
 // 주문 상세 ag-grid 컬럼을 정의합니다.
@@ -304,6 +348,8 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
   const [preparing, setPreparing] = useState(false);
   // 반품 철회 처리 진행 여부입니다.
   const [withdrawingReturn, setWithdrawingReturn] = useState(false);
+  // 교환 철회 처리 진행 여부입니다.
+  const [withdrawingExchange, setWithdrawingExchange] = useState(false);
 
   // ag-grid 컬럼 정의를 메모이제이션합니다.
   const columnDefs = useMemo(() => createDetailColumnDefs(), []);
@@ -474,6 +520,46 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
     }
   }, [ordNo, getSelectedClaimRows, fetchOrderDetail]);
 
+  // 선택한 교환 신청 클레임만 대상으로 교환 철회를 수행합니다.
+  const handleWithdrawSelectedExchangeClaim = useCallback(async () => {
+    if (!ordNo) {
+      return;
+    }
+
+    const selectedClaimRows = getSelectedClaimRows();
+    if (selectedClaimRows.length < 1) {
+      alert('철회할 교환건을 선택해주세요.');
+      return;
+    }
+
+    const exchangeWithdrawClaimRows = resolveAdminOrderExchangeWithdrawClaimRows(selectedClaimRows);
+    if (exchangeWithdrawClaimRows.length < 1) {
+      alert('교환 신청/교환 배송대기 건만 철회가 가능합니다.');
+      return;
+    }
+
+    // 선택된 교환 회수 클레임 행만 관리자 교환 철회 요청 본문으로 변환합니다.
+    const requestBody: AdminOrderExchangeWithdrawRequest = {
+      ordNo,
+      claimItemList: exchangeWithdrawClaimRows.map((claimRow) => ({
+        clmNo: claimRow.clmNo,
+        ordDtlNo: claimRow.ordDtlNo,
+      })),
+    };
+
+    setWithdrawingExchange(true);
+    try {
+      await api.post<AdminOrderExchangeWithdrawResponse>('/api/admin/order/exchange/withdraw', requestBody);
+      claimGridApiRef.current?.deselectAll();
+      await fetchOrderDetail(ordNo);
+      alert('교환 철회가 완료되었습니다.');
+    } catch (actionError) {
+      alert(resolveOrderDetailActionErrorMessage(actionError, '교환 철회 처리 중 오류가 발생했습니다.'));
+    } finally {
+      setWithdrawingExchange(false);
+    }
+  }, [ordNo, getSelectedClaimRows, fetchOrderDetail]);
+
   // 선택한 결제완료 주문을 상품 준비중 상태로 변경합니다.
   const handlePrepareSelected = useCallback(async () => {
     if (!ordNo) {
@@ -628,14 +714,24 @@ const OrderDetailModal = ({ isOpen, ordNo, onClose }: OrderDetailModalProps) => 
                     <>
                       <div className="d-flex justify-content-between align-items-center mt-4 mb-2">
                         <h6 className="fw-bold mb-0">주문 클레임 목록</h6>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-warning"
-                          onClick={handleWithdrawSelectedClaim}
-                          disabled={loading || withdrawingReturn}
-                        >
-                          {withdrawingReturn ? '처리 중...' : '반품 철회'}
-                        </button>
+                        <div className="d-flex gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-warning"
+                            onClick={handleWithdrawSelectedExchangeClaim}
+                            disabled={loading || withdrawingExchange || withdrawingReturn}
+                          >
+                            {withdrawingExchange ? '처리 중...' : '교환 철회'}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-warning"
+                            onClick={handleWithdrawSelectedClaim}
+                            disabled={loading || withdrawingReturn || withdrawingExchange}
+                          >
+                            {withdrawingReturn ? '처리 중...' : '반품 철회'}
+                          </button>
+                        </div>
                       </div>
                       <div
                         className="ag-theme-alpine-dark header-center"

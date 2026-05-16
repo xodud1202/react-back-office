@@ -559,6 +559,34 @@ export interface AdminOrderReturnWithdrawResponse {
   closedClaimCount: number;
 }
 
+// 관리자 주문교환 철회 대상 상품 1건을 정의합니다.
+export interface AdminOrderExchangeWithdrawItemRequest {
+  // 클레임번호입니다.
+  clmNo: string;
+  // 주문상세번호입니다.
+  ordDtlNo: number;
+}
+
+// 관리자 주문교환 철회 요청 본문을 정의합니다.
+export interface AdminOrderExchangeWithdrawRequest {
+  // 주문번호입니다.
+  ordNo: string;
+  // 철회 대상 교환 클레임 상품 목록입니다.
+  claimItemList: AdminOrderExchangeWithdrawItemRequest[];
+}
+
+// 관리자 주문교환 철회 응답을 정의합니다.
+export interface AdminOrderExchangeWithdrawResponse {
+  // 주문번호입니다.
+  ordNo: string;
+  // 철회 처리로 변경된 상세/클레임 건수입니다.
+  updatedCount: number;
+  // 철회로 종료된 클레임 건수입니다.
+  closedClaimCount: number;
+  // 철회와 함께 결제 취소 또는 환불이 처리된 건수입니다.
+  paymentCancelCount: number;
+}
+
 // 관리자 주문 주소 검색 공통 응답을 정의합니다.
 export interface AdminOrderAddressSearchCommon {
   // 오류 코드입니다.
