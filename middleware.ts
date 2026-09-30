@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = ['/login'];
+const PUBLIC_PATHS = ['/login', '/healthcheck'];
 const STATIC_FILE_PATTERN = /\.[^/]+$/;
 
 /**
